@@ -115,8 +115,8 @@ def trace_then_cluster(workload, suite, simpoint_home, bincmd, client_bincmd, si
         start_time = time.perf_counter()
         subprocess.run(["mkdir", "-p", f"{simpoint_home}/{workload}/traces/whole"], check=True, capture_output=True, text=True)
         workload_home = f"{simpoint_home}/{workload}"
-        dynamorio_home = os.environ.get('DYNAMORIO_HOME')
-        trace_cmd = f"{dynamorio_home}/bin64/drrun -t drcachesim -jobs 40 -outdir {workload_home}/traces/whole -offline"
+        dynamorio_home = "/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio"
+        trace_cmd = f"/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio/bin64/drrun -t drcachesim -jobs 40 -outdir {workload_home}/traces/whole -offline"
         if drio_args != None:
             trace_cmd = f"{trace_cmd} {drio_args}"
         trace_cmd = f"{trace_cmd} -- {bincmd}"
@@ -159,7 +159,7 @@ def trace_then_cluster(workload, suite, simpoint_home, bincmd, client_bincmd, si
             subprocess.run(f"cp {raw_path}/modules.log {raw_path}/modules.log.bak", check=True, shell=True)
             subprocess.run(["python2", f"{simpoint_home}/scarab/utils/memtrace/portabilize_trace.py", f"{dr_path}"], capture_output=True, text=True, check=True)
             subprocess.run(f"cp {bin_path}/modules.log {raw_path}/modules.log", check=True, shell=True)
-            raw2trace_cmd = f"{dynamorio_home}/tools/bin64/drraw2trace -jobs 40 -indir {raw_path} -chunk_instr_count {chunk_size}"
+            raw2trace_cmd = f"/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio/clients/bin64/drraw2trace -jobs 40 -indir {raw_path} -chunk_instr_count {chunk_size}"
             process = subprocess.Popen("exec " + raw2trace_cmd, stdout=subprocess.PIPE, shell=True)
             raw2trace_processes.add(process)
         else:
@@ -176,7 +176,7 @@ def trace_then_cluster(workload, suite, simpoint_home, bincmd, client_bincmd, si
                         subprocess.run(f"cp {raw_path}/modules.log {raw_path}/modules.log.bak", check=True, shell=True)
                         subprocess.run(["python2", f"{simpoint_home}/scarab/utils/memtrace/portabilize_trace.py", f"{dr_path}"], capture_output=True, text=True, check=True)
                         subprocess.run(f"cp {bin_path}/modules.log {raw_path}/modules.log", check=True, shell=True)
-                        raw2trace_cmd = f"{dynamorio_home}/tools/bin64/drraw2trace -jobs 40 -indir {raw_path} -chunk_instr_count {chunk_size}"
+                        raw2trace_cmd = f"/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio/clients/bin64/drraw2trace -jobs 40 -indir {raw_path} -chunk_instr_count {chunk_size}"
                         process = subprocess.Popen("exec " + raw2trace_cmd, stdout=subprocess.PIPE, shell=True)
                         raw2trace_processes.add(process)
 
@@ -254,12 +254,12 @@ def cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, si
         os.makedirs(os.path.join(simpoint_home, workload, "fingerprint"), exist_ok=True)
         os.makedirs(os.path.join(simpoint_home, workload, "traces_simp"), exist_ok=True)
         workload_home = f"{simpoint_home}/{workload}"
-        dynamorio_home = os.environ.get('DYNAMORIO_HOME')
+        dynamorio_home = /users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio
         print("generate fingerprint..")
         if client_bincmd:
             subprocess.Popen("exec " + client_bincmd, stdout=subprocess.PIPE, shell=True)
         start_time = time.perf_counter()
-        fp_cmd = f"{dynamorio_home}/bin64/drrun -max_bb_instrs 4096 -opt_cleancall 2 -c $tmpdir/libfpg.so -no_use_bb_pc -no_use_fetched_count -segment_size {seg_size} -output {workload_home}/fingerprint/bbfp -pcmap_output {workload_home}/fingerprint/pcmap -- {bincmd}"
+        fp_cmd = f"/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio/bin64/drrun -max_bb_instrs 4096 -opt_cleancall 2 -c $tmpdir/libfpg.so -no_use_bb_pc -no_use_fetched_count -segment_size {seg_size} -output {workload_home}/fingerprint/bbfp -pcmap_output {workload_home}/fingerprint/pcmap -- {bincmd}"
         subprocess.run([fp_cmd], check=True, capture_output=True, text=True, shell=True)
         end_time = time.perf_counter()
 
@@ -323,9 +323,9 @@ def cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, si
                 roi_length += 2 * seg_size
 
             if roi_start == 0:
-                trace_cmd = f"{dynamorio_home}/bin64/drrun -t drcachesim -jobs 40 -outdir {seg_dir} -offline -exit_after_tracing {roi_length} -- {bincmd}"
+                trace_cmd = f"/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio/bin64/drrun -t drcachesim -jobs 40 -outdir {seg_dir} -offline -exit_after_tracing {roi_length} -- {bincmd}"
             else:
-                trace_cmd = f"{dynamorio_home}/bin64/drrun -t drcachesim -jobs 40 -outdir {seg_dir} -offline -trace_after_instrs {roi_start} -exit_after_tracing {roi_length} -- {bincmd}"
+                trace_cmd = f"/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio/bin64/drrun -t drcachesim -jobs 40 -outdir {seg_dir} -offline -trace_after_instrs {roi_start} -exit_after_tracing {roi_length} -- {bincmd}"
 
             process = subprocess.Popen("exec " + trace_cmd, stdout=subprocess.PIPE, shell=True)
             cluster_tracing_processes.add(process)
@@ -358,7 +358,7 @@ def cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, si
             subprocess.run(f"cp {raw_path}/modules.log {raw_path}/modules.log.bak", check=True, shell=True)
             subprocess.run(["python2", f"{simpoint_home}/scarab/utils/memtrace/portabilize_trace.py", f"{trace_path}"], capture_output=True, text=True, check=True)
             subprocess.run(f"cp {bin_path}/modules.log {raw_path}/modules.log", check=True, shell=True)
-            raw2trace_cmd = f"{dynamorio_home}/tools/bin64/drraw2trace -jobs 40 -indir {raw_path} -chunk_instr_count {chunk_size}"
+            raw2trace_cmd = f"/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio/clients/bin64/drraw2trace -jobs 40 -indir {raw_path} -chunk_instr_count {chunk_size}"
             process = subprocess.Popen("exec " + raw2trace_cmd, stdout=subprocess.PIPE, shell=True)
             raw2trace_processes.add(process)
 
@@ -389,11 +389,11 @@ def iterative(workload, suite, simpoint_home, bincmd, client_bincmd, simpoint_mo
             os.makedirs(timestep_dir, exist_ok=True)
 
             start_time = time.perf_counter()
-            dynamorio_home = os.environ.get('DYNAMORIO_HOME')
+            dynamorio_home = /users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio
             if not dynamorio_home:
                 raise EnvironmentError("DYNAMORIO_HOME not set")
 
-            trace_cmd = (f"{dynamorio_home}/bin64/drrun -t drcachesim -jobs 40 -outdir {timestep_dir} -offline")
+            trace_cmd = (f"/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio/bin64/drrun -t drcachesim -jobs 40 -outdir {timestep_dir} -offline")
             if drio_args is not None:
                 trace_cmd = f"{trace_cmd} {drio_args}"
             trace_cmd = f"{trace_cmd} -- {bincmd}"
@@ -461,7 +461,7 @@ def iterative(workload, suite, simpoint_home, bincmd, client_bincmd, simpoint_mo
                     subprocess.run(f"cp {raw_path}/modules.log {raw_path}/modules.log.bak", check=True, shell=True)
                     subprocess.run(["python2", f"{simpoint_home}/scarab/utils/memtrace/portabilize_trace.py", f"{dr_path}"], capture_output=True, text=True, check=True)
                     subprocess.run(f"cp {bin_path}/modules.log {raw_path}/modules.log", check=True, shell=True)
-                    raw2trace_cmd = f"{dynamorio_home}/tools/bin64/drraw2trace -jobs 40 -indir {raw_path} -chunk_instr_count {chunk_size}"
+                    raw2trace_cmd = f"/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio/clients/bin64/drraw2trace -jobs 40 -indir {raw_path} -chunk_instr_count {chunk_size}"
                     process = subprocess.Popen("exec " + raw2trace_cmd, stdout=subprocess.PIPE, shell=True)
                     stdout, stderr = process.communicate()
                     if stderr:
