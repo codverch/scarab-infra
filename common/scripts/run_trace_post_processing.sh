@@ -76,6 +76,7 @@ do
   cd $segmentID
   scarabCmd="$SIMPOINTHOME/scarab/src/scarab --frontend memtrace \
             --cbp_trace_r0=$TRACEFILE \
+            --memtrace_modules_log=$MODULESDIR/modules.log \
             --mode=trace_bbv_distributed \
             --segment_instr_count=$SEGSIZE \
             --memtrace_roi_begin=$(( $segmentID * $SEGSIZE + 1 )) \
