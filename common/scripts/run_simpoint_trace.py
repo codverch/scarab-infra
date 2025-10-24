@@ -254,7 +254,7 @@ def cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, si
         os.makedirs(os.path.join(simpoint_home, workload, "fingerprint"), exist_ok=True)
         os.makedirs(os.path.join(simpoint_home, workload, "traces_simp"), exist_ok=True)
         workload_home = f"{simpoint_home}/{workload}"
-        dynamorio_home = /users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio
+        dynamorio_home = "/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio"
         print("generate fingerprint..")
         if client_bincmd:
             subprocess.Popen("exec " + client_bincmd, stdout=subprocess.PIPE, shell=True)
@@ -389,7 +389,7 @@ def iterative(workload, suite, simpoint_home, bincmd, client_bincmd, simpoint_mo
             os.makedirs(timestep_dir, exist_ok=True)
 
             start_time = time.perf_counter()
-            dynamorio_home = /users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio
+            dynamorio_home = "/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio"
             if not dynamorio_home:
                 raise EnvironmentError("DYNAMORIO_HOME not set")
 
