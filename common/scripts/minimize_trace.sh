@@ -16,6 +16,9 @@ OUTDIR=$5
 
 cd $OUTDIR
 
+# create the main directory structure
+mkdir -p bin raw trace
+
 # read in simpoints
 declare -A clusterMap
 while IFS=" " read -r segID clusterID; do
@@ -35,7 +38,6 @@ for clusterID in "${!clusterMap[@]}"
 do
     WARMUP=$WARMUPCHUNKSORG
     segID=${clusterMap[$clusterID]}
-    mkdir $segID
 
     # unzip /path/to/archive.zip "in/archive/folder/*" -d "/path/to/unzip/to"
     # ref: https://unix.stackexchange.com/questions/59276/how-to-extract-only-a-specific-folder-from-a-zipped-archive-to-a-given-directory
@@ -55,31 +57,41 @@ do
         roiStart=0
     fi
 
+    # create temporary directory for this segment
+    tempDir="temp_$segID"
+    mkdir -p "$tempDir"
+
     # copy chunk zero
     echo "copying chunk 0000"
-    cp ./chunk.0000 "./$segID"
+    cp ./chunk.0000 "$tempDir/"
 
     # append to zip file
-    zip -j -m "./$segID.zip" "./$segID/chunk.0000"
+    zip -j -m "./$segID.zip" "$tempDir/chunk.0000"
 
     for chunkID in $(seq $roiStart $roiEnd);
     do
         # ref: https://stackoverflow.com/questions/1117134/padding-zeros-in-a-string
-        # unzip /path/to/archive.zip "in/archive/folder/*" -d "/path/to/unzip/to"
         padChunkID=$(printf %04d $chunkID)
         echo "unzipping chunk $padChunkID"
-        unzip "$TRACEFILE" "chunk.$padChunkID" -d "./$segID"
+        unzip "$TRACEFILE" "chunk.$padChunkID" -d "$tempDir"
         # append to zip file
-        zip -j -m "./$segID.zip" "./$segID/chunk.$padChunkID"
+        zip -j -m "./$segID.zip" "$tempDir/chunk.$padChunkID"
     done
 
-    # rezip the dir
-    # echo "zipping segment $segID"
-    # zip -j -r "./$segID.zip" "./$segID"
+    # clean up temp directory
+    rm -rf "$tempDir"
 
-    # delete tmp unzipped file folder
-    echo "removing tmp segment folder"
-    rmdir "./$segID"
+    # copy bin directory and modules.log to main directories (only once)
+    if [ ! -d "bin" ] || [ -z "$(ls -A bin)" ]; then
+        echo "copying bin directory and modules.log"
+        cp -r "$BINDIR"/* bin/
+        if [ -f "$BINDIR/../raw/modules.log" ]; then
+            cp "$BINDIR/../raw/modules.log" raw/
+        fi
+    fi
+    
+    # move the zip file to the main trace directory
+    mv "$segID.zip" trace/
 done
 
 rm "./chunk.0000"
