@@ -1,8 +1,3 @@
-#!/usr/bin/python3
-
-# 02/26/2025 | Surim Oh | run_simpoint_trace.py
-# A script to run tracing and clustering inside a docker container
-
 import subprocess
 import argparse
 import os
@@ -115,11 +110,19 @@ def trace_then_cluster(workload, suite, simpoint_home, bincmd, client_bincmd, si
         start_time = time.perf_counter()
         subprocess.run(["mkdir", "-p", f"{simpoint_home}/{workload}/traces/whole"], check=True, capture_output=True, text=True)
         workload_home = f"{simpoint_home}/{workload}"
+        print("old workload home:", workload_home)
+        # mkdir -p /dev/shm/baseline/{workload}
+        subprocess.run(["mkdir", "-p", f"/dev/shm/baseline/{workload}/traces/whole"], check=True, capture_output=True, text=True)
+        # chmod -R 777 /dev/shm/baseline
+        subprocess.run(["chmod", "-R", "777", f"/dev/shm/baseline/{workload}"], check=True, capture_output=True, text=True)
+        workload_home = f"/dev/shm/baseline/{workload}"
+        print("new workload home:", workload_home)
         dynamorio_home = "/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio"
         trace_cmd = f"/users/deepmish/scarab-infra/scarab/src/build/opt/deps/dynamorio/bin64/drrun -t drcachesim -jobs 40 -outdir {workload_home}/traces/whole -offline"
         if drio_args != None:
             trace_cmd = f"{trace_cmd} {drio_args}"
         trace_cmd = f"{trace_cmd} -- {bincmd}"
+        print("trace command:", trace_cmd)
         trace_cmd_list = shlex.split(trace_cmd)
 
         whole_trace_path = f"{workload_home}/traces/whole"
@@ -214,6 +217,7 @@ def trace_then_cluster(workload, suite, simpoint_home, bincmd, client_bincmd, si
             trace_clustering_info["whole_trace"] = whole_trace
 
         post_processing_cmd = f"/bin/bash /usr/local/bin/run_trace_post_processing.sh {workload_home} {modules_dir} {whole_trace} {chunk_size} {seg_size} {simpoint_home}"
+        print(f"{post_processing_cmd=}")
         subprocess.run([post_processing_cmd], check=True, shell=True, stdin=open(os.devnull, 'r'))
         trace_file = os.path.basename(whole_trace)
         trace_clustering_info["trace_file"] = trace_file
