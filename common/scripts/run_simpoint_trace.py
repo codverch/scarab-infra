@@ -241,8 +241,8 @@ def trace_then_cluster(workload, suite, simpoint_home, bincmd, client_bincmd, si
         os.makedirs(f"{workload_home}/traces_simp", exist_ok=True)
         print("whole trace:", whole_trace)
         print("dr folder:", dr_folder)
-        # dr_folder =  f"{workload_home}/trace"
-        minimize_trace_cmd = f"/bin/bash /usr/local/bin/minimize_trace.sh {workload_home}/trace/bin {whole_trace} {workload_home}/simpoints 1 {workload_home}/traces_simp"
+        dr_folder =  f"{workload_home}/trace"
+        minimize_trace_cmd = f"/bin/bash /usr/local/bin/minimize_trace.sh ../whole{dr_folder}/bin {whole_trace} {workload_home}/simpoints 1 {workload_home}/traces_simp"
         subprocess.run([minimize_trace_cmd], check=True, shell=True, stdin=open(os.devnull, 'r'))
         end_time = time.perf_counter()
         report_time("minimizing traces done", start_time, end_time)
