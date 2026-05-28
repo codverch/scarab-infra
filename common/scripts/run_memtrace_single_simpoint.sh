@@ -17,9 +17,10 @@ WARMUP="$6"
 TRACE_WARMUP="$7"
 TRACE_TYPE="$8"
 SCARABHOME="$9"
-SEGMENT_ID="${10}"
+CLUSTER_ID="${10}"
 TRACEFILE="${11}"
 SCARAB_BIN="${12}"
+SEGMENT_IDX="${13}"
 
 PARAMS_FILE="$SCARABHOME/src/PARAMS.$SCARABARCH"
 if [[ "$SCARAB_BIN" =~ ^scarab_([0-9a-fA-F]+) ]]; then
@@ -34,15 +35,19 @@ SIMHOME=$SCENARIO/$WORKLOAD_HOME
 mkdir -p $SIMHOME
 OUTDIR=$SIMHOME
 
-segID=$SEGMENT_ID
-#echo "SEGMENT ID: $segID"
+# cluster_id names the simpoint zip and output directory; segment_id drives ROI math
+if [ -z "$SEGMENT_IDX" ]; then
+  SEGMENT_IDX="$CLUSTER_ID"
+fi
+
+segID=$CLUSTER_ID
 mkdir -p $OUTDIR/$segID
 cp "$PARAMS_FILE" "$OUTDIR/$segID/PARAMS.in"
 cd $OUTDIR/$segID
 
-# SEGMENT_ID = -1 represents whole trace simulation
-# SEGMENT_ID >= 0 represents segmented trace (simpoint) simulation
-if [ "$SEGMENT_ID" == "-1" ]; then
+# CLUSTER_ID = -1 represents whole trace simulation
+# CLUSTER_ID >= 0 represents segmented trace (simpoint) simulation
+if [ "$CLUSTER_ID" == "-1" ]; then
   traceMap=$(ls $trace_home/$WORKLOAD_HOME/traces/whole/)
   scarabCmd="$SCARABHOME/src/$SCARAB_BIN \
   --frontend memtrace \
@@ -50,10 +55,10 @@ if [ "$SEGMENT_ID" == "-1" ]; then
   $SCARABPARAMS &> sim.log"
 else
   # overwriting
-  TRACEFILE=$trace_home/$WORKLOAD_HOME/traces/simp/$segID.zip
-  # roi is initialized by original segment boundary without warmup
-  roiStart=$(( $segID * $SEGSIZE + 1 ))
-  roiEnd=$(( $segID * $SEGSIZE + $SEGSIZE ))
+  TRACEFILE=$trace_home/$WORKLOAD_HOME/traces/simp/$CLUSTER_ID.zip
+  # roi is initialized by original segment boundary without warmup (use segment index, not cluster id)
+  roiStart=$(( SEGMENT_IDX * $SEGSIZE + 1 ))
+  roiEnd=$(( SEGMENT_IDX * $SEGSIZE + $SEGSIZE ))
 
   # now modify roi start based on warmup:
   # roiStart + WARMUP = original segment start
@@ -90,6 +95,21 @@ else
     #### if chunk zero chunk is part of the simulation, the roiStart is the first chunk
     # the roiEnd is always the end of the trace -- (dynamorio uses 0)
     # the warmup is the same
+
+    numChunk=$(unzip -l "$TRACEFILE" 2>/dev/null | grep -c "chunk\." || true)
+    # Multi-chunk zips embed a prior segment before the simpoint; skip SEGSIZE instrs.
+    # Single-chunk simpoint zips (e.g. some cluster_id != segment_id cases) start at 1
+    # and contain roughly one segment of instructions, not segment_idx+1 segments.
+    if [ "${numChunk:-0}" -le 1 ]; then
+      roiStart=1
+      instLimit=$SEGSIZE
+      if [ "${numChunk:-0}" -gt 0 ]; then
+        instLimit=$(( numChunk * SEGSIZE ))
+      fi
+      # Single-chunk zips hold ~one segment; 10M warmup would consume the whole trace
+      # and leave only *.csv.warmup (no bp.stat.0.csv). Measure the full zip instead.
+      WARMUP=0
+    fi
 
     # roiStart 1 means simulation starts with chunk 0
     if [ "$roiStart" == "1" ]; then
