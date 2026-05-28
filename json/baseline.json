@@ -1,0 +1,94 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "baseline",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/scarab/src",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline/simpoint_traces",
+  "workload_db": "baseline.json",
+  "top_simpoint": false,
+  "simulations": [
+    {
+      "suite": "datacenter",
+      "subsuite": "datacenter",
+      "workload": [
+        "bc",
+        "bfs",
+        "cc",
+        "cd",
+        "dfs",
+        "memcached",
+        "mongodb",
+        "mysql",
+        "pagerank",
+        "postgres",
+        "redis",
+        "sssp_ego_fb",
+        "tc"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": null
+    }
+  ],
+  "configurations": {
+    "icache_32k": {
+      "params": "--icache_size 32768 --inst_limit 100000000",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "icache_32k",
+    "configs": [
+      "icache_64k"
+    ],
+    "counters": [
+      "IPC",
+      [
+        "BTB_CORRECT",
+        "BTB_INCORRECT_BUT_TARGET_CORRECT",
+        "BTB_INCORRECT"
+      ],
+      {
+        "type": "stacked",
+        "name": "icache_hit_miss",
+        "title": "Icache Hit/Miss Breakdown",
+        "y_label": "Events",
+        "stats": [
+          "ICACHE_HIT",
+          "ICACHE_MISS"
+        ]
+      }
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 16384
+  },
+  "perf_analyze": {
+    "baseline": "icache_32k",
+    "counters": [
+      "IPC",
+      "ICACHE_MISS"
+    ],
+    "stat_groups": [
+      "bp",
+      "fetch",
+      "core"
+    ],
+    "compare_all_stats": false,
+    "drift_top_workloads": 5,
+    "drift_top_simpoints": 5,
+    "prompt_budget_tokens": 12000,
+    "threshold_pct": 2.0,
+    "analyzer_cli_cmd": "codex"
+  }
+}
