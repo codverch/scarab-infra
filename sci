@@ -17,6 +17,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
@@ -101,6 +102,50 @@ def run_command(
     if capture:
         return completed.stdout or ""
     return None
+
+
+def expand_dockerfile_includes(
+    dockerfile_path: Path,
+    context_root: Path,
+    _seen: Optional[Set[Path]] = None,
+) -> str:
+    """Inline edrevo/dockerfile-plus `INCLUDE+` directives.
+
+    The workload Dockerfiles declare `# syntax = edrevo/dockerfile-plus` and use
+    `INCLUDE+ <path>` to splice in common Dockerfile fragments. That custom
+    frontend only works under BuildKit/buildx, which isn't always available. We
+    expand the includes ourselves (paths are resolved relative to the build
+    context root, matching dockerfile-plus behavior) and strip the `# syntax`
+    line so the result builds with the standard builder.
+    """
+    if _seen is None:
+        _seen = set()
+    resolved = dockerfile_path.resolve()
+    if resolved in _seen:
+        raise StepError(f"Circular INCLUDE+ detected at {dockerfile_path}")
+    _seen.add(resolved)
+
+    out_lines: List[str] = []
+    for raw_line in dockerfile_path.read_text(encoding="utf-8").splitlines():
+        stripped = raw_line.strip()
+        if re.match(r"^#\s*syntax\s*=", stripped):
+            # Drop the custom-frontend directive; we expand includes ourselves.
+            continue
+        include_match = re.match(r"^INCLUDE\+\s+(\S+)", stripped)
+        if include_match:
+            include_target = (context_root / include_match.group(1)).resolve()
+            if not include_target.is_file():
+                raise StepError(f"INCLUDE+ target not found: {include_target}")
+            out_lines.append(f"# >>> expanded from INCLUDE+ {include_match.group(1)}")
+            out_lines.append(
+                expand_dockerfile_includes(include_target, context_root, _seen)
+            )
+            out_lines.append(f"# <<< end INCLUDE+ {include_match.group(1)}")
+            continue
+        out_lines.append(raw_line)
+
+    _seen.discard(resolved)
+    return "\n".join(out_lines)
 
 def extract_descriptor_expectations(descriptor: Dict[str, Any]) -> Tuple[Set[str], Set[str]]:
     workloads: Set[str] = set()
@@ -1871,18 +1916,37 @@ def run_build_image(workload_group: str) -> int:
 
     if rebuild_required:
         info("Changes detected or no base image available; building from source.")
-        run_command(
-            [
-                "docker",
-                "build",
-                str(REPO_ROOT),
-                "-f",
-                str(dockerfile_path),
-                "--no-cache",
-                "-t",
-                current_ref,
-            ],
-        )
+        # Expand edrevo/dockerfile-plus INCLUDE+ directives ourselves so the build
+        # works with the standard builder (the custom frontend needs buildx, which
+        # isn't guaranteed to be installed).
+        expanded_dockerfile = expand_dockerfile_includes(dockerfile_path, REPO_ROOT)
+        tmp_dockerfile = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                prefix=f".sci-dockerfile-{workload_group}-",
+                suffix=".dockerfile",
+                dir=str(REPO_ROOT),
+                delete=False,
+                encoding="utf-8",
+            ) as handle:
+                handle.write(expanded_dockerfile)
+                tmp_dockerfile = handle.name
+            run_command(
+                [
+                    "docker",
+                    "build",
+                    str(REPO_ROOT),
+                    "-f",
+                    tmp_dockerfile,
+                    "--no-cache",
+                    "-t",
+                    current_ref,
+                ],
+            )
+        finally:
+            if tmp_dockerfile and os.path.exists(tmp_dockerfile):
+                os.remove(tmp_dockerfile)
     else:
         info(f"No Dockerfile changes since {last_hash}; retagging {base_ref} -> {current_ref}")
         run_command(["docker", "tag", base_ref, current_ref])
