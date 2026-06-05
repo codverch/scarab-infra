@@ -1620,6 +1620,7 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
                 --mount type=bind,source={traces_dir},target=/simpoint_traces,readonly=true \
                 --mount type=bind,source={docker_home},target=/home/{user},readonly=false \
                 --mount type=bind,source={application_dir},target=/tmp_home/application,readonly=false \
+                --mount type=bind,source=/dev/shm/baseline,target=/dev/shm/baseline,readonly=false \
                 {docker_prefix}:{githash} \
                 /bin/bash\n")
             else:
@@ -1636,6 +1637,7 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
                 --mount type=bind,source={traces_dir},target=/simpoint_traces,readonly=true \
                 --mount type=bind,source={docker_home},target=/home/{user},readonly=false \
                 --mount type=bind,source={application_dir},target=/tmp_home/application,readonly=false \
+                --mount type=bind,source=/dev/shm/baseline,target=/dev/shm/baseline,readonly=false \
                 {docker_prefix}:{githash} \
                 /bin/bash\n")
             f.write(f"docker cp {infra_dir}/scripts/utilities.sh $CONTAINER_NAME:/usr/local/bin\n")

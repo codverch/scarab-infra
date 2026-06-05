@@ -87,6 +87,17 @@ else
 
   instLimit=$(( $roiEnd - $roiStart + 1 ))
 
+  # No warmup + an --inst_limit larger than one segment: start at instruction 1
+  # (skip nothing) and honor the requested limit instead of jumping to the
+  # segment boundary. This is what the ideal-fusion pass-1/pass-2 runs expect.
+  if [ "$WARMUP" == "0" ] && [[ "$SCARABPARAMS" =~ --inst_limit[[:space:]]+([0-9]+) ]]; then
+    desired_limit="${BASH_REMATCH[1]}"
+    if [ "$desired_limit" -gt "$SEGSIZE" ]; then
+      roiStart=1
+      instLimit=$desired_limit
+    fi
+  fi
+
   if [ "$TRACE_TYPE" == "iterative_trace" ]; then
     # with no warmup
     # simultion always simulate the whole trace file with no skip
@@ -115,9 +126,13 @@ else
     # and contain roughly one segment of instructions, not segment_idx+1 segments.
     if [ "${numChunk:-0}" -le 1 ]; then
       roiStart=1
-      instLimit=$SEGSIZE
-      if [ "${numChunk:-0}" -gt 0 ]; then
-        instLimit=$(( numChunk * SEGSIZE ))
+      # Only clamp to a single segment if a larger limit wasn't already requested
+      # above (no-warmup + big --inst_limit case keeps the full requested limit).
+      if [ "$instLimit" -le "$SEGSIZE" ]; then
+        instLimit=$SEGSIZE
+        if [ "${numChunk:-0}" -gt 0 ]; then
+          instLimit=$(( numChunk * SEGSIZE ))
+        fi
       fi
       # Single-chunk zips hold ~one segment; 10M warmup would consume the whole trace
       # and leave only *.csv.warmup (no bp.stat.0.csv). Measure the full zip instead.

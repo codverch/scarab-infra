@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "ideal_fusion_pass1",
+  "experiment": "ideal_fusion_pass2",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -40,8 +40,8 @@
     }
   ],
   "configurations": {
-    "pass1": {
-      "params": "--inst_limit 100000000 --ideal_fusion_pass 1 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{workload}/{cluster_id}.csv",
+    "pass2": {
+      "params": "--inst_limit 100000000 --ideal_fusion_pass 2 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{workload}/{cluster_id}.csv",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
@@ -51,7 +51,7 @@
     "configs": null
   },
   "visualize": {
-    "baseline": "pass1",
+    "baseline": "pass2",
     "configs": [],
     "counters": [
       "IPC"
@@ -62,7 +62,7 @@
     "fallback_mb": 16384
   },
   "perf_analyze": {
-    "baseline": "pass1",
+    "baseline": "pass2",
     "counters": [
       "IPC"
     ],
