@@ -35,6 +35,19 @@ SIMHOME=$SCENARIO/$WORKLOAD_HOME
 mkdir -p $SIMHOME
 OUTDIR=$SIMHOME
 
+# Expand per-simpoint placeholders in Scarab params, e.g.
+#   --ideal_fusion_log /home/<user>/ideal_fusion_candidates/{workload}/{cluster_id}.csv
+APP_NAME="${WORKLOAD_HOME##*/}"
+SCARABPARAMS="${SCARABPARAMS//\{workload\}/$APP_NAME}"
+SCARABPARAMS="${SCARABPARAMS//\{cluster_id\}/$CLUSTER_ID}"
+# Pre-create the directory for --ideal_fusion_log so pass 1 can write candidates.
+if [[ "$SCARABPARAMS" == *"--ideal_fusion_log"* ]]; then
+  ideal_log_path=$(echo "$SCARABPARAMS" | sed -n 's/.*--ideal_fusion_log[ =]\([^ ]*\).*/\1/p')
+  if [ -n "$ideal_log_path" ]; then
+    mkdir -p "$(dirname "$ideal_log_path")"
+  fi
+fi
+
 # cluster_id names the simpoint zip and output directory; segment_id drives ROI math
 if [ -z "$SEGMENT_IDX" ]; then
   SEGMENT_IDX="$CLUSTER_ID"
