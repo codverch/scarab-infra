@@ -19,7 +19,10 @@
         "bfs",
         "cc",
         "cd",
+        "chemcrow",
         "dfs",
+        "haystack",
+        "langchain",
         "memcached",
         "mongodb",
         "mysql",
@@ -27,7 +30,9 @@
         "postgres",
         "redis",
         "sssp_ego_fb",
-        "tc"
+        "swe",
+        "tc",
+        "toolformer"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
