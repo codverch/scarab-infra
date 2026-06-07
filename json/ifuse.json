@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "baseline",
+  "experiment": "ifuse",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -40,8 +40,8 @@
     }
   ],
   "configurations": {
-    "baseline": {
-      "params": "--icache_size 32768 --inst_limit 100000000",
+    "ifuse": {
+      "params": "--icache_size 32768 --inst_limit 100000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_training_enabled 1 --ifuse_training_insert_threshold 2 --ifuse_fct_conf_threshold 3 --ifuse_fct_mispred_conf_penalty 1 --ifuse_fct_insert_on_first_obs 1 --ifuse_fct_initial_conf 1",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
@@ -51,10 +51,16 @@
     "configs": null
   },
   "visualize": {
-    "baseline": "baseline",
+    "baseline": "ifuse",
     "configs": [],
     "counters": [
-      "IPC"
+      "IPC",
+      "IFUSE_FUSED_LOADS",
+      "IFUSE_LD2_PRF_ALLOC_SUCCESSES",
+      "IFUSE_LD2_PRF_ALLOC_FAILURES",
+      "IFUSE_LD2_PRF_HANDOFF_SUCCESSES",
+      "IFUSE_LD2_PRF_HANDOFF_FAILURES",
+      "IFUSE_MISPREDICTED_LOADS"
     ]
   },
   "mem": {
@@ -62,10 +68,12 @@
     "fallback_mb": 16384
   },
   "perf_analyze": {
-    "baseline": "baseline",
+    "baseline": "ifuse",
     "counters": [
       "IPC",
-      "ICACHE_MISS"
+      "IFUSE_FUSED_LOADS",
+      "IFUSE_LD2_PRF_ALLOC_FAILURES",
+      "IFUSE_MISPREDICTED_LOADS"
     ],
     "stat_groups": [
       "bp",
