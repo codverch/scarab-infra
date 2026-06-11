@@ -69,6 +69,30 @@ if [ "$CLUSTER_ID" == "-1" ]; then
 else
   # overwriting
   TRACEFILE=$trace_home/$WORKLOAD_HOME/traces/simp/$CLUSTER_ID.zip
+  # Fall back to the raw (as-downloaded) HuggingFace layout when the registered
+  # <suite>/<subsuite>/<workload>/traces/simp/<id>.zip symlink tree is absent.
+  # That tree is created by scripts/register_local_traces.py under $trace_home,
+  # which commonly lives on tmpfs (/dev/shm) and is wiped on reboot, whereas the
+  # raw per-app trees (<app>/traces_simp/trace/<id>.zip) and workloads_db.json
+  # persist. Searching the raw layout here lets sims run without re-registering.
+  if [ ! -f "$TRACEFILE" ]; then
+    for _cand in \
+      "$trace_home/$APP_NAME/traces_simp/trace/$CLUSTER_ID.zip" \
+      "$trace_home/$APP_NAME/traces_simp/$CLUSTER_ID.zip"; do
+      if [ -f "$_cand" ]; then
+        TRACEFILE="$_cand"
+        break
+      fi
+    done
+  fi
+  # Last resort: raw tree nested under a single per-instance dir
+  # (e.g. <app>/<app_instance>/traces_simp/trace/<id>.zip).
+  if [ ! -f "$TRACEFILE" ]; then
+    _nested=$(ls "$trace_home/$APP_NAME"/*/traces_simp/trace/"$CLUSTER_ID.zip" 2>/dev/null | head -n 1)
+    if [ -n "$_nested" ]; then
+      TRACEFILE="$_nested"
+    fi
+  fi
   # roi is initialized by original segment boundary without warmup (use segment index, not cluster id)
   roiStart=$(( SEGMENT_IDX * $SEGSIZE + 1 ))
   roiEnd=$(( SEGMENT_IDX * $SEGSIZE + $SEGSIZE ))
