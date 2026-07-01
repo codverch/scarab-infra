@@ -19,38 +19,32 @@ an optional host helper — build deps + a 200 GB tmpfs at `/dev/shm/baseline` +
 does **not** set up Docker or conda.)
 
 **1. Clone both repos** (any two dirs; paths inside `HELIOS.json` assume `/users/vedlaksh/I-Fuse`
-and `/users/vedlaksh/helios_results` — edit `scarab_path`/`root_dir` in `HELIOS.json` if different).
+and `/users/vedlaksh/I-Fuse/helios_results` (results land in the I-Fuse checkout; `simulations/`
+is gitignored, the light artifacts are committed) — edit `scarab_path`/`root_dir` in `HELIOS.json`
+if your clone paths differ.
 
 **2. Traces.** Two steps — download, then wire into the `helios_dc` suite:
 - **Download** the HF dataset `harry1332/ifuse-final-datacenter-traces-20260624` (16 apps; the 5
   agentic apps store `traces_simp/<id>.zip`, the rest `traces_simp/trace/<id>.zip`), e.g.
   `hf download harry1332/ifuse-final-datacenter-traces-20260624 --repo-type dataset --local-dir <DL>`.
-- **Wire** each app under `traces_dir` as the suite path `sci` derives from
-  `workload_home = suite/subsuite/workload` (`local_runner.py:213`): the descriptors use
-  `traces_dir: /dev/shm/baseline` and suite/subsuite `helios_dc/helios_dc`, so every app must be
-  reachable at `/dev/shm/baseline/helios_dc/helios_dc/<app>/` (symlinks into `<DL>/<app>` are
-  fine). `setup_scarab-3.sh` (HF dataset default now points at the harry1332 set) downloads the
-  raw traces into `traces_dir`; creating the per-app `helios_dc/helios_dc/<app>/` suite links is
-  the remaining wiring step.
+- **Wire** the download into the suite layout `sci` expects (`workload_home =
+  suite/subsuite/workload`, `local_runner.py:213`):
+  `<traces_dir>/helios_dc/helios_dc/<app>/traces/simp/<cluster_id>.zip`. This is **automatic** —
+  `run_helios.py` (step 3) runs `wire_helios_traces.py`, which hard-links each app's DB-selected
+  simpoint zips from the download into the suite layout (hard links: no extra space, resolve
+  inside the Docker mount; idempotent). To wire by hand:
+  `python3 wire_helios_traces.py [--src <download_dir>]` (auto-detects `<traces_dir>/new_traces_dl`).
 
-**3. Materialize the group descriptors and build scarab from I-Fuse:**
-```bash
-cd scarab-infra
-python3 -c "import json,pathlib; b=json.load(open('json/HELIOS.json')); [pathlib.Path('json/%s.json'%d['experiment']).write_text(json.dumps(d,indent=2)) for d in b['runs']]"
-./sci --build-scarab HELIOS_T3      # builds I-Fuse@helios-2026 -> scarab_builds/scarab_current.opt
-```
+**3. Run the experiment — `python3 run_helios.py`** (from `scarab-infra`). This one command:
+materializes the 6 group descriptors from `json/HELIOS.json`; builds scarab from I-Fuse if the
+binary isn't cached (`scarab_builds/scarab_current.opt`); runs each group (`./sci --sim` /
+`--collect-stats` / `--visualize` — 32 sims = baseline + each app's tuning, no full sweep); and
+then **automatically writes `benefit_latency.png` + `fusion_breakdown.png`** into the campaign
+`root_dir` via `helios_plots.py`. (Graphs can be regenerated alone with `python3 helios_plots.py`.)
 
-**4. Run all 6 groups** (baseline + each app's tuning = 32 sims, no full sweep):
-```bash
-for e in HELIOS_T3 HELIOS_T10 HELIOS_T1000 HELIOS_T10000 HELIOS_T30000 HELIOS_T65000; do
-  ./sci --sim "$e" && ./sci --collect-stats "$e" && ./sci --visualize "$e"
-done
-```
-(Equivalent to the one-liner in `HELIOS.json._run_loop`, which also does the materialize step.)
-
-**5. Read results.** Each `--visualize` prints a `baseline` vs `helios_T*_ns` IPC table with
-speedup %, weighted over the app's `helios_dc` simpoints. Match each app to its column via
-`HELIOS.json → helios_optimal.per_app_optimal[].helios_config`.
+**4. Results.** Per-group `--visualize` prints a `baseline` vs `helios_T*_ns` IPC table with
+speedup %, weighted over each app's `helios_dc` simpoints; the two PNGs land in `root_dir`. Match
+each app to its column via `HELIOS.json → helios_optimal.per_app_optimal[].helios_config`.
 
 ## Expected headline
 

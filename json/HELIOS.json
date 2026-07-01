@@ -1,7 +1,7 @@
 {
-  "_README": "BUNDLE, not a single sci descriptor. Do NOT run `./sci --sim HELIOS`. sci applies every configuration to every workload in one descriptor (local_runner.py: `for config_key in configs`), so a lone descriptor can only do the full config x app matrix. This bundle instead holds one descriptor per optimal-tuning group so each app runs ONLY baseline + its own optimum (32 sims total, no sweep). Run the loop in `_run_loop`. Each `runs[]` entry is a complete sci descriptor; the loop writes it to json/<experiment>.json (gitignored: json/HELIOS_*.json) and runs sim/collect-stats/visualize. 12/16 apps beat baseline; the other 4 (rag_haystack, sssp_ego_fb, tc, toolformer) have no config that beats baseline, so they run at T65000 (least-aggressive best-attempt arm, ~baseline). Binary scarab_current = I-Fuse gitrev 563795f (opt). architecture \"in\" resolves to I-Fuse/src/PARAMS.in, which IS the Golden Cove config (no separate PARAMS.golden_cove needed). Data from /users/vedlaksh/helios_results/{STATE.json,SUMMARY.csv}.",
+  "_README": "BUNDLE, not a single sci descriptor. Do NOT run `./sci --sim HELIOS`. sci applies every configuration to every workload in one descriptor (local_runner.py: `for config_key in configs`), so a lone descriptor can only do the full config x app matrix. This bundle instead holds one descriptor per optimal-tuning group so each app runs ONLY baseline + its own optimum (32 sims total, no sweep). Run the loop in `_run_loop`. Each `runs[]` entry is a complete sci descriptor; the loop writes it to json/<experiment>.json (gitignored: json/HELIOS_*.json) and runs sim/collect-stats/visualize. 12/16 apps beat baseline; the other 4 (rag_haystack, sssp_ego_fb, tc, toolformer) have no config that beats baseline, so they run at T65000 (least-aggressive best-attempt arm, ~baseline). Binary scarab_current = I-Fuse gitrev 563795f (opt). architecture \"in\" resolves to I-Fuse/src/PARAMS.in, which IS the Golden Cove config (no separate PARAMS.golden_cove needed). Data from /users/vedlaksh/I-Fuse/helios_results/{STATE.json,SUMMARY.csv}.",
 
-  "_run_loop": "cd /users/vedlaksh/scarab-infra && python3 -c \"import json,subprocess,pathlib; b=json.load(open('json/HELIOS.json')); [ (pathlib.Path('json/%s.json'%d['experiment']).write_text(json.dumps(d,indent=2)), [subprocess.run(['./sci',a,d['experiment']]) for a in ('--sim','--collect-stats','--visualize')]) for d in b['runs'] ]\"",
+  "_run_loop": "cd /users/vedlaksh/scarab-infra && python3 run_helios.py   # materializes the 6 group descriptors, builds scarab if needed, runs sim/collect-stats/visualize per group, then writes benefit_latency.png + fusion_breakdown.png to root_dir via helios_plots.py",
 
   "helios_optimal": {
     "title": "Golden Cove baseline vs HELIOS (store-store fusion OFF) at per-app optimal T/I/D",
@@ -13,7 +13,7 @@
       "dataset": "harry1332/ifuse-final-datacenter-traces-20260624",
       "suite": "helios_dc",
       "n_apps": 16,
-      "campaign_root": "/users/vedlaksh/helios_results",
+      "campaign_root": "/users/vedlaksh/I-Fuse/helios_results",
       "total_sims": "32 (baseline+optimum per app; underperformers run baseline+T65000) vs 96 for the full matrix"
     },
     "invariants": {
@@ -46,7 +46,7 @@
   "runs": [
     {
       "descriptor_type": "simulation", "architecture": "in", "experiment": "HELIOS_T3",
-      "workload_manager": "manual", "root_dir": "/users/vedlaksh/helios_results",
+      "workload_manager": "manual", "root_dir": "/users/vedlaksh/I-Fuse/helios_results",
       "scarab_path": "/users/vedlaksh/I-Fuse", "scarab_build": "opt", "traces_dir": "/dev/shm/baseline", "top_simpoint": false,
       "simulations": [{"suite": "helios_dc", "subsuite": "helios_dc", "workload": ["bc", "bfs", "cc", "cd", "chemcrow", "dfs", "swe_agent"], "cluster_id": null, "simulation_type": "memtrace", "warmup": null}],
       "configurations": {
@@ -59,7 +59,7 @@
     },
     {
       "descriptor_type": "simulation", "architecture": "in", "experiment": "HELIOS_T10",
-      "workload_manager": "manual", "root_dir": "/users/vedlaksh/helios_results",
+      "workload_manager": "manual", "root_dir": "/users/vedlaksh/I-Fuse/helios_results",
       "scarab_path": "/users/vedlaksh/I-Fuse", "scarab_build": "opt", "traces_dir": "/dev/shm/baseline", "top_simpoint": false,
       "simulations": [{"suite": "helios_dc", "subsuite": "helios_dc", "workload": ["mongodb"], "cluster_id": null, "simulation_type": "memtrace", "warmup": null}],
       "configurations": {
@@ -72,7 +72,7 @@
     },
     {
       "descriptor_type": "simulation", "architecture": "in", "experiment": "HELIOS_T1000",
-      "workload_manager": "manual", "root_dir": "/users/vedlaksh/helios_results",
+      "workload_manager": "manual", "root_dir": "/users/vedlaksh/I-Fuse/helios_results",
       "scarab_path": "/users/vedlaksh/I-Fuse", "scarab_build": "opt", "traces_dir": "/dev/shm/baseline", "top_simpoint": false,
       "simulations": [{"suite": "helios_dc", "subsuite": "helios_dc", "workload": ["pagerank"], "cluster_id": null, "simulation_type": "memtrace", "warmup": null}],
       "configurations": {
@@ -85,7 +85,7 @@
     },
     {
       "descriptor_type": "simulation", "architecture": "in", "experiment": "HELIOS_T10000",
-      "workload_manager": "manual", "root_dir": "/users/vedlaksh/helios_results",
+      "workload_manager": "manual", "root_dir": "/users/vedlaksh/I-Fuse/helios_results",
       "scarab_path": "/users/vedlaksh/I-Fuse", "scarab_build": "opt", "traces_dir": "/dev/shm/baseline", "top_simpoint": false,
       "simulations": [{"suite": "helios_dc", "subsuite": "helios_dc", "workload": ["langchain_web", "mysql"], "cluster_id": null, "simulation_type": "memtrace", "warmup": null}],
       "configurations": {
@@ -98,7 +98,7 @@
     },
     {
       "descriptor_type": "simulation", "architecture": "in", "experiment": "HELIOS_T30000",
-      "workload_manager": "manual", "root_dir": "/users/vedlaksh/helios_results",
+      "workload_manager": "manual", "root_dir": "/users/vedlaksh/I-Fuse/helios_results",
       "scarab_path": "/users/vedlaksh/I-Fuse", "scarab_build": "opt", "traces_dir": "/dev/shm/baseline", "top_simpoint": false,
       "simulations": [{"suite": "helios_dc", "subsuite": "helios_dc", "workload": ["postgres"], "cluster_id": null, "simulation_type": "memtrace", "warmup": null}],
       "configurations": {
@@ -111,7 +111,7 @@
     },
     {
       "descriptor_type": "simulation", "architecture": "in", "experiment": "HELIOS_T65000",
-      "workload_manager": "manual", "root_dir": "/users/vedlaksh/helios_results",
+      "workload_manager": "manual", "root_dir": "/users/vedlaksh/I-Fuse/helios_results",
       "scarab_path": "/users/vedlaksh/I-Fuse", "scarab_build": "opt", "traces_dir": "/dev/shm/baseline", "top_simpoint": false,
       "simulations": [{"suite": "helios_dc", "subsuite": "helios_dc", "workload": ["rag_haystack", "sssp_ego_fb", "tc", "toolformer"], "cluster_id": null, "simulation_type": "memtrace", "warmup": null}],
       "configurations": {
