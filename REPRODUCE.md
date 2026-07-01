@@ -35,7 +35,8 @@ if your clone paths differ.
   inside the Docker mount; idempotent). To wire by hand:
   `python3 wire_helios_traces.py [--src <download_dir>]` (auto-detects `<traces_dir>/new_traces_dl`).
 
-**3. Run the experiment — `python3 run_helios.py`** (from `scarab-infra`). This one command:
+**3. Run the experiment — `conda activate scarabinfra && python3 run_helios.py`** (from
+`scarab-infra`; run inside the `scarabinfra` env so the graph step has matplotlib/numpy). This one command:
 materializes the 6 group descriptors from `json/HELIOS.json`; builds scarab from I-Fuse if the
 binary isn't cached (`scarab_builds/scarab_current.opt`); runs each group (`./sci --sim` /
 `--collect-stats` / `--visualize` — 32 sims = baseline + each app's tuning, no full sweep); and

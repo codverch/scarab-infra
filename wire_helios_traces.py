@@ -78,7 +78,15 @@ def main() -> int:
                          "<traces-dir>/new_traces_dl then <traces-dir>)")
     args = ap.parse_args()
 
-    src_roots = [args.src] if args.src else [args.traces_dir / "new_traces_dl", args.traces_dir]
+    # Candidate download roots holding <app>/traces_simp, in priority order:
+    #   new_traces_dl  - manual `hf download --local-dir <traces_dir>/new_traces_dl`
+    #   simpoint_traces- where setup_scarab-3.sh unpacks the HF dataset
+    #   <traces_dir>   - dataset unpacked directly at the traces_dir root
+    src_roots = [args.src] if args.src else [
+        args.traces_dir / "new_traces_dl",
+        args.traces_dir / "simpoint_traces",
+        args.traces_dir,
+    ]
     src_roots = [r for r in src_roots if r and r.is_dir()]
 
     tally = {"link": 0, "copy": 0, "skip": 0}
