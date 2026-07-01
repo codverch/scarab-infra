@@ -1,0 +1,127 @@
+{
+  "_README": "BUNDLE, not a single sci descriptor. Do NOT run `./sci --sim HELIOS`. sci applies every configuration to every workload in one descriptor (local_runner.py: `for config_key in configs`), so a lone descriptor can only do the full config x app matrix. This bundle instead holds one descriptor per optimal-tuning group so each app runs ONLY baseline + its own optimum (32 sims total, no sweep). Run the loop in `_run_loop`. Each `runs[]` entry is a complete sci descriptor; the loop writes it to json/<experiment>.json (gitignored: json/HELIOS_*.json) and runs sim/collect-stats/visualize. 12/16 apps beat baseline; the other 4 (rag_haystack, sssp_ego_fb, tc, toolformer) have no config that beats baseline, so they run at T65000 (least-aggressive best-attempt arm, ~baseline). Binary scarab_current = I-Fuse gitrev 563795f (opt). architecture \"in\" resolves to I-Fuse/src/PARAMS.in, which IS the Golden Cove config (no separate PARAMS.golden_cove needed). Data from /users/vedlaksh/helios_results/{STATE.json,SUMMARY.csv}.",
+
+  "_run_loop": "cd /users/vedlaksh/scarab-infra && python3 -c \"import json,subprocess,pathlib; b=json.load(open('json/HELIOS.json')); [ (pathlib.Path('json/%s.json'%d['experiment']).write_text(json.dumps(d,indent=2)), [subprocess.run(['./sci',a,d['experiment']]) for a in ('--sim','--collect-stats','--visualize')]) for d in b['runs'] ]\"",
+
+  "helios_optimal": {
+    "title": "Golden Cove baseline vs HELIOS (store-store fusion OFF) at per-app optimal T/I/D",
+    "meta": {
+      "scarab_repo": "/users/vedlaksh/I-Fuse",
+      "scarab_gitrev": "563795f",
+      "architecture": "in (= I-Fuse/src/PARAMS.in, the Golden Cove config)",
+      "binary_resolves_to": "scarab_builds/scarab_563795f_0.opt",
+      "dataset": "harry1332/ifuse-final-datacenter-traces-20260624",
+      "suite": "helios_dc",
+      "n_apps": 16,
+      "campaign_root": "/users/vedlaksh/helios_results",
+      "total_sims": "32 (baseline+optimum per app; underperformers run baseline+T65000) vs 96 for the full matrix"
+    },
+    "invariants": {
+      "store_fusion": "OFF on every HELIOS arm (--helios_fuse_stores 0)",
+      "common_params": "--fetch_off_path_ops 0",
+      "confidence_increment": 1,
+      "confidence_decrement_rule": "3 when threshold==3, else 10",
+      "baseline_arm": "HELIOS fusion fully disabled (no --helios_do_fusion); the 4 underperformers run T65000 whose result is ~= baseline"
+    },
+    "per_app_optimal": [
+      {"app": "bc",            "baseline_ipc": 0.707349, "T": 3,     "I": 1, "D": 3,  "run": "HELIOS_T3",     "helios_config": "helios_T3_ns",     "helios_ipc": 0.711120, "speedup_pct": 0.53,  "status": "optimized"},
+      {"app": "bfs",           "baseline_ipc": 3.214943, "T": 3,     "I": 1, "D": 3,  "run": "HELIOS_T3",     "helios_config": "helios_T3_ns",     "helios_ipc": 3.288240, "speedup_pct": 2.28,  "status": "optimized"},
+      {"app": "cc",            "baseline_ipc": 3.213649, "T": 3,     "I": 1, "D": 3,  "run": "HELIOS_T3",     "helios_config": "helios_T3_ns",     "helios_ipc": 3.515156, "speedup_pct": 9.38,  "status": "optimized"},
+      {"app": "cd",            "baseline_ipc": 4.218458, "T": 3,     "I": 1, "D": 3,  "run": "HELIOS_T3",     "helios_config": "helios_T3_ns",     "helios_ipc": 4.459243, "speedup_pct": 5.71,  "status": "optimized"},
+      {"app": "chemcrow",      "baseline_ipc": 2.439545, "T": 3,     "I": 1, "D": 3,  "run": "HELIOS_T3",     "helios_config": "helios_T3_ns",     "helios_ipc": 2.448632, "speedup_pct": 0.37,  "status": "optimized"},
+      {"app": "dfs",           "baseline_ipc": 3.217929, "T": 3,     "I": 1, "D": 3,  "run": "HELIOS_T3",     "helios_config": "helios_T3_ns",     "helios_ipc": 3.272187, "speedup_pct": 1.69,  "status": "optimized"},
+      {"app": "swe_agent",     "baseline_ipc": 1.706983, "T": 3,     "I": 1, "D": 3,  "run": "HELIOS_T3",     "helios_config": "helios_T3_ns",     "helios_ipc": 1.750935, "speedup_pct": 2.57,  "status": "optimized"},
+      {"app": "mongodb",       "baseline_ipc": 1.456794, "T": 10,    "I": 1, "D": 10, "run": "HELIOS_T10",    "helios_config": "helios_T10_ns",    "helios_ipc": 1.462535, "speedup_pct": 0.39,  "status": "optimized"},
+      {"app": "pagerank",      "baseline_ipc": 3.250563, "T": 1000,  "I": 1, "D": 10, "run": "HELIOS_T1000",  "helios_config": "helios_T1000_ns",  "helios_ipc": 3.860023, "speedup_pct": 18.75, "status": "optimized"},
+      {"app": "langchain_web", "baseline_ipc": 1.772915, "T": 10000, "I": 1, "D": 10, "run": "HELIOS_T10000", "helios_config": "helios_T10000_ns", "helios_ipc": 1.773114, "speedup_pct": 0.01,  "status": "optimized"},
+      {"app": "mysql",         "baseline_ipc": 0.730450, "T": 10000, "I": 1, "D": 10, "run": "HELIOS_T10000", "helios_config": "helios_T10000_ns", "helios_ipc": 0.730493, "speedup_pct": 0.01,  "status": "optimized"},
+      {"app": "postgres",      "baseline_ipc": 2.527791, "T": 30000, "I": 1, "D": 10, "run": "HELIOS_T30000", "helios_config": "helios_T30000_ns", "helios_ipc": 2.527791, "speedup_pct": 0.00,  "status": "optimized_neutral"},
+      {"app": "rag_haystack",  "baseline_ipc": 3.042680, "T": 65000, "I": 1, "D": 10, "run": "HELIOS_T65000", "helios_config": "helios_T65000_ns", "helios_ipc": 3.029571, "speedup_pct": -0.43, "status": "underperformer", "note": "no config beat baseline; runs at T65000 (best attempt)."},
+      {"app": "sssp_ego_fb",   "baseline_ipc": 1.262102, "T": 65000, "I": 1, "D": 10, "run": "HELIOS_T65000", "helios_config": "helios_T65000_ns", "helios_ipc": 1.262028, "speedup_pct": -0.01, "status": "underperformer", "note": "no config beat baseline; runs at T65000 (best attempt)."},
+      {"app": "tc",            "baseline_ipc": 5.045666, "T": 65000, "I": 1, "D": 10, "run": "HELIOS_T65000", "helios_config": "helios_T65000_ns", "helios_ipc": 5.016995, "speedup_pct": -0.57, "status": "underperformer", "note": "no config beat baseline; runs at T65000 (best attempt)."},
+      {"app": "toolformer",    "baseline_ipc": 1.999928, "T": 65000, "I": 1, "D": 10, "run": "HELIOS_T65000", "helios_config": "helios_T65000_ns", "helios_ipc": 1.999928, "speedup_pct": 0.00,  "status": "underperformer", "note": "no config beat baseline; runs at T65000 (best attempt)."}
+    ]
+  },
+
+  "runs": [
+    {
+      "descriptor_type": "simulation", "architecture": "in", "experiment": "HELIOS_T3",
+      "workload_manager": "manual", "root_dir": "/users/vedlaksh/helios_results",
+      "scarab_path": "/users/vedlaksh/I-Fuse", "scarab_build": "opt", "traces_dir": "/dev/shm/baseline", "top_simpoint": false,
+      "simulations": [{"suite": "helios_dc", "subsuite": "helios_dc", "workload": ["bc", "bfs", "cc", "cd", "chemcrow", "dfs", "swe_agent"], "cluster_id": null, "simulation_type": "memtrace", "warmup": null}],
+      "configurations": {
+        "baseline":     {"params": "--fetch_off_path_ops 0", "binary": "scarab_current", "slurm_options": "", "memory_overhead_mb": 0},
+        "helios_T3_ns": {"params": "--fetch_off_path_ops 0 --helios_do_fusion 1 --helios_confidence_threshold 3 --helios_confidence_increment 1 --helios_confidence_decrement 3 --helios_fuse_stores 0", "binary": "scarab_current", "slurm_options": "", "memory_overhead_mb": 512}
+      },
+      "collect_stats": {"configs": null},
+      "visualize": {"baseline": "baseline", "configs": ["baseline", "helios_T3_ns"], "counters": ["IPC"]},
+      "mem": {"collection_baseline": null, "fallback_mb": 8192}
+    },
+    {
+      "descriptor_type": "simulation", "architecture": "in", "experiment": "HELIOS_T10",
+      "workload_manager": "manual", "root_dir": "/users/vedlaksh/helios_results",
+      "scarab_path": "/users/vedlaksh/I-Fuse", "scarab_build": "opt", "traces_dir": "/dev/shm/baseline", "top_simpoint": false,
+      "simulations": [{"suite": "helios_dc", "subsuite": "helios_dc", "workload": ["mongodb"], "cluster_id": null, "simulation_type": "memtrace", "warmup": null}],
+      "configurations": {
+        "baseline":      {"params": "--fetch_off_path_ops 0", "binary": "scarab_current", "slurm_options": "", "memory_overhead_mb": 0},
+        "helios_T10_ns": {"params": "--fetch_off_path_ops 0 --helios_do_fusion 1 --helios_confidence_threshold 10 --helios_confidence_increment 1 --helios_confidence_decrement 10 --helios_fuse_stores 0", "binary": "scarab_current", "slurm_options": "", "memory_overhead_mb": 512}
+      },
+      "collect_stats": {"configs": null},
+      "visualize": {"baseline": "baseline", "configs": ["baseline", "helios_T10_ns"], "counters": ["IPC"]},
+      "mem": {"collection_baseline": null, "fallback_mb": 8192}
+    },
+    {
+      "descriptor_type": "simulation", "architecture": "in", "experiment": "HELIOS_T1000",
+      "workload_manager": "manual", "root_dir": "/users/vedlaksh/helios_results",
+      "scarab_path": "/users/vedlaksh/I-Fuse", "scarab_build": "opt", "traces_dir": "/dev/shm/baseline", "top_simpoint": false,
+      "simulations": [{"suite": "helios_dc", "subsuite": "helios_dc", "workload": ["pagerank"], "cluster_id": null, "simulation_type": "memtrace", "warmup": null}],
+      "configurations": {
+        "baseline":        {"params": "--fetch_off_path_ops 0", "binary": "scarab_current", "slurm_options": "", "memory_overhead_mb": 0},
+        "helios_T1000_ns": {"params": "--fetch_off_path_ops 0 --helios_do_fusion 1 --helios_confidence_threshold 1000 --helios_confidence_increment 1 --helios_confidence_decrement 10 --helios_fuse_stores 0", "binary": "scarab_current", "slurm_options": "", "memory_overhead_mb": 512}
+      },
+      "collect_stats": {"configs": null},
+      "visualize": {"baseline": "baseline", "configs": ["baseline", "helios_T1000_ns"], "counters": ["IPC"]},
+      "mem": {"collection_baseline": null, "fallback_mb": 8192}
+    },
+    {
+      "descriptor_type": "simulation", "architecture": "in", "experiment": "HELIOS_T10000",
+      "workload_manager": "manual", "root_dir": "/users/vedlaksh/helios_results",
+      "scarab_path": "/users/vedlaksh/I-Fuse", "scarab_build": "opt", "traces_dir": "/dev/shm/baseline", "top_simpoint": false,
+      "simulations": [{"suite": "helios_dc", "subsuite": "helios_dc", "workload": ["langchain_web", "mysql"], "cluster_id": null, "simulation_type": "memtrace", "warmup": null}],
+      "configurations": {
+        "baseline":         {"params": "--fetch_off_path_ops 0", "binary": "scarab_current", "slurm_options": "", "memory_overhead_mb": 0},
+        "helios_T10000_ns": {"params": "--fetch_off_path_ops 0 --helios_do_fusion 1 --helios_confidence_threshold 10000 --helios_confidence_increment 1 --helios_confidence_decrement 10 --helios_fuse_stores 0", "binary": "scarab_current", "slurm_options": "", "memory_overhead_mb": 512}
+      },
+      "collect_stats": {"configs": null},
+      "visualize": {"baseline": "baseline", "configs": ["baseline", "helios_T10000_ns"], "counters": ["IPC"]},
+      "mem": {"collection_baseline": null, "fallback_mb": 8192}
+    },
+    {
+      "descriptor_type": "simulation", "architecture": "in", "experiment": "HELIOS_T30000",
+      "workload_manager": "manual", "root_dir": "/users/vedlaksh/helios_results",
+      "scarab_path": "/users/vedlaksh/I-Fuse", "scarab_build": "opt", "traces_dir": "/dev/shm/baseline", "top_simpoint": false,
+      "simulations": [{"suite": "helios_dc", "subsuite": "helios_dc", "workload": ["postgres"], "cluster_id": null, "simulation_type": "memtrace", "warmup": null}],
+      "configurations": {
+        "baseline":         {"params": "--fetch_off_path_ops 0", "binary": "scarab_current", "slurm_options": "", "memory_overhead_mb": 0},
+        "helios_T30000_ns": {"params": "--fetch_off_path_ops 0 --helios_do_fusion 1 --helios_confidence_threshold 30000 --helios_confidence_increment 1 --helios_confidence_decrement 10 --helios_fuse_stores 0", "binary": "scarab_current", "slurm_options": "", "memory_overhead_mb": 512}
+      },
+      "collect_stats": {"configs": null},
+      "visualize": {"baseline": "baseline", "configs": ["baseline", "helios_T30000_ns"], "counters": ["IPC"]},
+      "mem": {"collection_baseline": null, "fallback_mb": 8192}
+    },
+    {
+      "descriptor_type": "simulation", "architecture": "in", "experiment": "HELIOS_T65000",
+      "workload_manager": "manual", "root_dir": "/users/vedlaksh/helios_results",
+      "scarab_path": "/users/vedlaksh/I-Fuse", "scarab_build": "opt", "traces_dir": "/dev/shm/baseline", "top_simpoint": false,
+      "simulations": [{"suite": "helios_dc", "subsuite": "helios_dc", "workload": ["rag_haystack", "sssp_ego_fb", "tc", "toolformer"], "cluster_id": null, "simulation_type": "memtrace", "warmup": null}],
+      "configurations": {
+        "baseline":         {"params": "--fetch_off_path_ops 0", "binary": "scarab_current", "slurm_options": "", "memory_overhead_mb": 0},
+        "helios_T65000_ns": {"params": "--fetch_off_path_ops 0 --helios_do_fusion 1 --helios_confidence_threshold 65000 --helios_confidence_increment 1 --helios_confidence_decrement 10 --helios_fuse_stores 0", "binary": "scarab_current", "slurm_options": "", "memory_overhead_mb": 512}
+      },
+      "collect_stats": {"configs": null},
+      "visualize": {"baseline": "baseline", "configs": ["baseline", "helios_T65000_ns"], "counters": ["IPC"]},
+      "mem": {"collection_baseline": null, "fallback_mb": 8192},
+      "_note": "4 apps with no config that beats baseline; run at T65000 (least-aggressive best-attempt arm). Sweep results ~baseline: rag_haystack -0.43%, sssp_ego_fb -0.01%, tc -0.57%, toolformer 0.00%."
+    }
+  ]
+}

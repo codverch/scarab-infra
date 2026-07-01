@@ -1,2 +1,11 @@
 workloads/spec2017/cpu2017-1_0_5.iso
 scarab_builds/*
+
+# Python caches
+__pycache__/
+
+# workloads_db backups (kept on disk, not versioned)
+workloads/*.bak*
+
+# Generated per-group HELIOS run descriptors (only HELIOS.json is tracked)
+json/HELIOS_*.json
