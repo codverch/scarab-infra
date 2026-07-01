@@ -7,7 +7,7 @@ Baseline vs HELIOS at each app's optimal confidence tuning, Golden Cove, 16 data
 | Repo | GitHub | Branch | Role |
 |------|--------|--------|------|
 | **I-Fuse** | `codverch/I-Fuse` | `helios-2026` | the HELIOS scarab simulator source + `PARAMS.in` (the Golden Cove config) |
-| **scarab-infra** (this) | `codverch/scarab-infra` | `main` | run harness (`sci`), workload DB, the `HELIOS.json` experiment |
+| **scarab-infra** (this) | `codverch/scarab-infra` | `helios` | infrastructure to run experiment |
 
 ## Setup + run on a fresh node
 
