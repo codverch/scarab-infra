@@ -1226,8 +1226,11 @@ def prepare_simulation(user, scarab_path, scarab_build, docker_home, experiment_
         local_gid = os.getgid()
 
         experiment_dir = f"{docker_home}/simulations/{experiment_name}"
+        # Stage the scarab build outside the experiment result directory so the
+        # results tree stays lightweight and simple to commit (no scarab binaries).
+        scarab_stage_dir = f"{docker_home}/scarab_stage/{experiment_name}"
         os.system(f"mkdir -p {experiment_dir}/logs/")
-        dest_scarab_bin = f"{experiment_dir}/scarab/src/scarab"
+        dest_scarab_bin = f"{scarab_stage_dir}/scarab/src/scarab"
         build_mode = scarab_build if scarab_build else "opt"
 
         binary_pattern = re.compile(
@@ -1320,16 +1323,16 @@ def prepare_simulation(user, scarab_path, scarab_build, docker_home, experiment_
 
         # Copy architectural params to scarab/src
         arch_params = f"{scarab_path}/src/PARAMS.{architecture}"
-        os.system(f"mkdir -p {experiment_dir}/scarab/src/")
+        os.system(f"mkdir -p {scarab_stage_dir}/scarab/src/")
         # Copy pin_exec.so to scarab/src/pin/pin_exec/obj-intel64/pin_exec.so
         pin_exec_so = f"{scarab_path}/src/pin/pin_exec/obj-intel64/pin_exec.so"
-        os.system(f"mkdir -p {experiment_dir}/scarab/src/pin/pin_exec/obj-intel64/")
+        os.system(f"mkdir -p {scarab_stage_dir}/scarab/src/pin/pin_exec/obj-intel64/")
 
         # Copy from cache all required scarab binaries
         for bin_name in scarab_binaries:
             cache_name = _cache_bin_name(bin_name, build_mode)
             scarab_ver = f"{infra_dir}/scarab_builds/{cache_name}"
-            dest_dir = Path(experiment_dir) / "scarab" / "src"
+            dest_dir = Path(scarab_stage_dir) / "scarab" / "src"
             dest_dir.mkdir(parents=True, exist_ok=True)
             if not os.path.isfile(scarab_ver):
                 if interactive_shell and bin_name == "scarab_current":
@@ -1369,7 +1372,7 @@ def prepare_simulation(user, scarab_path, scarab_build, docker_home, experiment_
             except Exception:
                 os.system(f"cp {pin_src} {pin_dest}")
 
-        os.system(f"cp {arch_params} {experiment_dir}/scarab/src")
+        os.system(f"cp {arch_params} {scarab_stage_dir}/scarab/src")
 
         # Export hash-specific PARAMS so each scarab binary can use matching defaults.
         for bin_name in scarab_binaries:
@@ -1377,7 +1380,7 @@ def prepare_simulation(user, scarab_path, scarab_build, docker_home, experiment_
             if not match:
                 continue
             target_hash = match.group(1)
-            params_target = f"{experiment_dir}/scarab/src/PARAMS.{architecture}.{target_hash}"
+            params_target = f"{scarab_stage_dir}/scarab/src/PARAMS.{architecture}.{target_hash}"
             if os.path.isfile(params_target):
                 continue
             try:
@@ -1397,9 +1400,9 @@ def prepare_simulation(user, scarab_path, scarab_build, docker_home, experiment_
         # Required for non mode 4. Copy launch scripts from the docker container's scarab repo.
         # NOTE: Could cause issues if a copied version of scarab is incompatible with the version of
         # the launch scripts in the docker container's repo
-        os.system(f"mkdir -p {experiment_dir}/scarab/bin/scarab_globals")
-        os.system(f"cp {scarab_path}/bin/scarab_launch.py  {experiment_dir}/scarab/bin/scarab_launch.py ")
-        os.system(f"cp {scarab_path}/bin/scarab_globals/*  {experiment_dir}/scarab/bin/scarab_globals/ ")
+        os.system(f"mkdir -p {scarab_stage_dir}/scarab/bin/scarab_globals")
+        os.system(f"cp {scarab_path}/bin/scarab_launch.py  {scarab_stage_dir}/scarab/bin/scarab_launch.py ")
+        os.system(f"cp {scarab_path}/bin/scarab_globals/*  {scarab_stage_dir}/scarab/bin/scarab_globals/ ")
 
         return scarab_githash, image_tag_list
     except subprocess.CalledProcessError as e:
@@ -1527,9 +1530,9 @@ def generate_single_scarab_run_command(user, workload_home, experiment, config_k
                                        env_vars, bincmd, client_bincmd):
 
     if mode == "memtrace":
-        command = f"run_memtrace_single_simpoint.sh \\\"{workload_home}\\\" \\\"/home/{user}/simulations/{experiment}/{config_key}\\\" \\\"{config}\\\" \\\"{seg_size}\\\" \\\"{arch}\\\" \\\"{warmup}\\\" \\\"{trace_warmup}\\\" \\\"{trace_type}\\\" /home/{user}/simulations/{experiment}/scarab {cluster_id} {trace_file} {scarab_binary}"
+        command = f"run_memtrace_single_simpoint.sh \\\"{workload_home}\\\" \\\"/home/{user}/simulations/{experiment}/{config_key}\\\" \\\"{config}\\\" \\\"{seg_size}\\\" \\\"{arch}\\\" \\\"{warmup}\\\" \\\"{trace_warmup}\\\" \\\"{trace_type}\\\" /home/{user}/scarab_stage/{experiment}/scarab {cluster_id} {trace_file} {scarab_binary}"
     elif mode == "pt":
-        command = f"run_pt_single_simpoint.sh \\\"{workload_home}\\\" \\\"/home/{user}/simulations/{experiment}/{config_key}\\\" \\\"{config}\\\" \\\"{arch}\\\" \\\"{warmup}\\\" /home/{user}/simulations/{experiment}/scarab {scarab_binary}"
+        command = f"run_pt_single_simpoint.sh \\\"{workload_home}\\\" \\\"/home/{user}/simulations/{experiment}/{config_key}\\\" \\\"{config}\\\" \\\"{arch}\\\" \\\"{warmup}\\\" /home/{user}/scarab_stage/{experiment}/scarab {scarab_binary}"
     elif mode == "exec":
         env_vars_safe = env_vars if env_vars else ""
         client_bincmd_safe = client_bincmd if client_bincmd else ""
@@ -1541,7 +1544,7 @@ def generate_single_scarab_run_command(user, workload_home, experiment, config_k
             f"\\\"{seg_size}\\\" "                           # $4 SEGSIZE
             f"\\\"{arch}\\\" "                               # $5 SCARABARCH
             f"\\\"{warmup}\\\" "                             # $6 WARMUP
-            f"\\\"/home/{user}/simulations/{experiment}/scarab\\\" "  # $7 SCARABHOME
+            f"\\\"/home/{user}/scarab_stage/{experiment}/scarab\\\" "  # $7 SCARABHOME
             f"\\\"{cluster_id}\\\" "                         # $8 SEGMENT_ID
             f"\\\"{env_vars_safe}\\\" "                      # $9 ENVVAR
             f"\\\"{bincmd}\\\" "                             # $10 BINCMD (stay as one arg)
