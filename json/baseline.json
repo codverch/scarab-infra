@@ -39,7 +39,7 @@
   ],
   "configurations": {
     "baseline": {
-      "params": "--icache_size 32768 --inst_limit 100000000",
+      "params": "--icache_size 32768 --inst_limit 100000000 --power_intf_on 1 --power_intf_enable_scaling 0",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
