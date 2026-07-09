@@ -1768,7 +1768,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -1802,7 +1802,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -1826,7 +1826,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -2675,7 +2675,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -2744,7 +2744,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":30000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -2778,7 +2778,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -2832,7 +2832,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -2871,16 +2871,26 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
         },
         "simpoints":[
           {
-            "cluster_id":7,
+            "cluster_id":3,
             "segment_id":0,
-            "weight":1.0
+            "weight":0.372524
+          },
+          {
+            "cluster_id":4,
+            "segment_id":1,
+            "weight":0.313738
+          },
+          {
+            "cluster_id":5,
+            "segment_id":2,
+            "weight":0.313738
           }
         ]
       },
@@ -2890,7 +2900,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":30000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -2962,7 +2972,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -2986,7 +2996,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":30000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3025,7 +3035,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3059,7 +3069,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3117,7 +3127,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":30000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3151,16 +3161,26 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
         },
         "simpoints":[
           {
-            "cluster_id":1,
+            "cluster_id":0,
             "segment_id":0,
-            "weight":1.0
+            "weight":0.3747
+          },
+          {
+            "cluster_id":1,
+            "segment_id":1,
+            "weight":0.31265
+          },
+          {
+            "cluster_id":2,
+            "segment_id":2,
+            "weight":0.31265
           }
         ]
       },
@@ -3170,7 +3190,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3199,7 +3219,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3228,7 +3248,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":10000000,
+            "warmup":0,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
