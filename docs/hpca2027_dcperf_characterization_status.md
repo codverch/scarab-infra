@@ -1,6 +1,60 @@
 # HPCA 2027 DCPerf Characterization Status
 
-Date: 2026-07-09
+Date: 2026-07-09. Updated 2026-07-10 (blocker debugging session; see the
+"2026-07-10 blocker resolution" section).
+
+## 2026-07-10 blocker resolution (Django solved; MediaWiki decision needed)
+
+Five stacked root causes were identified and fixed on `amd162.utah.cloudlab.us`:
+
+1. DynamoRIO **attach** mode fundamentally wedges on both HHVM (JIT segfault)
+   and idle/loaded uWSGI workers (client init never completes). Attach is
+   abandoned; launch mode is the method.
+2. `packages/mediawiki/run.sh` passes its own `--delay-check-health 30`; adding
+   the option again via extra args breaks the option parse and collapses the
+   HHVM startup health budget to ~100 s. Fix: the launch pilot invokes
+   `perf.php` directly with a single controlled option set
+   (`scripts/run_dcperf_mediawiki_launch_pilot.sh`).
+3. **Kernel `vsyscall=xonly` (Ubuntu default) killed both workloads under
+   DynamoRIO** — dmesg showed 61 `vsyscall read attempt denied` events for
+   hhvm/uwsgi, including the general protection fault that killed HHVM's first
+   warmup request. Fixed by rebooting with `vsyscall=emulate`
+   (persisted in `/etc/default/grub` on the node). After the fix, zero
+   kernel-level faults in any run.
+4. The reboot reset DCPerf's sysctls (`TCP TIME_WAIT re-use must be enabled`
+   failure). Restored and persisted in `/etc/sysctl.d/99-dcperf.conf`.
+5. With crashes gone, **uwsgi's `harakiri = 75` watchdog SIGKILLed every
+   DR-slowed worker mid-first-request** (each request under delay-mode DR
+   exceeds 75 s cold). Fix: `--harakiri 600` for traced runs (timeout-only
+   deviation, same class as the MediaWiki health-budget extension).
+
+**Django: viability PROVEN.** `scripts/run_dcperf_django_launch_pilot.sh`
+launches the official 32-worker uWSGI under drmemtrace launch mode (forks
+followed), gates the siege client on a real HTTP response, and completed with
+39 successful transactions, 67 per-process trace roots, 40 with valid
+modules.log (pilot `django_launch_viability_20260709`, delay set beyond the
+run so no tracing — mechanics-only validation). Remaining for the final trace:
+delay calibration against worker steady state, 100M collection, and
+largest-worker trace selection per the existing `get_largest_trace` policy.
+
+**MediaWiki: JIT × DynamoRIO incompatibility confirmed; advisor decision
+needed.** With everything above fixed, HHVM under DR now boots, passes health
+checks, and starts serving warmup — then crashes in the JIT during warmup
+traffic. The full matrix tried: pinned DR 11.90, release DR 11.91.20634
+(uploaded to the node), `-disable_traces`, `Eval.MaxHotTextHugePages=0`,
+`Eval.JitPGO=0` — all crash at request time. **`Eval.Jit=0` (interpreter)
+completes the entire official harness cycle under DR** (Server warmed,
+66.55 wrk RPS, run `mediawiki_launch_viability7_jitoff_20260709`), so the
+pipeline itself is sound. Options for Deepanjali:
+(a) accept an interpreter-mode MediaWiki trace (large, disclosed workload
+deviation); (b) collect MediaWiki on an Intel node with Intel PT (no DR in
+the loop; scarab has a PT frontend; amd162 is AMD so PT is unavailable there);
+(c) defer MediaWiki.
+
+Evidence for every attempt is preserved under
+`/proj/datacntr-effcy-PG0/Harry123/hpca2027_dcperf/traces/`
+(`mediawiki_launch_viability*`, `django_launch_*`, `hhvm_dr_probe_*`) and in
+dmesg extracts referenced above.
 
 This document separates software setup, native workload validation, trace
 validation, and final characterization. A successful installer is not counted
@@ -122,14 +176,23 @@ result.
 
 ## Remaining Execution Order
 
-1. Develop launch-mode tracing that preserves the official MediaWiki and
-   Django workload behavior; do not count attach crashes or empty traces.
-2. Obtain the registered El Fuente dataset for VideoTranscode. Spark is
-   explicitly deferred and must not be started until Harry changes priority.
-3. Add validated FeedSim and TaoBench results to the existing agentic/top-down
-   plot, then add MediaWiki, Django, and VideoTranscode only after their traces
-   pass the same validation.
-4. Leave PostgreSQL+TPC-H and alternate MongoDB/MySQL configurations until the
+1. Django: calibrate the per-worker trace delay against steady state and
+   collect the 100M trace with `run_dcperf_django_launch_pilot.sh`
+   (launch-mode viability is proven; see the 2026-07-10 section).
+2. MediaWiki: Deepanjali decides between interpreter-mode tracing, Intel-PT
+   collection on an Intel node, or deferral (JIT × DynamoRIO is confirmed
+   incompatible; every mitigation tried is documented above).
+3. VideoTranscode dataset (Harry, manual): register free at https://www.cdvl.org,
+   search "ElFuente Shots for SI/TI, Y4M format, 1080p 29.96fps", download the
+   zip, decompress with p7zip (ignore the header error), and place all `.y4m`
+   files in `DCPerf/benchmarks/video_transcode_bench/datasets/cuts/` on amd162.
+   Everything else for this benchmark is already built.
+4. Spark is explicitly deferred and must not be started until Harry changes
+   priority.
+5. Add validated FeedSim and TaoBench results to the existing agentic/top-down
+   plot, then add Django (and MediaWiki/VideoTranscode when unblocked) only
+   after their traces pass the same validation.
+6. Leave PostgreSQL+TPC-H and alternate MongoDB/MySQL configurations until the
    DCPerf characterization is closed, as requested.
 
 ## Reproducibility Files
@@ -140,5 +203,7 @@ result.
 - `scripts/run_dcperf_mediawiki_trace_pilot.sh`
 - `scripts/run_dcperf_django_trace_pilot.sh`
 - `scripts/run_dcperf_tao_trace_pilot.sh`
+- `scripts/run_dcperf_mediawiki_launch_pilot.sh` (2026-07-10, launch mode)
+- `scripts/run_dcperf_django_launch_pilot.sh` (2026-07-10, launch mode, validated)
 - `workloads/dcperf/patches/tao_bench_ubuntu_libcrypto.patch`
 - `workloads/dcperf/patches/tao_bench_memcached_download.patch`
