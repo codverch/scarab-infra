@@ -40,6 +40,15 @@ OUTDIR=$SIMHOME
 APP_NAME="${WORKLOAD_HOME##*/}"
 SCARABPARAMS="${SCARABPARAMS//\{workload\}/$APP_NAME}"
 SCARABPARAMS="${SCARABPARAMS//\{cluster_id\}/$CLUSTER_ID}"
+# Skip sims when a PGO FCT preload file is configured but absent for this simpoint.
+if [[ "$SCARABPARAMS" == *"--ifuse_fct_preload_file"* ]]; then
+  preload_path=$(echo "$SCARABPARAMS" | sed -n 's/.*--ifuse_fct_preload_file[ =]\([^ ]*\).*/\1/p')
+  if [ -n "$preload_path" ] && [ ! -f "$preload_path" ]; then
+    mkdir -p "$SIMHOME/$CLUSTER_ID"
+    echo "SKIP: PGO preload file not found: $preload_path" > "$SIMHOME/$CLUSTER_ID/sim.log"
+    exit 0
+  fi
+fi
 # Pre-create the directory for --ideal_fusion_log so pass 1 can write candidates.
 if [[ "$SCARABPARAMS" == *"--ideal_fusion_log"* ]]; then
   ideal_log_path=$(echo "$SCARABPARAMS" | sed -n 's/.*--ideal_fusion_log[ =]\([^ ]*\).*/\1/p')
