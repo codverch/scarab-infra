@@ -30,6 +30,7 @@ WORKLOAD_LABELS = {
     "cd": "community detection",
     "chemcrow": "chemcrow",
     "dfs": "depth first search",
+    "feedsim": "feedsim",
     "langchain_web": "langchain web",
     "mongodb": "mongodb",
     "mysql": "mysql",
@@ -40,6 +41,7 @@ WORKLOAD_LABELS = {
     "redis": "redis",
     "sssp_ego_fb": "single source shortest path",
     "swe_agent": "swe-agent",
+    "tao": "taobench",
     "tc": "triangle counting",
     "toolformer": "toolformer",
 }
@@ -114,23 +116,42 @@ def percentages(counters: dict[str, float]) -> dict[str, float]:
 def load_weights(
     db_path: Path, suite: str, subsuite: str
 ) -> dict[str, dict[str, float]]:
-    """Return workload -> cluster_id -> weight for one suite/subsuite."""
+    """Return workload -> cluster_id -> weight.
+
+    The primary suite/subsuite (e.g. datacenter/datacenter) is required; other
+    suites in the DB (e.g. dcperf) are merged in as well so one plot can span
+    suites. The primary section wins on workload-name collisions.
+    """
     data = json.loads(db_path.read_text())
     try:
-        workloads = data[suite][subsuite]
+        primary = data[suite][subsuite]
     except KeyError as exc:
         raise SystemExit(
             f"{db_path}: missing workload DB section {suite}/{subsuite}"
         ) from exc
 
-    return {
-        workload: {
-            str(sp["cluster_id"]): float(sp["weight"])
-            for sp in entry["simpoints"]
+    def section_weights(workloads) -> dict[str, dict[str, float]]:
+        return {
+            workload: {
+                str(sp["cluster_id"]): float(sp["weight"])
+                for sp in entry["simpoints"]
+            }
+            for workload, entry in workloads.items()
+            if isinstance(entry, dict) and "simpoints" in entry
         }
-        for workload, entry in workloads.items()
-        if isinstance(entry, dict) and "simpoints" in entry
-    }
+
+    merged: dict[str, dict[str, float]] = {}
+    for suite_name, subsuites in data.items():
+        if not isinstance(subsuites, dict):
+            continue
+        for subsuite_name, workloads in subsuites.items():
+            if not isinstance(workloads, dict):
+                continue
+            if (suite_name, subsuite_name) == (suite, subsuite):
+                continue
+            merged.update(section_weights(workloads))
+    merged.update(section_weights(primary))
+    return merged
 
 
 def collect(

@@ -54,3 +54,14 @@ calculated backend residual is negative beyond tolerance.
 `memcached` and `redis` use the only bundles available on the Clemson node:
 the `traces_lab` cluster037 copies. Confirm that these are the advisor's
 intended official bundles before treating their values as final paper data.
+
+## 2026-07-10: DCPerf feedsim and taobench added
+
+feedsim and tao (TaoBench) bars were added from the validated 100M DCPerf
+traces on amd162 (largest-thread selection per the get_largest_trace policy,
+whole-trace measurement, full_warmup=0, single weight 1.0; manifest rows use
+roi 0,0 meaning no ROI window). Scarab commit 7185dea5, same golden_cove
+PARAMS.in as all other bars. Backend bound: feedsim 23.54%, tao 28.50%.
+Django's trace is pending delay calibration (launch-mode collection is
+validated); MediaWiki is pending the JIT-tracing decision; VideoTranscode is
+pending the CDVL dataset. See docs/hpca2027_dcperf_characterization_status.md.

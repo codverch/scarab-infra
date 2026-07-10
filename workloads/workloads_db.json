@@ -17715,6 +17715,46 @@
           }
         ]
       }
+    },
+    "dcperf":{
+      "feedsim":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"dcperf",
+            "segment_size":10000000,
+            "warmup":0,
+            "trace_type":"whole_trace_largest_thread",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":0,
+            "segment_id":0,
+            "weight":1.0
+          }
+        ]
+      },
+      "tao":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"dcperf",
+            "segment_size":10000000,
+            "warmup":0,
+            "trace_type":"whole_trace_largest_thread",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":0,
+            "segment_id":0,
+            "weight":1.0
+          }
+        ]
+      }
     }
   },
   "driving":{
