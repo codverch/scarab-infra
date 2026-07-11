@@ -17724,15 +17724,25 @@
             "image_name":"dcperf",
             "segment_size":10000000,
             "warmup":0,
-            "trace_type":"whole_trace_largest_thread",
+            "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
         },
         "simpoints":[
           {
-            "cluster_id":0,
+            "cluster_id":5,
             "segment_id":0,
-            "weight":1.0
+            "weight":0.484199
+          },
+          {
+            "cluster_id":12,
+            "segment_id":1,
+            "weight":0.0316016
+          },
+          {
+            "cluster_id":6,
+            "segment_id":2,
+            "weight":0.484199
           }
         ]
       },
@@ -17743,15 +17753,20 @@
             "image_name":"dcperf",
             "segment_size":10000000,
             "warmup":0,
-            "trace_type":"whole_trace_largest_thread",
+            "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
         },
         "simpoints":[
           {
-            "cluster_id":0,
-            "segment_id":0,
-            "weight":1.0
+            "cluster_id":9,
+            "segment_id":1,
+            "weight":0.291438
+          },
+          {
+            "cluster_id":1,
+            "segment_id":2,
+            "weight":0.472375
           }
         ]
       }

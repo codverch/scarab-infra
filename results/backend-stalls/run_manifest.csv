@@ -80,5 +80,8 @@ tc,15,/proj/datacntr-effcy-PG0/Harry123/hpca2027_fix/traces/tc/traces_simp/trace
 tc,17,/proj/datacntr-effcy-PG0/Harry123/hpca2027_fix/traces/tc/traces_simp/trace/17.zip,60000001,90000000,0,30000000
 tc,24,/proj/datacntr-effcy-PG0/Harry123/hpca2027_fix/traces/tc/traces_simp/trace/24.zip,60000001,90000000,0,30000000
 tc,3,/proj/datacntr-effcy-PG0/Harry123/hpca2027_fix/traces/tc/traces_simp/trace/3.zip,60000001,90000000,0,30000000
-feedsim,0,/proj/datacntr-effcy-PG0/Harry123/hpca2027_dcperf/traces/feedsim_steady_100m_delay350b_20260709/raw_trace/drmemtrace.LeafNodeRank.274305.1653.dir/trace/drmemtrace.LeafNodeRank.274305.1653.trace.zip,0,0,0,100000000
-tao,0,/proj/datacntr-effcy-PG0/Harry123/hpca2027_dcperf/traces/tao_server_execphase_100m_delay65b_20260709/raw_trace/drmemtrace.tao_bench_server.337556.5811.dir/trace/drmemtrace.tao_bench_server.338201.0701.trace.zip,0,0,0,100000000
+feedsim,5,/proj/datacntr-effcy-PG0/Harry123/hpca2027_dcperf/bundles/feedsim/traces_simp/trace/5.zip,20000001,30000000,0,10000000
+feedsim,6,/proj/datacntr-effcy-PG0/Harry123/hpca2027_dcperf/bundles/feedsim/traces_simp/trace/6.zip,20000001,30000000,0,10000000
+feedsim,12,/proj/datacntr-effcy-PG0/Harry123/hpca2027_dcperf/bundles/feedsim/traces_simp/trace/12.zip,20000001,30000000,0,10000000
+tao,9,/proj/datacntr-effcy-PG0/Harry123/hpca2027_dcperf/bundles/tao/traces_simp/trace/9.zip,20000001,30000000,0,10000000
+tao,1,/proj/datacntr-effcy-PG0/Harry123/hpca2027_dcperf/bundles/tao/traces_simp/trace/1.zip,10000001,20000000,0,10000000
