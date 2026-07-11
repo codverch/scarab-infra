@@ -46,6 +46,11 @@ def parse_perf(path: Path) -> dict[str, float | None]:
 
 
 def parse_throughput(run_dir: Path, system: str) -> float | None:
+    if system in ("mongodb_aggregate", "mysql_tpch"):
+        duration_path = run_dir / "duration-seconds.txt"
+        if duration_path.is_file():
+            duration = float(duration_path.read_text().strip())
+            return 1.0 / duration if duration > 0 else None
     if system == "mysql":
         summaries = sorted((run_dir / "benchbase-results").glob("*.summary.json"))
         if summaries:
@@ -58,7 +63,7 @@ def parse_throughput(run_dir: Path, system: str) -> float | None:
     text = path.read_text(errors="replace")
     patterns = (
         [r"\[OVERALL\],\s*Throughput\(ops/sec\),\s*([0-9.]+)"]
-        if system == "mongodb"
+        if system in ("mongodb", "mongodb_aggregate")
         else [
             r"([0-9]+(?:\.[0-9]+)?)\s*requests/sec\s*\(throughput\)",
             r"([0-9]+(?:\.[0-9]+)?)\s*requests/sec",
@@ -73,7 +78,7 @@ def parse_throughput(run_dir: Path, system: str) -> float | None:
 
 def parse_errors(path: Path, system: str) -> int:
     text = path.read_text(errors="replace")
-    if system == "mongodb":
+    if system in ("mongodb", "mongodb_aggregate"):
         values = re.findall(
             r"\[[A-Z-]+-FAILED\],\s*Operations,\s*([0-9]+)", text
         )
@@ -135,18 +140,28 @@ def summarize(rows: list[dict[str, object]]) -> list[dict[str, object]]:
         group = [row for row in rows if row["workload"] == workload]
         throughputs = [float(row["throughput"]) for row in group if row["throughput"] is not None]
         stalls = [float(row["backend_stall_pct"]) for row in group if row["backend_stall_pct"] is not None]
+        def coefficient_of_variation(values: list[float]) -> float:
+            mean = statistics.fmean(values) if values else math.nan
+            return (
+                statistics.pstdev(values) / mean * 100.0
+                if len(values) >= 2 and mean > 0
+                else math.nan
+            )
+
         mean_throughput = statistics.fmean(throughputs) if throughputs else math.nan
-        cv = (
-            statistics.pstdev(throughputs) / mean_throughput * 100.0
-            if len(throughputs) >= 2 and mean_throughput > 0
-            else math.nan
-        )
+        throughput_cv = coefficient_of_variation(throughputs)
+        instructions = [float(row["instructions"]) for row in group if row["instructions"] is not None]
+        cycles = [float(row["cycles"]) for row in group if row["cycles"] is not None]
+        instruction_cv = coefficient_of_variation(instructions)
+        cycle_cv = coefficient_of_variation(cycles)
         eligible = (
             len(group) == 2
             and len(throughputs) == 2
             and len(stalls) == 2
             and sum(int(row["errors"]) for row in group) == 0
-            and cv <= 5.0
+            and throughput_cv <= 5.0
+            and instruction_cv <= 5.0
+            and cycle_cv <= 5.0
         )
         cpu_values = [
             float(row["cpu_util_pct"])
@@ -159,7 +174,9 @@ def summarize(rows: list[dict[str, object]]) -> list[dict[str, object]]:
                 "system": group[0]["system"],
                 "runs": len(group),
                 "mean_throughput": mean_throughput,
-                "throughput_cv_pct": cv,
+                "throughput_cv_pct": throughput_cv,
+                "instruction_cv_pct": instruction_cv,
+                "cycle_cv_pct": cycle_cv,
                 "median_backend_stall_pct": statistics.median(stalls) if stalls else math.nan,
                 "mean_cpu_util_pct": statistics.fmean(cpu_values) if cpu_values else math.nan,
                 "errors": sum(int(row["errors"]) for row in group),
@@ -172,7 +189,7 @@ def summarize(rows: list[dict[str, object]]) -> list[dict[str, object]]:
 def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -181,9 +198,16 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
+    parser.add_argument(
+        "--repetitions",
+        help="Comma-separated repetitions to include, for example 1,2.",
+    )
     args = parser.parse_args()
 
     rows = load_runs(args.root)
+    if args.repetitions:
+        repetitions = {int(value) for value in args.repetitions.split(",")}
+        rows = [row for row in rows if int(row["repetition"]) in repetitions]
     if not rows:
         raise SystemExit(f"No manifest.json files found under {args.root}")
     summaries = summarize(rows)
@@ -192,7 +216,15 @@ def main() -> None:
 
     winners: dict[str, dict[str, object]] = {}
     for system in ("mysql", "mongodb"):
-        eligible = [row for row in summaries if row["system"] == system and row["eligible"]]
+        eligible = [
+            row for row in summaries
+            if (
+                row["system"] == system
+                or (system == "mongodb" and row["system"] == "mongodb_aggregate")
+                or (system == "mysql" and row["system"] == "mysql_tpch")
+            )
+            and row["eligible"]
+        ]
         if eligible:
             winners[system] = max(eligible, key=lambda row: float(row["median_backend_stall_pct"]))
     (args.out_dir / "selected_candidates.json").write_text(json.dumps(winners, indent=2) + "\n")

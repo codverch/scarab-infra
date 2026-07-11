@@ -1,0 +1,1 @@
+{"workload":"mysql_tpch_sf10_q18_bp16g_mem32g_cgroup","system":"mysql_tpch","repetition":99,"dataset":"tpch_sf10","query":18,"db_cache_gb":16,"container_memory_gb":32}

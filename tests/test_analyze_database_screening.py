@@ -36,6 +36,15 @@ def write_run(root: Path, workload: str, repetition: int, throughput: float, sta
 
 
 class AnalyzeDatabaseScreeningTest(unittest.TestCase):
+    def test_analytical_throughput_uses_inverse_duration(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_dir = Path(directory)
+            (run_dir / "duration-seconds.txt").write_text("25.0\n")
+
+            self.assertEqual(
+                MODULE.parse_throughput(run_dir, "mysql_tpch"), 0.04
+            )
+
     def test_prefers_benchbase_summary_throughput_over_goodput(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             run_dir = Path(directory)
@@ -81,6 +90,35 @@ class AnalyzeDatabaseScreeningTest(unittest.TestCase):
             self.assertGreater(
                 by_name["mongodb_ycsb_c_10m"]["throughput_cv_pct"], 5.0
             )
+
+    def test_rejects_unstable_instruction_counts(self) -> None:
+        rows = [
+            {
+                "workload": "candidate",
+                "system": "mysql_tpch",
+                "throughput": 1.0,
+                "backend_stall_pct": 35.0,
+                "instructions": 100.0,
+                "cycles": 100.0,
+                "errors": 0,
+                "cpu_util_pct": 50.0,
+            },
+            {
+                "workload": "candidate",
+                "system": "mysql_tpch",
+                "throughput": 1.0,
+                "backend_stall_pct": 36.0,
+                "instructions": 200.0,
+                "cycles": 100.0,
+                "errors": 0,
+                "cpu_util_pct": 50.0,
+            },
+        ]
+
+        summary = MODULE.summarize(rows)[0]
+
+        self.assertFalse(summary["eligible"])
+        self.assertGreater(summary["instruction_cv_pct"], 5.0)
 
 
 if __name__ == "__main__":

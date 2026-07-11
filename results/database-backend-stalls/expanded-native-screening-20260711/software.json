@@ -1,0 +1,7 @@
+{
+  "host": "node0.paper.datacntr-effcy-pg0.utah.cloudlab.us",
+  "mysql_image": "mysql@sha256:224bcb427d70a54ea2a5c8f47dfcf697ae4baefedd02ecf8d4229dd7b061293d",
+  "mongo_image": "mongo@sha256:b0c1f837c31921c93689559d5848fd14b7c421afb92d9b5a11e5a8769f98cad1",
+  "ycsb_version": "0.17.0",
+  "ycsb_sha256": "6a054a706812269c80bfc6ed1e83457990c1c60b01f5083c873aaed05577e30d"
+}

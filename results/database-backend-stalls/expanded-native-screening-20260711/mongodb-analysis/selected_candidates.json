@@ -1,0 +1,15 @@
+{
+  "mongodb": {
+    "workload": "mongodb_ycsb10m_sort_aggregate_wt1g_mem3g_cgroup",
+    "system": "mongodb_aggregate",
+    "runs": 2,
+    "mean_throughput": 0.05231502540077168,
+    "throughput_cv_pct": 0.13078733978551388,
+    "instruction_cv_pct": 0.0529323545086043,
+    "cycle_cv_pct": 0.007288157797489522,
+    "median_backend_stall_pct": 36.258119825787325,
+    "mean_cpu_util_pct": 11.237916666666667,
+    "errors": 0,
+    "eligible": true
+  }
+}

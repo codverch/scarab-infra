@@ -1,0 +1,1 @@
+{"workload":"mongodb_ycsb10m_sort_aggregate_wt1g_mem3g_cgroup","system":"mongodb_aggregate","repetition":99,"dataset":"ycsb_10m","query":"sort","db_cache_gb":1,"container_memory_gb":3}

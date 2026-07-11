@@ -2,9 +2,10 @@
 
 ## Decision requested
 
-The approved native screening matrix is complete, but neither database has a
-stable candidate at or above 30% native backend stalls. Please confirm whether
-to expand the matrix. No DynamoRIO trace has been collected.
+The expanded native matrix found one stable candidate above 30% for each
+database. Please confirm whether to collect DynamoRIO server traces for MySQL
+TPC-H SF10 Q18 and the MongoDB analytical sort described below. No MySQL or
+MongoDB DynamoRIO trace has been collected.
 
 ## Basis and setup
 
@@ -52,6 +53,22 @@ a 1M-instruction calibration, a 1B global pilot, then a final server trace sized
 for at least 120M instructions in the largest thread, capped at 15.2B global
 instructions and 300 GiB predicted storage.
 
+## Expanded results
+
+Native counters were restricted to each database server's Docker cgroup. This
+avoids including client or unrelated host work in the selection metric.
+
+| Candidate | Backend stalls | Throughput CV | Instruction CV | Cycle CV | Errors |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| MySQL TPC-H SF10 Q18, 16 GiB buffer pool, 32 GiB container | 32.10% | 0.15% | 0.01% | 0.18% | 0 |
+| MongoDB YCSB-10M analytical sort, 1 GiB WT cache, 3 GiB container | 36.26% | 0.13% | 0.05% | 0.01% | 0 |
+
+MySQL Q18 is the standard TPC-H large-volume-customer query. The MongoDB input
+sorts the existing 10M-record YCSB collection by `field0`, projects `_id`, and
+returns 100,000 rows with `allowDiskUse:true`. It should be labeled as a custom
+analytical MongoDB workload, not as YCSB A-F. The raw evidence is under
+`expanded-native-screening-20260711`.
+
 ## PostgreSQL audit
 
 PostgreSQL+TPC-H is now verified. A full SF10 screen selected stable Q7 at
@@ -63,8 +80,8 @@ the reproducible plot are under `postgres-tpch-sf10-q7-20260710`.
 
 ## Slack-ready update
 
-> I completed the native MySQL and MongoDB screening matrix. The best stable
-> results were MySQL TPC-C 100w/32t at 14.41% backend stalls and MongoDB YCSB A
-> at 10.42%, so neither reached our 30% threshold. YCSB E was invalid because
-> its measured inserts collided with warmup inserts. I have not collected any
-> traces; should I expand the configuration matrix or stop these databases?
+> I expanded the native database screening and found stable candidates above
+> 30%: MySQL TPC-H SF10 Q18 is 32.10% backend stalled, and a MongoDB analytical
+> sort over the 10M-record YCSB dataset is 36.26%. Both passed two-run stability
+> checks with zero errors. I have not collected DynamoRIO traces yet; may I use
+> these two application+input configurations for the final Scarab runs?
