@@ -1,0 +1,106 @@
+/usr/bin/java  -classpath /mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/conf:/mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/lib/HdrHistogram-2.1.4.jar:/mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/lib/core-0.17.0.jar:/mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/lib/htrace-core4-4.1.0-incubating.jar:/mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/lib/jackson-core-asl-1.9.4.jar:/mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/lib/jackson-mapper-asl-1.9.4.jar:/mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/lib/logback-classic-1.1.2.jar:/mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/lib/logback-core-1.1.2.jar:/mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/lib/mongo-java-driver-3.8.0.jar:/mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/lib/mongodb-async-driver-2.0.1.jar:/mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/lib/mongodb-binding-0.17.0.jar:/mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/lib/slf4j-api-1.7.25.jar:/mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/lib/snappy-java-1.1.7.1.jar site.ycsb.Client -t -db site.ycsb.db.MongoDbClient -s -P /mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/workloads/workloadc -threads 64 -p mongodb.url=mongodb://127.0.0.1:27017/ycsb?w=1 -p recordcount=10000000 -p operationcount=5000000 -p fieldcount=10 -p fieldlength=100
+Command line: -t -db site.ycsb.db.MongoDbClient -s -P /mnt/hpca2027-db/tools/ycsb-mongodb-binding-0.17.0/workloads/workloadc -threads 64 -p mongodb.url=mongodb://127.0.0.1:27017/ycsb?w=1 -p recordcount=10000000 -p operationcount=5000000 -p fieldcount=10 -p fieldlength=100
+YCSB Client 0.17.0
+
+Loading workload...
+Starting test.
+2026-07-11 01:46:56:121 0 sec: 0 operations; est completion in 0 second 
+mongo client connection created with mongodb://127.0.0.1:27017/ycsb?w=1
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+DBWrapper: report latency for each error is false and specific error codes to track for latency are: []
+2026-07-11 01:47:05:395 10 sec: 317609 operations; 31760.9 current ops/sec; est completion in 2 minutes [READ: Count=317827, Max=281087, Min=150, Avg=1658.84, 90=4219, 99=9375, 99.9=35615, 99.99=199295] 
+2026-07-11 01:47:15:392 20 sec: 883623 operations; 56601.4 current ops/sec; est completion in 1 minute [READ: Count=565838, Max=52383, Min=146, Avg=1128.02, 90=1665, 99=8107, 99.9=23983, 99.99=33663] 
+2026-07-11 01:47:25:392 30 sec: 1471683 operations; 58806 current ops/sec; est completion in 1 minute [READ: Count=588037, Max=110655, Min=155, Avg=1085.69, 90=1504, 99=8519, 99.9=18575, 99.99=36575] 
+2026-07-11 01:47:35:392 40 sec: 2056140 operations; 58445.7 current ops/sec; est completion in 58 seconds [READ: Count=584479, Max=72127, Min=164, Avg=1092.74, 90=1380, 99=8127, 99.9=19327, 99.99=37695] 
+2026-07-11 01:47:45:392 50 sec: 2618238 operations; 56209.8 current ops/sec; est completion in 46 seconds [READ: Count=562090, Max=72831, Min=150, Avg=1136.13, 90=2059, 99=7951, 99.9=16071, 99.99=30847] 
+2026-07-11 01:47:55:392 60 sec: 3168421 operations; 55018.3 current ops/sec; est completion in 35 seconds [READ: Count=550181, Max=56415, Min=151, Avg=1160.86, 90=3063, 99=7623, 99.9=13567, 99.99=23839] 
+2026-07-11 01:48:05:392 70 sec: 3782635 operations; 61421.4 current ops/sec; est completion in 23 seconds [READ: Count=614215, Max=65375, Min=153, Avg=1039.54, 90=1335, 99=7863, 99.9=15423, 99.99=27839] 
+2026-07-11 01:48:15:396 80 sec: 4379240 operations; 59642.61 current ops/sec; est completion in 12 seconds [READ: Count=596602, Max=39775, Min=159, Avg=1070.43, 90=1750, 99=7539, 99.9=14719, 99.99=24223] 
+2026-07-11 01:48:25:392 90 sec: 4970331 operations; 59126.84 current ops/sec; est completion in 1 second [READ: Count=591082, Max=40351, Min=149, Avg=1060.69, 90=1440, 99=7799, 99.9=16559, 99.99=27663] [CLEANUP: Count=24, Max=7, Min=0, Avg=1.83, 90=2, 99=7, 99.9=7, 99.99=7] 
+2026-07-11 01:48:26:498 91 sec: 5000000 operations; 26825.5 current ops/sec; [READ: Count=29649, Max=15935, Min=157, Avg=617.28, 90=635, 99=6251, 99.9=9647, 99.99=14079] [CLEANUP: Count=40, Max=6143, Min=0, Avg=158.62, 90=2, 99=6143, 99.9=6143, 99.99=6143] 
+[OVERALL], RunTime(ms), 91107
+[OVERALL], Throughput(ops/sec), 54880.52509686413
+[TOTAL_GCS_G1_Young_Generation], Count, 65
+[TOTAL_GC_TIME_G1_Young_Generation], Time(ms), 539
+[TOTAL_GC_TIME_%_G1_Young_Generation], Time(%), 0.5916120605441954
+[TOTAL_GCS_G1_Old_Generation], Count, 0
+[TOTAL_GC_TIME_G1_Old_Generation], Time(ms), 0
+[TOTAL_GC_TIME_%_G1_Old_Generation], Time(%), 0.0
+[TOTAL_GCs], Count, 65
+[TOTAL_GC_TIME], Time(ms), 539
+[TOTAL_GC_TIME_%], Time(%), 0.5916120605441954
+[READ], Operations, 5000000
+[READ], AverageLatency(us), 1128.4557452
+[READ], MinLatency(us), 146
+[READ], MaxLatency(us), 281087
+[READ], 95thPercentileLatency(us), 4379
+[READ], 99thPercentileLatency(us), 7951
+[READ], Return=OK, 5000000
+[CLEANUP], Operations, 64
+[CLEANUP], AverageLatency(us), 99.828125
+[CLEANUP], MinLatency(us), 0
+[CLEANUP], MaxLatency(us), 6143
+[CLEANUP], 95thPercentileLatency(us), 3
+[CLEANUP], 99thPercentileLatency(us), 144

@@ -1,0 +1,7 @@
+trace_start=2026-07-10T21:33:51,451793538-06:00
+scale_factor=10
+query=7
+trace_after_instructions=100000000
+trace_instructions=121000000
+trace_process_end=2026-07-10T21:33:58,023293578-06:00
+trace_process_status=0

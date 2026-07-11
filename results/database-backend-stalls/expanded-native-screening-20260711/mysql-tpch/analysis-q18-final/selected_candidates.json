@@ -1,0 +1,15 @@
+{
+  "mysql": {
+    "workload": "mysql_tpch_sf10_q18_bp16g_mem32g_cgroup",
+    "system": "mysql_tpch",
+    "runs": 2,
+    "mean_throughput": 0.015359836098835195,
+    "throughput_cv_pct": 0.14591813224790443,
+    "instruction_cv_pct": 0.00919790226143866,
+    "cycle_cv_pct": 0.17703058764412619,
+    "median_backend_stall_pct": 32.098166251943056,
+    "mean_cpu_util_pct": 4.237916666666667,
+    "errors": 0,
+    "eligible": true
+  }
+}

@@ -3000,6 +3000,7 @@ def run_visualize(descriptor_name: str) -> int:
         - \"stat_name\"
         - [\"stat_a\", \"stat_b\", ...] (stacked when length > 1)
         - {\"stats\": [...], \"type\": \"stacked\"} (optional \"title\", \"y_label\", \"name\")
+        - {\"type\": \"pareto\", \"stat\": \"IPC\", ...} (storage vs IPC Pareto curve)
         """
         if isinstance(entry, str):
             return {"type": "single", "stats": [entry]}
@@ -3010,6 +3011,27 @@ def run_visualize(descriptor_name: str) -> int:
             plot_type = "stacked" if len(stats) > 1 else "single"
             return {"type": plot_type, "stats": stats}
         if isinstance(entry, dict):
+            plot_type = entry.get("type") or entry.get("mode")
+            if plot_type == "pareto":
+                request: Dict[str, object] = {"type": "pareto"}
+                for key in (
+                    "name",
+                    "title",
+                    "x_label",
+                    "y_label",
+                    "stat",
+                    "pgo_root",
+                    "bits_per_entry",
+                    "frequencies",
+                    "workloads",
+                    "workloads_db",
+                    "baseline",
+                ):
+                    if key in entry:
+                        request[key] = entry[key]
+                stat_name = entry.get("stat") or "IPC"
+                request["stats"] = [str(stat_name)]
+                return request
             raw_stats = entry.get("stats")
             if raw_stats is None:
                 raw_stats = entry.get("stacked")
@@ -3197,6 +3219,27 @@ def run_visualize(descriptor_name: str) -> int:
 
         if plot_type != "stacked" or len(stats_list) == 1:
             print_markdown_table(resolved_stats[0], display_name=stats_list[0])
+
+        if plot_type == "pareto":
+            stem_safe = safe_filename(str(custom_stem or "fct_storage_ipc_pareto"))
+            pareto_output = stats_path.with_name(f"{stem_safe}.png")
+            print(f"Plotting Pareto storage vs IPC → {pareto_output.name}")
+            try:
+                from scripts.pgo_pareto_plot import run_from_descriptor
+
+                rc = run_from_descriptor(
+                    descriptor,
+                    stats_path,
+                    stats_path.parent,
+                    request,
+                    baseline_config=baseline,
+                    plot_configs=configs,
+                )
+                if rc != 0:
+                    print("Pareto plot generation reported errors.")
+            except Exception as exc:  # pragma: no cover - matplotlib/backend dependent
+                print(f"Failed to generate Pareto plot: {exc}")
+            continue
 
         if plot_type == "stacked" and len(stats_list) > 1:
             stem_safe = safe_filename(str(custom_stem))

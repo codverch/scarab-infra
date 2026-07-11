@@ -1,0 +1,13 @@
+{
+  "workload": "postgres_tpch_sf10_q7",
+  "scale_factor": 10,
+  "query": 7,
+  "runs": 2,
+  "mean_duration_seconds": 10.579999999999998,
+  "duration_cv_pct": 0.3780718336483936,
+  "instruction_cv_pct": 0.2996788597467487,
+  "cycle_cv_pct": 0.8171151589519704,
+  "median_backend_stall_pct": 42.99288469449781,
+  "mean_cpu_util_pct": 5.934999999999999,
+  "eligible": true
+}

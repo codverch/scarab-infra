@@ -1,0 +1,99 @@
+Basic counts tool results:
+Total counts:
+   120961104 total (fetched) instructions
+       40943 total unique (fetched) instructions
+       52088 total non-fetched instructions
+           0 total prefetches
+    26087491 total data loads
+    25619597 total data stores
+           0 total icache flushes
+           0 total dcache flushes
+           1 total threads
+       54986 total timestamp + cpuid markers
+           0 total idle markers
+           0 total wait markers
+           0 total kernel transfer markers
+           0 total function id markers
+           0 total function return address markers
+           0 total function argument markers
+           0 total function return value markers
+           0 total physical address + virtual address marker pairs
+           0 total physical address unavailable markers
+         320 total system call number markers
+         209 total blocking system call markers
+           0 total skipped memref markers
+       13444 total other markers
+       63647 total encodings
+Total windows: 2
+Window #0:
+   120961104 window (fetched) instructions
+       40943 window unique (fetched) instructions
+       52088 window non-fetched instructions
+           0 window prefetches
+    26087491 window data loads
+    25619597 window data stores
+           0 window icache flushes
+           0 window dcache flushes
+       54985 window timestamp + cpuid markers
+           0 window idle markers
+           0 window wait markers
+           0 window kernel transfer markers
+           0 window function id markers
+           0 window function return address markers
+           0 window function argument markers
+           0 window function return value markers
+           0 window physical address + virtual address marker pairs
+           0 window physical address unavailable markers
+         320 window system call number markers
+         209 window blocking system call markers
+           0 window skipped memref markers
+       13443 window other markers
+       63647 window encodings
+Window #1:
+           0 window (fetched) instructions
+           0 window unique (fetched) instructions
+           0 window non-fetched instructions
+           0 window prefetches
+           0 window data loads
+           0 window data stores
+           0 window icache flushes
+           0 window dcache flushes
+           1 window timestamp + cpuid markers
+           0 window idle markers
+           0 window wait markers
+           0 window kernel transfer markers
+           0 window function id markers
+           0 window function return address markers
+           0 window function argument markers
+           0 window function return value markers
+           0 window physical address + virtual address marker pairs
+           0 window physical address unavailable markers
+           0 window system call number markers
+           0 window blocking system call markers
+           0 window skipped memref markers
+           1 window other markers
+           0 window encodings
+Thread 1 counts:
+   120961104 (fetched) instructions
+       40943 unique (fetched) instructions
+       52088 non-fetched instructions
+           0 prefetches
+    26087491 data loads
+    25619597 data stores
+           0 icache flushes
+           0 dcache flushes
+       54985 timestamp + cpuid markers
+           0 idle markers
+           0 wait markers
+           0 kernel transfer markers
+           0 function id markers
+           0 function return address markers
+           0 function argument markers
+           0 function return value markers
+           0 physical address + virtual address marker pairs
+           0 physical address unavailable markers
+         320 system call number markers
+         209 blocking system call markers
+           0 skipped memref markers
+       13443 other markers
+       63647 encodings

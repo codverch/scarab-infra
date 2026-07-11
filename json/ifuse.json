@@ -19,20 +19,10 @@
         "bfs",
         "cc",
         "cd",
-        "chemcrow",
         "dfs",
-        "haystack",
-        "langchain",
-        "memcached",
-        "mongodb",
-        "mysql",
         "pagerank",
-        "postgres",
-        "redis",
         "sssp_ego_fb",
-        "swe",
-        "tc",
-        "toolformer"
+        "tc"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
@@ -40,8 +30,14 @@
     }
   ],
   "configurations": {
-    "ifuse": {
-      "params": "--icache_size 32768 --inst_limit 100000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_training_enabled 1 --ifuse_training_insert_threshold 2 --ifuse_fct_conf_threshold 3 --ifuse_fct_mispred_conf_penalty 1 --ifuse_fct_insert_on_first_obs 1 --ifuse_fct_initial_conf 1",
+    "baseline": {
+      "params": "--icache_size 32768 --inst_limit 100000000 --ifuse_fusion_distance 0",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "ifuse_pgo_freq_1000": {
+      "params": "--icache_size 32768 --inst_limit 100000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_fct_conf_threshold 499 --ifuse_fct_mispred_conf_penalty 50 --ifuse_fct_preload_conf 500 --ifuse_fct_preload_file /users/deepmish/scarab/src/pgo-candidates/pgo-candidates-frequency-1000/{workload}/{cluster_id}.csv",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
@@ -51,28 +47,29 @@
     "configs": null
   },
   "visualize": {
-    "baseline": "ifuse",
-    "configs": [],
+    "baseline": "baseline",
+    "configs": [
+      "ifuse_pgo_freq_1000"
+    ],
     "counters": [
       "IPC",
       "IFUSE_FUSED_LOADS",
-      "IFUSE_LD2_PRF_ALLOC_SUCCESSES",
-      "IFUSE_LD2_PRF_ALLOC_FAILURES",
-      "IFUSE_LD2_PRF_HANDOFF_SUCCESSES",
-      "IFUSE_LD2_PRF_HANDOFF_FAILURES",
+      "IFUSE_LOAD1_PREDICTIONS",
+      "IFUSE_CORRECT_PREDICTIONS",
+      "IFUSE_INCORRECT_PREDICTIONS",
       "IFUSE_MISPREDICTED_LOADS"
-    ]
+    ],
+    "average": false
   },
   "mem": {
     "collection_baseline": null,
     "fallback_mb": 16384
   },
   "perf_analyze": {
-    "baseline": "ifuse",
+    "baseline": "baseline",
     "counters": [
       "IPC",
       "IFUSE_FUSED_LOADS",
-      "IFUSE_LD2_PRF_ALLOC_FAILURES",
       "IFUSE_MISPREDICTED_LOADS"
     ],
     "stat_groups": [

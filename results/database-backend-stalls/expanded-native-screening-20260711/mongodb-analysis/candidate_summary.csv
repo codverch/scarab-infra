@@ -1,0 +1,2 @@
+workload,system,runs,mean_throughput,throughput_cv_pct,instruction_cv_pct,cycle_cv_pct,median_backend_stall_pct,mean_cpu_util_pct,errors,eligible
+mongodb_ycsb10m_sort_aggregate_wt1g_mem3g_cgroup,mongodb_aggregate,2,0.05231502540077168,0.13078733978551388,0.0529323545086043,0.007288157797489522,36.258119825787325,11.237916666666667,0,True

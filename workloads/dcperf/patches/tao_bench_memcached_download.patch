@@ -1,0 +1,14 @@
+diff --git a/packages/tao_bench/install_tao_bench_x86_64.sh b/packages/tao_bench/install_tao_bench_x86_64.sh
+index 3049c12..33c943b 100755
+--- a/packages/tao_bench/install_tao_bench_x86_64.sh
++++ b/packages/tao_bench/install_tao_bench_x86_64.sh
+@@ -96,7 +96,8 @@ popd
+ 
+ # === Build and install memcached (tao_bench_server) ===
+ rm -rf memcached-1.6.5
+-curl http://www.memcached.org/files/memcached-1.6.5.tar.gz > memcached-1.6.5.tar.gz
++curl --fail --location --retry 3 --output memcached-1.6.5.tar.gz \
++    https://memcached.org/files/memcached-1.6.5.tar.gz
+ tar -zxf memcached-1.6.5.tar.gz
+ pushd memcached-1.6.5
+ # We'll need to run autogen.sh if config.h.in does not exist in memcached's source

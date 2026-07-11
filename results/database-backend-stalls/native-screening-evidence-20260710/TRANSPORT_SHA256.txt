@@ -1,0 +1,3 @@
+The downloaded transport archive was verified before extraction:
+
+3d035d0bfd1395974a77317c6d91d7f4054b2f1023a904db9ba556a1b00fbb9e  native-screening-evidence-20260710.tar.gz

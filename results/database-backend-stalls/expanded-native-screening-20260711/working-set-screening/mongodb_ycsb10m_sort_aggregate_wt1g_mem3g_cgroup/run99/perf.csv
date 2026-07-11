@@ -1,0 +1,9 @@
+# started on Fri Jul 10 23:16:16 2026
+
+64975695640,,cycles,/system.slice/docker-000ef82a81a0a7fe3b411c2379e456b4694632905a0de9d4aca6108d0bbb80db.scope,16653531776,83.11,,
+89857904905,,instructions,/system.slice/docker-000ef82a81a0a7fe3b411c2379e456b4694632905a0de9d4aca6108d0bbb80db.scope,16690501331,83.30,1.38,insn per cycle
+,,,,,0.26,stalled cycles per insn
+23453055108,,stalled-cycles-backend,/system.slice/docker-000ef82a81a0a7fe3b411c2379e456b4694632905a0de9d4aca6108d0bbb80db.scope,16726934980,83.48,36.10,backend cycles idle
+403844274,,cache-misses,/system.slice/docker-000ef82a81a0a7fe3b411c2379e456b4694632905a0de9d4aca6108d0bbb80db.scope,16730214381,83.50,,
+16444299503,,branches,/system.slice/docker-000ef82a81a0a7fe3b411c2379e456b4694632905a0de9d4aca6108d0bbb80db.scope,16727724894,83.48,,
+211476077,,branch-misses,/system.slice/docker-000ef82a81a0a7fe3b411c2379e456b4694632905a0de9d4aca6108d0bbb80db.scope,16656688653,83.13,1.29,of all branches

@@ -1,0 +1,57 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "database-backend-stalls",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/scarab/src",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline/simpoint_traces",
+  "workload_db": "baseline.json",
+  "top_simpoint": false,
+  "simulations": [
+    {
+      "suite": "datacenter",
+      "subsuite": "database-characterization",
+      "workload": [
+        "mysql_tpcc_100w_32t",
+        "mysql_tpcc_100w_64t",
+        "mysql_tpcc_200w_64t",
+        "mongodb_ycsb_a_10m",
+        "mongodb_ycsb_c_10m",
+        "mongodb_ycsb_e_10m",
+        "mongodb_ycsb_f_10m"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 0
+    }
+  ],
+  "configurations": {
+    "baseline": {
+      "params": "--icache_size 32768 --dcache_assoc 8 --inst_limit 100000000 --power_intf_on 1 --power_intf_enable_scaling 0",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "baseline",
+    "configs": [],
+    "counters": [
+      "IPC",
+      "TOPDOWN_FRONTEND_BOUND",
+      "TOPDOWN_BAD_SPEC_BOUND",
+      "TOPDOWN_RETIRING_BOUND",
+      "TOPDOWN_BACKEND_BOUND"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 16384
+  }
+}

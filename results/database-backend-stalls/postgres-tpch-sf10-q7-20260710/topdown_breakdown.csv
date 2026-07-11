@@ -1,0 +1,2 @@
+workload,Frontend bound,Bad speculation,Retiring,Backend bound,Topdown sum
+postgres_tpch_sf10_q7,0.6797099654170726,0.66075483686836,21.692913804034966,76.96662139367959,99.99999999999999
