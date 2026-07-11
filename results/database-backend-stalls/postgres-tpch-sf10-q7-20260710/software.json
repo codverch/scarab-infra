@@ -1,0 +1,8 @@
+{
+  "host": "node0.paper.datacntr-effcy-pg0.utah.cloudlab.us",
+  "postgres_image": "postgres@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74",
+  "tpch_repo": "https://github.com/gregrahn/tpch-kit.git",
+  "tpch_commit": "852ad0a5ee31ebefeed884cea4188781dd9613a3",
+  "dbgen_machine": "LINUX",
+  "qgen_database": "POSTGRESQL"
+}

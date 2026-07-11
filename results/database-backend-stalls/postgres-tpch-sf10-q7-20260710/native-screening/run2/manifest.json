@@ -1,0 +1,1 @@
+{"workload":"postgres_tpch_sf10_q7","system":"postgresql","scale_factor":10,"query":7,"repetition":2}

@@ -1,0 +1,10 @@
+status=trace_valid
+workload=postgres_tpch_sf10_q7
+trace_method=single_backend_delayed_instruction_window
+trace_dir=/mnt/hpca2027-db/postgres-tpch/traces/postgres_tpch_sf10_q7_121m_min120m_delay100m_20260710/raw_trace/drmemtrace.postgres.00001.6187.dir/trace
+trace_zip_count=1
+trace_after_instructions=100000000
+trace_instructions=121000000
+minimum_fetched_instructions=120000000
+fetched_instructions=120961104
+dynamorio_compat_library=/lib/x86_64-linux-gnu/libsnappy.so.1

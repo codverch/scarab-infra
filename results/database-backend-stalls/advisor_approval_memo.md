@@ -54,10 +54,12 @@ instructions and 300 GiB predicted storage.
 
 ## PostgreSQL audit
 
-PostgreSQL+TPC-H remains provisionally claimed but unverified. No local artifact
-currently supplies its query/scale configuration, trace provenance, SimPoint
-weights, raw top-down counters, or weighted calculation. It should not be
-marked complete until those files are provided and audited.
+PostgreSQL+TPC-H is now verified. A full SF10 screen selected stable Q7 at
+42.99% native backend stalls. A validated single-backend trace supplied
+120,961,104 fetched instructions, and the complete 120M window was simulated
+with Scarab's Golden Cove configuration. The raw-slot result is 0.68% frontend,
+0.66% bad speculation, 21.69% retiring, and 76.97% backend bound. Evidence and
+the reproducible plot are under `postgres-tpch-sf10-q7-20260710`.
 
 ## Slack-ready update
 
