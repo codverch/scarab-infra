@@ -50,6 +50,17 @@ class AnalyzeDatabaseScreeningTest(unittest.TestCase):
 
             self.assertEqual(MODULE.parse_throughput(run_dir, "mysql"), 387.912)
 
+    def test_counts_all_ycsb_failed_operation_types(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "workload.log"
+            path.write_text(
+                "[INSERT], Return=ERROR, 249631\n"
+                "[INSERT-FAILED], Operations, 249631\n"
+                "[SCAN-FAILED], Operations, 7\n"
+            )
+
+            self.assertEqual(MODULE.parse_errors(path, "mongodb"), 249638)
+
     def test_selects_stable_highest_backend_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -1,0 +1,24 @@
+{
+  "mysql": {
+    "workload": "mysql_tpcc_100w_32t",
+    "system": "mysql",
+    "runs": 2,
+    "mean_throughput": 2283.5232519147958,
+    "throughput_cv_pct": 4.633804691499125,
+    "median_backend_stall_pct": 14.413465562244193,
+    "mean_cpu_util_pct": 65.45166666666667,
+    "errors": 0,
+    "eligible": true
+  },
+  "mongodb": {
+    "workload": "mongodb_ycsb_a_10m",
+    "system": "mongodb",
+    "runs": 2,
+    "mean_throughput": 81057.24994117582,
+    "throughput_cv_pct": 3.670185209169795,
+    "median_backend_stall_pct": 10.418324900210532,
+    "mean_cpu_util_pct": 86.039375,
+    "errors": 0,
+    "eligible": true
+  }
+}

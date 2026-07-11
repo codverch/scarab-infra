@@ -1,0 +1,9 @@
+# started on Fri Jul 10 16:23:10 2026
+
+40007710260,,cycles,38971814748,83.23,,
+23833285891,,instructions,39031375997,83.36,0.60,insn per cycle
+,,,,0.68,stalled cycles per insn
+16209208575,,stalled-cycles-backend,39045650656,83.39,40.52,backend cycles idle
+1216468932,,cache-misses,39045701886,83.39,,
+5849714994,,branches,39045255167,83.39,,
+164001874,,branch-misses,38968171970,83.23,2.80,of all branches

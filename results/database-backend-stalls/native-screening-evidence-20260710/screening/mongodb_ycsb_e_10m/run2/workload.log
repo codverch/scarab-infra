@@ -1,0 +1,80 @@
+	at site.ycsb.db.MongoDbClient.insert(MongoDbClient.java:270)
+	at site.ycsb.DBWrapper.insert(DBWrapper.java:221)
+	at site.ycsb.workloads.CoreWorkload.doTransactionInsert(CoreWorkload.java:825)
+	at site.ycsb.workloads.CoreWorkload.doTransaction(CoreWorkload.java:650)
+	at site.ycsb.ClientThread.run(ClientThread.java:122)
+	at java.base/java.lang.Thread.run(Thread.java:829)
+Exception while trying bulk insert with 0
+com.mongodb.MongoWriteException: E11000 duplicate key error collection: ycsb.usertable index: _id_ dup key: { _id: "user2370247691286297396" }
+	at com.mongodb.client.internal.MongoCollectionImpl.executeSingleWriteRequest(MongoCollectionImpl.java:967)
+	at com.mongodb.client.internal.MongoCollectionImpl.executeInsertOne(MongoCollectionImpl.java:494)
+	at com.mongodb.client.internal.MongoCollectionImpl.insertOne(MongoCollectionImpl.java:478)
+	at com.mongodb.client.internal.MongoCollectionImpl.insertOne(MongoCollectionImpl.java:472)
+	at site.ycsb.db.MongoDbClient.insert(MongoDbClient.java:270)
+	at site.ycsb.DBWrapper.insert(DBWrapper.java:221)
+	at site.ycsb.workloads.CoreWorkload.doTransactionInsert(CoreWorkload.java:825)
+	at site.ycsb.workloads.CoreWorkload.doTransaction(CoreWorkload.java:650)
+	at site.ycsb.ClientThread.run(ClientThread.java:122)
+	at java.base/java.lang.Thread.run(Thread.java:829)
+Exception while trying bulk insert with 0
+com.mongodb.MongoWriteException: E11000 duplicate key error collection: ycsb.usertable index: _id_ dup key: { _id: "user2513146216558992969" }
+	at com.mongodb.client.internal.MongoCollectionImpl.executeSingleWriteRequest(MongoCollectionImpl.java:967)
+	at com.mongodb.client.internal.MongoCollectionImpl.executeInsertOne(MongoCollectionImpl.java:494)
+	at com.mongodb.client.internal.MongoCollectionImpl.insertOne(MongoCollectionImpl.java:478)
+	at com.mongodb.client.internal.MongoCollectionImpl.insertOne(MongoCollectionImpl.java:472)
+	at site.ycsb.db.MongoDbClient.insert(MongoDbClient.java:270)
+	at site.ycsb.DBWrapper.insert(DBWrapper.java:221)
+	at site.ycsb.workloads.CoreWorkload.doTransactionInsert(CoreWorkload.java:825)
+	at site.ycsb.workloads.CoreWorkload.doTransaction(CoreWorkload.java:650)
+	at site.ycsb.ClientThread.run(ClientThread.java:122)
+	at java.base/java.lang.Thread.run(Thread.java:829)
+Exception while trying bulk insert with 0
+com.mongodb.MongoWriteException: E11000 duplicate key error collection: ycsb.usertable index: _id_ dup key: { _id: "user2602528481035092806" }
+	at com.mongodb.client.internal.MongoCollectionImpl.executeSingleWriteRequest(MongoCollectionImpl.java:967)
+	at com.mongodb.client.internal.MongoCollectionImpl.executeInsertOne(MongoCollectionImpl.java:494)
+	at com.mongodb.client.internal.MongoCollectionImpl.insertOne(MongoCollectionImpl.java:478)
+	at com.mongodb.client.internal.MongoCollectionImpl.insertOne(MongoCollectionImpl.java:472)
+	at site.ycsb.db.MongoDbClient.insert(MongoDbClient.java:270)
+	at site.ycsb.DBWrapper.insert(DBWrapper.java:221)
+	at site.ycsb.workloads.CoreWorkload.doTransactionInsert(CoreWorkload.java:825)
+	at site.ycsb.workloads.CoreWorkload.doTransaction(CoreWorkload.java:650)
+	at site.ycsb.ClientThread.run(ClientThread.java:122)
+	at java.base/java.lang.Thread.run(Thread.java:829)
+2026-07-11 02:06:22:420 188 sec: 5000000 operations; 19005.04 current ops/sec; [CLEANUP: Count=64, Max=4459, Min=0, Avg=71.06, 90=2, 99=8, 99.9=4459, 99.99=4459] [INSERT: Count=0, Max=0, Min=9223372036854775807, Avg=NaN, 90=0, 99=0, 99.9=0, 99.99=0] [SCAN: Count=157781, Max=25599, Min=168, Avg=2163.49, 90=3775, 99=6319, 99.9=15039, 99.99=19903] [INSERT-FAILED: Count=8216, Max=36735, Min=273, Avg=2281.41, 90=3961, 99=8155, 99.9=19887, 99.99=35231] 
+[OVERALL], RunTime(ms), 188735
+[OVERALL], Throughput(ops/sec), 26492.171563303044
+[TOTAL_GCS_G1_Young_Generation], Count, 829
+[TOTAL_GC_TIME_G1_Young_Generation], Time(ms), 1491
+[TOTAL_GC_TIME_%_G1_Young_Generation], Time(%), 0.7899965560176967
+[TOTAL_GCS_G1_Old_Generation], Count, 0
+[TOTAL_GC_TIME_G1_Old_Generation], Time(ms), 0
+[TOTAL_GC_TIME_%_G1_Old_Generation], Time(%), 0.0
+[TOTAL_GCs], Count, 829
+[TOTAL_GC_TIME], Time(ms), 1491
+[TOTAL_GC_TIME_%], Time(%), 0.7899965560176967
+[CLEANUP], Operations, 64
+[CLEANUP], AverageLatency(us), 71.0625
+[CLEANUP], MinLatency(us), 0
+[CLEANUP], MaxLatency(us), 4459
+[CLEANUP], 95thPercentileLatency(us), 2
+[CLEANUP], 99thPercentileLatency(us), 8
+[INSERT], Operations, 0
+[INSERT], AverageLatency(us), NaN
+[INSERT], MinLatency(us), 9223372036854775807
+[INSERT], MaxLatency(us), 0
+[INSERT], 95thPercentileLatency(us), 0
+[INSERT], 99thPercentileLatency(us), 0
+[INSERT], Return=ERROR, 249754
+[SCAN], Operations, 4750246
+[SCAN], AverageLatency(us), 2357.3056829056854
+[SCAN], MinLatency(us), 168
+[SCAN], MaxLatency(us), 180607
+[SCAN], 95thPercentileLatency(us), 4543
+[SCAN], 99thPercentileLatency(us), 7371
+[SCAN], Return=OK, 4750246
+[INSERT-FAILED], Operations, 249754
+[INSERT-FAILED], AverageLatency(us), 2548.2135381215116
+[INSERT-FAILED], MinLatency(us), 273
+[INSERT-FAILED], MaxLatency(us), 171007
+[INSERT-FAILED], 95thPercentileLatency(us), 4883
+[INSERT-FAILED], 99thPercentileLatency(us), 11111
