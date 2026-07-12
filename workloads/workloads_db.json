@@ -2878,9 +2878,19 @@
         },
         "simpoints":[
           {
-            "cluster_id":7,
+            "cluster_id":5,
             "segment_id":0,
-            "weight":1.0
+            "weight":0.313738
+          },
+          {
+            "cluster_id":3,
+            "segment_id":1,
+            "weight":0.372524
+          },
+          {
+            "cluster_id":4,
+            "segment_id":2,
+            "weight":0.313738
           }
         ]
       },
@@ -2931,9 +2941,19 @@
         },
         "simpoints":[
           {
-            "cluster_id":3,
+            "cluster_id":0,
             "segment_id":0,
-            "weight":1.0
+            "weight":0.203765
+          },
+          {
+            "cluster_id":7,
+            "segment_id":1,
+            "weight":0.611296
+          },
+          {
+            "cluster_id":4,
+            "segment_id":2,
+            "weight":0.184938
           }
         ]
       },
@@ -2950,9 +2970,19 @@
         },
         "simpoints":[
           {
-            "cluster_id":3,
+            "cluster_id":8,
             "segment_id":0,
-            "weight":1.0
+            "weight":0.289112
+          },
+          {
+            "cluster_id":7,
+            "segment_id":1,
+            "weight":0.609333
+          },
+          {
+            "cluster_id":6,
+            "segment_id":2,
+            "weight":0.101555
           }
         ]
       },
@@ -3158,9 +3188,19 @@
         },
         "simpoints":[
           {
-            "cluster_id":1,
+            "cluster_id":2,
             "segment_id":0,
-            "weight":1.0
+            "weight":0.31265
+          },
+          {
+            "cluster_id":0,
+            "segment_id":1,
+            "weight":0.3747
+          },
+          {
+            "cluster_id":1,
+            "segment_id":2,
+            "weight":0.31265
           }
         ]
       },
@@ -3231,9 +3271,19 @@
         },
         "simpoints":[
           {
-            "cluster_id":6,
+            "cluster_id":0,
             "segment_id":0,
-            "weight":1.0
+            "weight":0.108021
+          },
+          {
+            "cluster_id":7,
+            "segment_id":1,
+            "weight":0.540105
+          },
+          {
+            "cluster_id":5,
+            "segment_id":2,
+            "weight":0.351874
           }
         ]
       },
