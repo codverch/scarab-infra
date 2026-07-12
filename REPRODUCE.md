@@ -11,15 +11,16 @@ Baseline vs HELIOS at each app's optimal confidence tuning, Golden Cove, 16 data
 
 ## Setup + run on a fresh node
 
-**0. Bootstrap scarab-infra — `./setup-scarab-helios.sh`.** Downloads dependencies and 
-clones the relevant repos. 
+**0. Bootstrapping — `./setup-scarab-helios.sh`.** Downloads dependencies and 
+clones the relevant repos. Be sure to cd src and rm -rf src/build src/pin/pin_exec/obj-intel64.
+  ```
+  cd I-Fuse/src && rm -rf src/build src/pin/pin_exec/obj-intel64
+  ```
 
-**1. Bootstrap scarab-infra — `./sci --init`.** This installs Docker, configures the docker
+**1. Setup scarab-infra — `./sci --init`.** This installs Docker, configures the docker
 socket, installs Miniconda if absent, and creates/updates the `scarabinfra` conda env from
 `quickstart_env.yaml` (`sci` re-execs itself inside that env). The scarab build runs inside a
-Docker image, so no host PIN/clang toolchain is required. (`/users/vedlaksh/setup_scarab-3.sh` is
-an optional host helper — build deps + a 200 GB tmpfs at `/dev/shm/baseline` + trace download; it
-does **not** set up Docker or conda.)
+Docker image, so no host PIN/clang toolchain is required. 
 
 **2. Run the experiment — `conda activate scarabinfra && python3 run_helios.py`** (from
 `scarab-infra`; run inside the `scarabinfra` env so the graph step has matplotlib/numpy). This one command:

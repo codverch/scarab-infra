@@ -41,14 +41,12 @@ HERE = Path(__file__).resolve().parent
 HELIOS_JSON = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE / "json" / "HELIOS.json"
 WLDB_PATH = HERE / "workloads" / "workloads_db.json"
 
-# Display order + short labels + fusion palette match the original reference plots.
-DISPLAY_ORDER = [
-    "bfs", "cc", "pagerank", "sssp_ego_fb", "tc", "bc", "dfs", "cd",
-    "chemcrow", "rag_haystack", "langchain_web", "swe_agent", "toolformer",
-    "mongodb", "mysql", "postgres",
-]
+# Short labels + fusion palette match the original reference plots.
 LABEL_OVERRIDE = {"swe_agent": "swe", "rag_haystack": "haystack",
                   "langchain_web": "langchain", "sssp_ego_fb": "sssp"}
+# Subset of apps to plot (all 16 are still simulated; only the graphs are restricted).
+# Order here is the display order used across all three graphs.
+GRAPH_APPS = ["bfs", "dfs", "pagerank", "tc", "cc", "cd", "bc", "sssp_ego_fb"]
 FUSION_CATEGORIES = [
     ("HELIOS_FUSIONS",                  "Helios fused",                   "#c92676"),
     ("HELIOS_REJECT_ADDR_MISMATCH",     "Unfused: Address mispredict",    "#6cb4d8"),
@@ -161,8 +159,44 @@ def app_fusion_breakdown(app: str) -> dict[str, float]:
     return {n: acc[n] / wsum for n in names} if wsum else {}
 
 
+def app_baseline_ideal_ipc(app: str) -> tuple[float, float]:
+    """(baseline IPC, ideal/HELIOS IPC) for one app, simpoint-weighted. Recompute live
+    from the run; fall back to the recorded per_app_optimal values if the run hasn't
+    produced stats yet (mirrors app_speedup's fallback)."""
+    e = PER_APP[app]
+    run, cfg = e["run"], e["helios_config"]
+    base = weighted_ipc(run, "baseline").get(app)
+    hel = weighted_ipc(run, cfg).get(app)
+    if base is None:
+        base = e.get("baseline_ipc") or 0.0
+    if hel is None:
+        hel = e.get("helios_ipc") or 0.0
+    return base, hel
+
+
+def plot_baseline_vs_ideal(out_path: Path) -> None:
+    apps = [a for a in GRAPH_APPS if a in PER_APP]
+    base_vals, ideal_vals = [], []
+    for a in apps:
+        b, h = app_baseline_ideal_ipc(a)
+        base_vals.append(b); ideal_vals.append(h)
+
+    fig, ax = plt.subplots(figsize=(13, 6))
+    x = np.arange(len(apps))
+    w = 0.4
+    ax.bar(x - w/2, base_vals, w, color="#1f77b4", label="baseline (no fusion)")
+    ax.bar(x + w/2, ideal_vals, w, color="#ff7f0e", label="HELIOS ideal-per-app (stores off)")
+    ax.set_xticks(x); ax.set_xticklabels(apps, rotation=45, ha="right")
+    ax.set_ylabel("IPC (simpoint-weighted avg)")
+    ax.set_title("HELIOS (store-store OFF) vs baseline — new datacenter traces")
+    ax.legend(loc="upper left", frameon=True)
+    ax.yaxis.grid(True, linestyle="--", alpha=0.4); ax.set_axisbelow(True)
+    fig.tight_layout(); fig.savefig(out_path, dpi=140); plt.close(fig)
+    print(f"Wrote {out_path}")
+
+
 def plot_benefit_latency(out_path: Path) -> None:
-    apps = [a for a in DISPLAY_ORDER if a in PER_APP]
+    apps = [a for a in GRAPH_APPS if a in PER_APP]
     data = [(a, *app_speedup(a)) for a in apps]
     labels = [LABEL_OVERRIDE.get(a, a) for a, _, _ in data]
     vals = [v for _, v, _ in data]
@@ -192,7 +226,7 @@ def plot_benefit_latency(out_path: Path) -> None:
 
 def plot_fusion_breakdown(out_path: Path) -> None:
     rows = []
-    for app in DISPLAY_ORDER:
+    for app in GRAPH_APPS:
         if app not in PER_APP:
             continue
         stats = app_fusion_breakdown(app)
@@ -246,6 +280,7 @@ def main() -> None:
     if not SIMS.is_dir():
         print(f"NOTE: {SIMS} not found — plotting recorded values only; run the "
               f"experiment for live graphs.", file=sys.stderr)
+    plot_baseline_vs_ideal(CAMPAIGN / "baseline_vs_ideal.png")
     plot_benefit_latency(CAMPAIGN / "benefit_latency.png")
     plot_fusion_breakdown(CAMPAIGN / "fusion_breakdown.png")
 
