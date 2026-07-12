@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Plot Scarab top-down percentages from core.stat.0.csv files.
+"""Plot Scarab backend-bound TopDown percentages (Figure 1 style).
 
 Per-simpoint top-down percentages are computed from raw slot counters, then
 combined into one value per workload using SimPoint cluster weights from the
-scarab-infra workload DB (weights are renormalized over the simpoints that are
-actually present). This matches the SimPoint methodology: each trace result is
-multiplied by its simpoint weight. The Average row is the arithmetic mean of
-the per-workload values.
+scarab-infra workload DB. The plot uses a two-level hierarchical x-axis:
+benchmark suite (GAP, Agentic, DCPerf, Database, …) and short application
+names (BC, CD, …). Only backend-bound stalls are shown. Workloads below the
+evaluation threshold are omitted from the figure; the Average bar is the mean
+of the plotted (evaluated) workloads only.
 """
 
 from __future__ import annotations
@@ -44,6 +45,43 @@ WORKLOAD_LABELS = {
     "tao": "taobench",
     "tc": "triangle counting",
     "toolformer": "toolformer",
+    "django": "django",
+    "videotranscode": "videotranscode",
+}
+
+# Level-1 x-axis groups (benchmark suite) and level-2 short application labels.
+WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("GAP", ("bc", "bfs", "cc", "cd", "dfs", "pagerank", "sssp_ego_fb", "tc")),
+    ("Agentic", ("langchain_web", "rag_haystack", "swe_agent")),
+    ("DCPerf", ("django", "feedsim", "tao", "videotranscode")),
+    ("Database", ("mongodb", "postgres")),
+    ("SPEC", ()),
+)
+
+WORKLOAD_SHORT_LABELS = {
+    "bc": "BC",
+    "bfs": "BFS",
+    "cc": "CC",
+    "cd": "CD",
+    "dfs": "DFS",
+    "pagerank": "PR",
+    "sssp_ego_fb": "SSSP",
+    "tc": "TC",
+    "langchain_web": "LangChain",
+    "rag_haystack": "RAG",
+    "swe_agent": "SWE",
+    "django": "Django",
+    "feedsim": "FeedSim",
+    "tao": "Tao",
+    "videotranscode": "VT",
+    "mongodb": "MongoDB",
+    "postgres": "Postgres",
+}
+
+WORKLOAD_TO_SUITE: dict[str, str] = {
+    workload: suite
+    for suite, members in WORKLOAD_GROUPS
+    for workload in members
 }
 
 STAT_NAMES = {
@@ -54,11 +92,12 @@ STAT_NAMES = {
     "recovery_bubbles": "TOPDOWN_RECOVERY_BUBBLES_SLOTS_count",
 }
 
+# Stacked bar order: bottom → top (Backend bound at bottom)
 METRICS = [
+    ("Backend bound", "#ff7f00"),
     ("Frontend bound", "#4c78a8"),
-    ("Bad speculation", "#f58518"),
+    ("Bad speculation", "#984ea3"),
     ("Retiring", "#54a24b"),
-    ("Backend bound", "#b279a2"),
 ]
 
 
@@ -222,6 +261,7 @@ def collect(
         row: dict[str, float] = {
             "workload": workload,
             "label": WORKLOAD_LABELS.get(workload, workload.replace("_", " ")),
+            "benchmark_suite": WORKLOAD_TO_SUITE.get(workload, "Other"),
             "simpoints": len(entries),
             "total_slots": sum(counters["total"] for _, counters in entries),
         }
@@ -236,6 +276,7 @@ def collect(
     average = {
         "workload": "Average",
         "label": "Average",
+        "benchmark_suite": "",
         "simpoints": sum(row["simpoints"] for row in rows),
         "total_slots": sum(row["total_slots"] for row in rows),
     }
@@ -250,6 +291,7 @@ def write_csv(rows: list[dict[str, float]], path: Path) -> None:
     fieldnames = [
         "workload",
         "label",
+        "benchmark_suite",
         "simpoints",
         "total_slots",
         "Frontend bound",
@@ -290,31 +332,264 @@ def write_simpoint_csv(rows: list[dict[str, float]], path: Path) -> None:
             writer.writerow({key: row[key] for key in fieldnames})
 
 
-def plot(rows: list[dict[str, float]], out_png: Path, out_pdf: Path | None) -> None:
-    labels = [str(row["label"]) for row in rows]
-    x = range(len(rows))
-    bottoms = [0.0] * len(rows)
+# Plot styling (aligned with instruction-fusion plot_ipc.py)
+CARNEGIE_RED = "#C41230"
+CATEGORY_GAP = 1.05
+GROUP_GAP = 0.95
+SUMMARY_GAP = 1.15
+AXIS_FONT = 34
+GROUP_FONT = 30
+APP_FONT = 28
+FIGSIZE = (24.0, 11.9)
+BAR_WIDTH = 0.68
+SUMMARY_COLUMN_SHADE_FACE = "#c0c0c0"
+SUMMARY_COLUMN_SHADE_ALPHA = 0.28
+SUMMARY_SEPARATOR_COLOR = "#DC3B23"
+GROUP_SEPARATOR_COLOR = "#666666"
+SUMMARY_XTICK = "Average"
+DEFAULT_EVAL_BACKEND_THRESHOLD = 15.0
 
-    fig_width = max(12.0, len(rows) * 0.72)
-    fig, ax = plt.subplots(figsize=(fig_width, 6.0))
 
-    for metric, color in METRICS:
-        values = [float(row[metric]) for row in rows]
-        ax.bar(x, values, bottom=bottoms, label=metric, color=color, edgecolor="black", linewidth=0.4)
-        bottoms = [bottom + value for bottom, value in zip(bottoms, values)]
+def _short_label(workload: str) -> str:
+    return WORKLOAD_SHORT_LABELS.get(
+        workload, workload.replace("_", " ").upper()
+    )
 
-    avg_idx = len(rows) - 1
-    ax.axvline(avg_idx - 0.5, linestyle="--", color="#444444", linewidth=1.0, alpha=0.8)
-    ax.set_ylabel("Top-down slots (%)")
-    ax.set_ylim(0, 100)
-    ax.set_xticks(list(x))
-    ax.set_xticklabels(labels, rotation=38, ha="right")
-    ax.grid(axis="y", linestyle=":", linewidth=0.7, color="#777777", alpha=0.65)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.14), ncol=4, frameon=True, fancybox=False, edgecolor="black")
-    fig.tight_layout()
-    fig.savefig(out_png, dpi=220, bbox_inches="tight")
+
+def _order_rows_hierarchical(
+    rows: list[dict[str, float]],
+) -> tuple[list[dict[str, float]], list[tuple[str, list[dict[str, float]]]], dict[str, float] | None]:
+    by_name = {str(row["workload"]): row for row in rows if row["workload"] != "Average"}
+    ordered: list[dict[str, float]] = []
+    grouped: list[tuple[str, list[dict[str, float]]]] = []
+    seen: set[str] = set()
+
+    for suite_name, members in WORKLOAD_GROUPS:
+        group_rows = [by_name[wl] for wl in members if wl in by_name]
+        if not group_rows:
+            continue
+        grouped.append((suite_name, group_rows))
+        ordered.extend(group_rows)
+        seen.update(str(row["workload"]) for row in group_rows)
+
+    leftovers = sorted(
+        (row for wl, row in by_name.items() if wl not in seen),
+        key=lambda row: str(row["workload"]),
+    )
+    if leftovers:
+        grouped.append(("Other", leftovers))
+        ordered.extend(leftovers)
+
+    average = next((row for row in rows if row["workload"] == "Average"), None)
+    return ordered, grouped, average
+
+
+def _shade_summary_column(ax, separator_x: float, average_x: float) -> None:
+    """Shade the full Average column from the dashed separator through the bar."""
+    ax.axvspan(
+        separator_x,
+        average_x + BAR_WIDTH / 2.0 + 0.10,
+        facecolor=SUMMARY_COLUMN_SHADE_FACE,
+        alpha=SUMMARY_COLUMN_SHADE_ALPHA,
+        zorder=-1,
+        linewidth=0,
+        clip_on=True,
+    )
+
+
+def _tight_x_limits(ax, x_min: float, x_max: float) -> None:
+    left_pad = 0.18
+    right_pad = 0.14
+    ax.set_xlim(x_min - BAR_WIDTH / 2 - left_pad, x_max + BAR_WIDTH / 2 + right_pad)
+    ax.margins(x=0)
+
+
+def _add_hierarchical_xaxis(
+    ax,
+    positions: list[float],
+    app_labels: list[str],
+    group_spans: list[tuple[float, float, str]],
+) -> None:
+    from matplotlib.transforms import blended_transform_factory
+
+    ax.set_xticks(positions)
+    ax.set_xticklabels(
+        app_labels,
+        rotation=45,
+        ha="right",
+        fontsize=APP_FONT,
+        fontfamily="serif",
+    )
+    group_transform = blended_transform_factory(ax.transData, ax.transAxes)
+    for x_start, x_end, group_name in group_spans:
+        ax.text(
+            (x_start + x_end) / 2.0,
+            -0.32,
+            group_name,
+            transform=group_transform,
+            ha="center",
+            va="top",
+            fontsize=GROUP_FONT,
+            fontfamily="serif",
+            fontweight="bold",
+            clip_on=False,
+        )
+
+
+def _filter_evaluated_groups(
+    grouped: list[tuple[str, list[dict[str, float]]]],
+    threshold: float | None,
+    full_average: dict[str, float] | None,
+) -> tuple[list[tuple[str, list[dict[str, float]]]], dict[str, float] | None]:
+    """Keep only workloads at or above the evaluation threshold."""
+    if threshold is None:
+        return grouped, full_average
+
+    filtered: list[tuple[str, list[dict[str, float]]]] = []
+    evaluated: list[dict[str, float]] = []
+    for group_name, group_rows in grouped:
+        kept = [
+            row for row in group_rows if float(row["Backend bound"]) >= threshold
+        ]
+        if kept:
+            filtered.append((group_name, kept))
+            evaluated.extend(kept)
+
+    if not evaluated:
+        raise SystemExit(
+            f"No workloads meet the evaluation threshold ({threshold:.1f}% backend bound)."
+        )
+
+    evaluated_average: dict[str, float] = {
+        "workload": "Average",
+        "label": "Average",
+        "Backend bound": sum(float(row["Backend bound"]) for row in evaluated)
+        / len(evaluated),
+    }
+    return filtered, evaluated_average
+
+
+def plot(
+    rows: list[dict[str, float]],
+    out_png: Path,
+    out_pdf: Path | None,
+    *,
+    eval_backend_threshold: float | None = DEFAULT_EVAL_BACKEND_THRESHOLD,
+) -> None:
+    _, grouped, full_average = _order_rows_hierarchical(rows)
+    grouped, average_row = _filter_evaluated_groups(
+        grouped, eval_backend_threshold, full_average
+    )
+
+    positions: list[float] = []
+    values: list[float] = []
+    app_labels: list[str] = []
+    group_spans: list[tuple[float, float, str]] = []
+    group_separators: list[float] = []
+
+    x = 0.0
+    for group_idx, (group_name, group_rows) in enumerate(grouped):
+        if group_idx > 0:
+            group_separators.append(x - GROUP_GAP / 2.0)
+        group_start = x
+        for row in group_rows:
+            backend = float(row["Backend bound"])
+            positions.append(x)
+            values.append(backend)
+            app_labels.append(_short_label(str(row["workload"])))
+            x += CATEGORY_GAP
+        group_spans.append((group_start, x - CATEGORY_GAP, group_name))
+        x += GROUP_GAP
+
+    average_x: float | None = None
+    if average_row is not None:
+        if positions:
+            group_separators.append(x - GROUP_GAP / 2.0)
+            x += SUMMARY_GAP
+        average_x = x
+        positions.append(average_x)
+        values.append(float(average_row["Backend bound"]))
+        app_labels.append(SUMMARY_XTICK)
+
+    if not positions:
+        raise SystemExit("No workloads to plot.")
+
+    fig_width = max(FIGSIZE[0], len(positions) * 0.98 + len(grouped) * 0.65)
+    plt.rcParams.update(
+        {"font.size": 15, "font.family": "serif", "axes.labelsize": AXIS_FONT}
+    )
+    fig, ax = plt.subplots(figsize=(fig_width, FIGSIZE[1]))
+
+    summary_separator_x: float | None = None
+    if average_x is not None:
+        summary_separator_x = average_x - CATEGORY_GAP / 2.0 - SUMMARY_GAP / 2.0
+        _shade_summary_column(ax, summary_separator_x, average_x)
+
+    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
+    ax.bar(
+        positions,
+        values,
+        BAR_WIDTH,
+        alpha=1.0,
+        color=CARNEGIE_RED,
+        edgecolor="black",
+        linewidth=1.5,
+        zorder=3,
+    )
+
+    for sep_x in group_separators:
+        ax.axvline(
+            x=sep_x,
+            color=GROUP_SEPARATOR_COLOR,
+            linestyle=":",
+            alpha=0.50,
+            linewidth=2.0,
+            zorder=1,
+        )
+
+    if summary_separator_x is not None:
+        ax.axvline(
+            x=summary_separator_x,
+            color=SUMMARY_SEPARATOR_COLOR,
+            linestyle="--",
+            alpha=0.8,
+            linewidth=3.0,
+            zorder=2,
+        )
+
+    y_max = max(values) if values else 100.0
+    ax.set_ylabel(
+        "Backend bound (%)",
+        fontsize=AXIS_FONT,
+        fontfamily="serif",
+        labelpad=18,
+    )
+    ax.set_ylim(0, max(y_max * 1.08, 10.0))
+    _add_hierarchical_xaxis(ax, positions, app_labels, group_spans)
+
+    if average_x is not None:
+        for tick in ax.get_xticklabels():
+            if tick.get_text() == SUMMARY_XTICK:
+                tick.set_weight("bold")
+
+    ax.tick_params(axis="x", pad=8)
+    ax.tick_params(axis="y", labelsize=AXIS_FONT)
+    for tick in ax.get_yticklabels():
+        tick.set_fontfamily("serif")
+        tick.set_fontsize(AXIS_FONT)
+
+    _tight_x_limits(ax, positions[0], positions[-1])
+
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_color("black")
+        spine.set_linewidth(2.5)
+
+    fig.subplots_adjust(bottom=0.32)
+    fig.savefig(out_png, bbox_inches="tight", dpi=300, pad_inches=0.06)
     if out_pdf:
-        fig.savefig(out_pdf, bbox_inches="tight")
+        fig.savefig(out_pdf, bbox_inches="tight", dpi=300, pad_inches=0.06)
+    plt.close(fig)
 
 
 def validate(rows: list[dict[str, float]], tolerance: float) -> None:
@@ -339,6 +614,17 @@ def main() -> None:
     parser.add_argument("--suite", default="datacenter")
     parser.add_argument("--subsuite", default="datacenter")
     parser.add_argument("--no-pdf", action="store_true", help="Skip PDF output.")
+    parser.add_argument(
+        "--eval-backend-threshold",
+        type=float,
+        default=DEFAULT_EVAL_BACKEND_THRESHOLD,
+        metavar="PCT",
+        help=(
+            "Backend-bound threshold (%%); only workloads at or above this value "
+            f"are plotted (default: {DEFAULT_EVAL_BACKEND_THRESHOLD}). "
+            "Use a negative value to plot all workloads."
+        ),
+    )
     parser.add_argument("--sum-tolerance", type=float, default=0.01)
     args = parser.parse_args()
 
@@ -354,7 +640,33 @@ def main() -> None:
 
     write_csv(rows, csv_path)
     write_simpoint_csv(simpoint_rows, simpoint_csv_path)
-    plot(rows, png_path, pdf_path)
+    threshold = (
+        None
+        if args.eval_backend_threshold < 0
+        else args.eval_backend_threshold
+    )
+    plot(rows, png_path, pdf_path, eval_backend_threshold=threshold)
+
+    if threshold is not None:
+        workload_rows = [row for row in rows if row["workload"] != "Average"]
+        evaluated = sorted(
+            row["workload"]
+            for row in workload_rows
+            if float(row["Backend bound"]) >= threshold
+        )
+        excluded = sorted(
+            row["workload"]
+            for row in workload_rows
+            if float(row["Backend bound"]) < threshold
+        )
+        print(
+            f"\nEvaluation subset (backend bound >= {threshold:.1f}%): "
+            f"{len(evaluated)} workload(s)"
+        )
+        print(f"  evaluated: {', '.join(evaluated) or '(none)'}")
+        print(
+            f"  excluded:  {', '.join(excluded) or '(none)'}"
+        )
 
     print(f"Wrote {csv_path}")
     print(f"Wrote {simpoint_csv_path}")
