@@ -99,24 +99,50 @@ def weighted_expected_storage_kib(
     return total_kib / weight_sum, total_entries / weight_sum
 
 
+def load_ipc_by_simpoint(stats_csv: Path, config: str) -> dict[tuple[str, str], float]:
+    """Return {(workload, cluster_id): ipc} for one configuration."""
+    import pandas as pd
+
+    df = pd.read_csv(stats_csv, low_memory=False)
+    ipc_rows = df[df["stats"] == "IPC"]
+    if ipc_rows.empty:
+        return {}
+    ipc_row = ipc_rows.iloc[0]
+
+    result: dict[tuple[str, str], float] = {}
+    for col in df.columns:
+        if col in {"stats", "write_protect", "groups"}:
+            continue
+        parts = col.rsplit(" ", 1)
+        if len(parts) != 2:
+            continue
+        prefix, cluster_id = parts
+        cfg, workload_path = prefix.split(" ", 1)
+        if cfg != config:
+            continue
+        workload = workload_path.rsplit("/", 1)[-1]
+        val = float(ipc_row[col])
+        if math.isnan(val):
+            continue
+        result[(workload, cluster_id)] = val
+    return result
+
+
 def weighted_ipc(
     stats_csv: Path,
     weights_by_wl: dict[str, dict[str, float]],
     config: str,
+    *,
+    baseline_stats_csv: Path | None = None,
 ) -> float:
-    import pandas as pd
-
-    df = pd.read_csv(stats_csv, low_memory=False)
-    ipc_row = df[df["stats"] == "IPC"].iloc[0]
+    ipc_csv = baseline_stats_csv if (baseline_stats_csv and config == "baseline") else stats_csv
+    ipc_by_sp = load_ipc_by_simpoint(ipc_csv, config)
     total = 0.0
     weight_sum = 0.0
     for wl, sp_weights in weights_by_wl.items():
         for cluster_id, weight in sp_weights.items():
-            col = f"{config} {wl} {cluster_id}"
-            if col not in df.columns:
-                continue
-            val = float(ipc_row[col])
-            if math.isnan(val):
+            val = ipc_by_sp.get((wl, cluster_id))
+            if val is None:
                 continue
             total += val * weight
             weight_sum += weight
@@ -133,10 +159,16 @@ def build_pareto_points(
     baseline_config: str,
     bits_per_entry: int = DEFAULT_BITS_PER_ENTRY,
     config_names: dict[int, str] | None = None,
+    baseline_stats_csv: Path | None = None,
 ) -> list[dict[str, Any]]:
     config_names = config_names or FREQ_TO_CONFIG
     weights = discover_simpoint_weights(workloads_db, workloads)
-    baseline_ipc = weighted_ipc(stats_csv, weights, baseline_config)
+    baseline_ipc = weighted_ipc(
+        stats_csv,
+        weights,
+        baseline_config,
+        baseline_stats_csv=baseline_stats_csv,
+    )
     points: list[dict[str, Any]] = []
 
     for freq in frequencies:
@@ -264,6 +296,13 @@ def run_from_descriptor(
     workloads = list(pareto_entry.get("workloads") or DEFAULT_PGO_WORKLOADS)
     frequencies = list(pareto_entry.get("frequencies") or DEFAULT_FREQUENCIES)
     bits_per_entry = int(pareto_entry.get("bits_per_entry") or DEFAULT_BITS_PER_ENTRY)
+    baseline_stats_csv = pareto_entry.get("baseline_stats_csv")
+    if not baseline_stats_csv:
+        visualize = descriptor.get("visualize") or {}
+        baseline_stats_csv = visualize.get("baseline_stats_csv")
+    baseline_stats_path = (
+        Path(str(baseline_stats_csv)) if baseline_stats_csv else None
+    )
 
     requested_configs = {
         FREQ_TO_CONFIG.get(freq, f"pgo_freq_{freq}") for freq in frequencies
@@ -283,6 +322,7 @@ def run_from_descriptor(
         frequencies=frequencies,
         baseline_config=baseline_config,
         bits_per_entry=bits_per_entry,
+        baseline_stats_csv=baseline_stats_path,
     )
     points = [p for p in points if p["config"] in plot_configs]
     if not points:

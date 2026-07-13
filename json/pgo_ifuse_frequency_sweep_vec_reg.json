@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "pgo_ifuse_frequency_sweep",
+  "experiment": "pgo_ifuse_frequency_sweep_vec_reg",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -91,7 +91,7 @@
       {
         "type": "pareto",
         "name": "fct_storage_ipc_pareto",
-        "title": "PGO FCT storage vs IPC (simpoint-weighted)",
+        "title": "PGO FCT storage vs IPC (simpoint-weighted, vector extra regs)",
         "x_label": "Expected FCT storage (KiB, simpoint-weighted)",
         "y_label": "Weighted IPC speedup vs baseline (%)",
         "stat": "IPC",
@@ -117,7 +117,8 @@
       "IFUSE_MISPREDICTED_LOADS",
       "FCT_LOOKUP_HITS",
       "FCT_LOOKUP_MISSES",
-      "FCT_PRELOAD_INSERTS"
+      "FCT_PRELOAD_INSERTS",
+      "MAP_STAGE_STALL_ITSELF"
     ],
     "average": false
   },
@@ -131,7 +132,8 @@
       "IPC",
       "IFUSE_FUSED_LOADS",
       "IFUSE_MISPREDICTED_LOADS",
-      "FCT_LOOKUP_HITS"
+      "FCT_LOOKUP_HITS",
+      "MAP_STAGE_STALL_ITSELF"
     ],
     "stat_groups": [
       "bp",

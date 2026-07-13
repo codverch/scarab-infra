@@ -1775,24 +1775,19 @@
         },
         "simpoints":[
           {
-            "cluster_id":4118,
+            "cluster_id":1,
             "segment_id":0,
-            "weight":0.40608
+            "weight":0.782109
           },
           {
-            "cluster_id":1010,
+            "cluster_id":4,
             "segment_id":1,
-            "weight":0.00380665
+            "weight":0.11173
           },
           {
-            "cluster_id":1362,
-            "segment_id":5,
-            "weight":0.391956
-          },
-          {
-            "cluster_id":5198,
-            "segment_id":6,
-            "weight":0.198157
+            "cluster_id":8,
+            "segment_id":2,
+            "weight":0.106161
           }
         ]
       },
@@ -1833,44 +1828,19 @@
         },
         "simpoints":[
           {
-            "cluster_id":517,
+            "cluster_id":12,
+            "segment_id":0,
+            "weight":0.751986
+          },
+          {
+            "cluster_id":1,
+            "segment_id":1,
+            "weight":0.165342
+          },
+          {
+            "cluster_id":2,
             "segment_id":2,
-            "weight":0.136866
-          },
-          {
-            "cluster_id":5297,
-            "segment_id":4,
-            "weight":0.151823
-          },
-          {
-            "cluster_id":5168,
-            "segment_id":5,
-            "weight":0.163489
-          },
-          {
-            "cluster_id":2807,
-            "segment_id":6,
-            "weight":0.165524
-          },
-          {
-            "cluster_id":2215,
-            "segment_id":7,
-            "weight":0.0861533
-          },
-          {
-            "cluster_id":1490,
-            "segment_id":9,
-            "weight":0.145715
-          },
-          {
-            "cluster_id":3954,
-            "segment_id":11,
-            "weight":0.0829318
-          },
-          {
-            "cluster_id":2031,
-            "segment_id":13,
-            "weight":0.067498
+            "weight":0.0826712
           }
         ]
       },
@@ -3268,6 +3238,64 @@
             "cluster_id":5,
             "segment_id":2,
             "weight":0.351874
+          }
+        ]
+      },
+      "feedsim":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":10000000,
+            "warmup":0,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":5,
+            "segment_id":0,
+            "weight":0.484199
+          },
+          {
+            "cluster_id":12,
+            "segment_id":1,
+            "weight":0.0316016
+          },
+          {
+            "cluster_id":6,
+            "segment_id":2,
+            "weight":0.484199
+          }
+        ]
+      },
+      "tao":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":10000000,
+            "warmup":0,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":11,
+            "segment_id":0,
+            "weight":0.236187
+          },
+          {
+            "cluster_id":9,
+            "segment_id":1,
+            "weight":0.291438
+          },
+          {
+            "cluster_id":1,
+            "segment_id":2,
+            "weight":0.472375
           }
         ]
       }

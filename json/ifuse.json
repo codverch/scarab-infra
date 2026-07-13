@@ -37,7 +37,7 @@
       "memory_overhead_mb": 0
     },
     "ifuse_pgo_freq_1000": {
-      "params": "--icache_size 32768 --inst_limit 100000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_fct_conf_threshold 499 --ifuse_fct_mispred_conf_penalty 50 --ifuse_fct_preload_conf 500 --ifuse_fct_preload_file /users/deepmish/scarab/src/pgo-candidates/pgo-candidates-frequency-1000/{workload}/{cluster_id}.csv",
+      "params": "--icache_size 32768 --inst_limit 100000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_fct_conf_threshold 499 --ifuse_fct_mispred_conf_penalty 50 --ifuse_fct_preload_conf 500 --ifuse_fct_preload_file {root_dir}/pgo-candidates/pgo-candidates-frequency-1000/{workload}/{cluster_id}.csv",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
