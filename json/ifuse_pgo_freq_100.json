@@ -1,0 +1,52 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "ifuse_pgo_freq_100",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/scarab/src",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline/simpoint_traces",
+  "workload_db": "baseline.json",
+  "top_simpoint": false,
+  "simulations": [{
+    "suite": "datacenter",
+    "subsuite": "datacenter",
+    "workload": [
+      "bc", "bfs", "dfs", "feedsim", "langchain_web",
+      "mongodb", "pagerank", "postgres", "rag_haystack",
+      "sssp_ego_fb", "tao"
+    ],
+    "cluster_id": null,
+    "simulation_type": "memtrace",
+    "warmup": null
+  }],
+  "configurations": {
+    "pgo_freq_100": {
+      "params": "--icache_size 32768 --inst_limit 100000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_fct_conf_threshold 499 --ifuse_fct_mispred_conf_penalty 50 --ifuse_fct_preload_conf 500 --ifuse_fct_preload_file {root_dir}/pgo-candidates/pgo-candidates-frequency-100/{workload}/{cluster_id}.csv",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": { "configs": ["pgo_freq_100"] },
+  "visualize": {
+    "baseline": "baseline",
+    "baseline_stats_csv": "/users/deepmish/ideal-fusion/scarab/src/simulations/baseline/collected_stats.csv",
+    "configs": ["pgo_freq_100"],
+    "counters": [
+      "IPC",
+      "IFUSE_FUSED_LOADS",
+      "IFUSE_LOAD1_PREDICTIONS",
+      "IFUSE_CORRECT_PREDICTIONS",
+      "IFUSE_INCORRECT_PREDICTIONS",
+      "IFUSE_MISPREDICTED_LOADS",
+      "FCT_LOOKUP_HITS",
+      "FCT_LOOKUP_MISSES",
+      "FCT_PRELOAD_INSERTS"
+    ],
+    "average": false
+  },
+  "mem": { "collection_baseline": null, "fallback_mb": 16384 }
+}
