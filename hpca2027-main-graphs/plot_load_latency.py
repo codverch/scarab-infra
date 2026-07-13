@@ -2,11 +2,12 @@
 """Simpoint-weighted average on-path load latency reduction for I-Fuse and ideal fusion.
 
 Average load latency (cycles) per retired on-path load:
-  LD_RETIRE_MINUS_FETCH_LATENCY_count / on_path_load_count
+  LD_EXEC_MINUS_FETCH_LATENCY_count / on_path_load_count
 
-Numerator: total summed (retire_cycle - fetch_cycle) over retired on-path loads
-(core.stat.def). Baseline and I-Fuse read core.stat.0.csv; ideal fusion reads
-ideal_fusion.stat.0.csv (not present in ideal-fusion core.stat.0.csv).
+Numerator: total summed (exec_cycle - fetch_cycle) over retired on-path loads.
+Baseline and I-Fuse read core.stat.0.csv. Ideal fusion reads ideal_fusion.stat.0.csv;
+if the stored exec total is corrupt (>1e12, from fused LOAD2 ops with exec_cycle=MAX_CTR),
+it is estimated as LD_RETIRE * (baseline_exec / baseline_retire) for that simpoint.
 
 Denominator (on-path load count):
   baseline / I-Fuse: sum(LD_NO_DEPENDENTS_count) + sum(LD_DEPENDENTS_count)
@@ -56,12 +57,14 @@ from plot_ipc import (  # noqa: E402
     rename_workload,
 )
 
+LOAD_EXEC_LATENCY_STAT = "LD_EXEC_MINUS_FETCH_LATENCY_count"
 LOAD_RETIRE_LATENCY_STAT = "LD_RETIRE_MINUS_FETCH_LATENCY_count"
 LD_NO_DEPENDENTS_STAT = "LD_NO_DEPENDENTS_count"
 LD_DEPENDENTS_STAT = "LD_DEPENDENTS_count"
 ONPATH_MEM_LOADS_STAT = "ONPATH_MEM_LOADS_count"
 CORE_STAT_FILE = "core.stat.0.csv"
 IDEAL_STAT_FILE = "ideal_fusion.stat.0.csv"
+MAX_SANE_EXEC_TOTAL = 1e12
 
 
 @dataclass
@@ -121,8 +124,29 @@ def on_path_load_count_from_core(core_csv: Path) -> float | None:
     return load_count if load_count > 0 else None
 
 
-def avg_load_latency(retire_latency_total: float, load_count: float) -> float:
-    return retire_latency_total / load_count
+def avg_load_latency(latency_total: float, load_count: float) -> float:
+    return latency_total / load_count
+
+
+def ideal_exec_latency_total(
+    ideal_csv: Path,
+    *,
+    baseline_exec: float,
+    baseline_retire: float,
+) -> float | None:
+    exec_total = stat_count_from_csv(ideal_csv, LOAD_EXEC_LATENCY_STAT)
+    if exec_total is None:
+        return None
+    if exec_total > MAX_SANE_EXEC_TOTAL:
+        retire_total = stat_count_from_csv(ideal_csv, LOAD_RETIRE_LATENCY_STAT)
+        if (
+            retire_total is None
+            or baseline_retire <= 0
+            or baseline_exec <= 0
+        ):
+            return None
+        exec_total = retire_total * (baseline_exec / baseline_retire)
+    return exec_total
 
 
 def simpoint_avg_latency(
@@ -132,6 +156,8 @@ def simpoint_avg_latency(
     cluster_id: str,
     *,
     use_ideal_stat: bool,
+    baseline_exec: float | None = None,
+    baseline_retire: float | None = None,
     suite: str,
     subsuite: str,
 ) -> float | None:
@@ -143,16 +169,42 @@ def simpoint_avg_latency(
 
     if use_ideal_stat:
         ideal_csv = sim_dir / IDEAL_STAT_FILE
-        retire_total = stat_count_from_csv(ideal_csv, LOAD_RETIRE_LATENCY_STAT)
+        if baseline_exec is None or baseline_retire is None:
+            return None
+        exec_total = ideal_exec_latency_total(
+            ideal_csv,
+            baseline_exec=baseline_exec,
+            baseline_retire=baseline_retire,
+        )
         load_count = stat_count_from_csv(ideal_csv, ONPATH_MEM_LOADS_STAT)
     else:
         core_csv = sim_dir / CORE_STAT_FILE
-        retire_total = stat_count_from_csv(core_csv, LOAD_RETIRE_LATENCY_STAT)
+        exec_total = stat_count_from_csv(core_csv, LOAD_EXEC_LATENCY_STAT)
         load_count = on_path_load_count_from_core(core_csv)
 
-    if retire_total is None or load_count is None or load_count <= 0:
+    if exec_total is None or load_count is None or load_count <= 0:
         return None
-    return avg_load_latency(retire_total, load_count)
+    return avg_load_latency(exec_total, load_count)
+
+
+def simpoint_baseline_exec_retire(
+    baseline_dir: Path,
+    baseline_config: str,
+    workload: str,
+    cluster_id: str,
+    *,
+    suite: str,
+    subsuite: str,
+) -> tuple[float | None, float | None]:
+    sim_dir = find_simpoint_dir(
+        baseline_dir, baseline_config, workload, cluster_id, suite=suite, subsuite=subsuite
+    )
+    if sim_dir is None:
+        return None, None
+    core_csv = sim_dir / CORE_STAT_FILE
+    exec_total = stat_count_from_csv(core_csv, LOAD_EXEC_LATENCY_STAT)
+    retire_total = stat_count_from_csv(core_csv, LOAD_RETIRE_LATENCY_STAT)
+    return exec_total, retire_total
 
 
 def compute_workload_latency(
@@ -179,6 +231,14 @@ def compute_workload_latency(
         if wl != workload or weight <= 0 or cluster_id not in reference_traces:
             continue
 
+        baseline_exec, baseline_retire = simpoint_baseline_exec_retire(
+            baseline_dir,
+            baseline_config,
+            workload,
+            cluster_id,
+            suite=suite,
+            subsuite=subsuite,
+        )
         baseline_val = simpoint_avg_latency(
             baseline_dir,
             baseline_config,
@@ -203,10 +263,18 @@ def compute_workload_latency(
             workload,
             cluster_id,
             use_ideal_stat=True,
+            baseline_exec=baseline_exec,
+            baseline_retire=baseline_retire,
             suite=suite,
             subsuite=subsuite,
         )
-        if baseline_val is None or ifuse_val is None or ideal_val is None:
+        if (
+            baseline_val is None
+            or ifuse_val is None
+            or ideal_val is None
+            or baseline_exec is None
+            or baseline_retire is None
+        ):
             continue
 
         weighted_baseline += weight * baseline_val
@@ -265,7 +333,7 @@ def write_computation_log(path: Path, results: list[LoadLatencyResult]) -> None:
         fh.write("Average on-path load latency reduction\n")
         fh.write("=" * 80 + "\n")
         fh.write(
-            "avg_latency_cycles = LD_RETIRE_MINUS_FETCH_LATENCY_count / on_path_load_count\n"
+            "avg_latency_cycles = LD_EXEC_MINUS_FETCH_LATENCY_count / on_path_load_count\n"
         )
         fh.write(
             "on_path_load_count (baseline/I-Fuse) = sum(LD_NO_DEPENDENTS_count) "
@@ -276,8 +344,12 @@ def write_computation_log(path: Path, results: list[LoadLatencyResult]) -> None:
             "from ideal_fusion.stat.0.csv\n"
         )
         fh.write(
-            "LD_RETIRE_MINUS_FETCH_LATENCY: baseline/I-Fuse from core.stat.0.csv; "
+            "LD_EXEC_MINUS_FETCH_LATENCY: baseline/I-Fuse from core.stat.0.csv; "
             "ideal fusion from ideal_fusion.stat.0.csv\n"
+        )
+        fh.write(
+            "Ideal fusion exec totals above 1e12 are corrected using "
+            "LD_RETIRE * (baseline_exec / baseline_retire) per simpoint.\n"
         )
         fh.write(
             "reduction_pct = 100 * (weighted_avg_baseline - weighted_avg_config) "
@@ -474,7 +546,7 @@ def main() -> None:
 
     sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
 
-    print("Computing average on-path load latency reductions...")
+    print("Computing average on-path load latency reductions (exec - fetch)...")
     print(f"  baseline:     {baseline_dir} (config={args.baseline_config})")
     print(f"  ifuse:        {ifuse_dir} (config={args.ifuse_config})")
     print(f"  ideal fusion: {ideal_dir} (config={args.ideal_fusion_config})")
