@@ -3,8 +3,8 @@
 
 Expects scarab-infra simulation results under:
   {simulations-root}/baseline/baseline/datacenter/datacenter/<workload>/<cluster_id>/
-  {simulations-root}/ideal_fusion_pass2/pass2/datacenter/datacenter/...
-  {simulations-root}/ifuse_pgo_freq_100/pgo_freq_100/datacenter/datacenter/...
+  {simulations-root}/ideal-fusion/ideal-fusion/datacenter/datacenter/...
+  {simulations-root}/ifuse/ifuse/datacenter/datacenter/...
 
 Example:
   python hpca2027-main-graphs/plot_ipc.py
@@ -64,12 +64,12 @@ DEFAULT_SUBSUITE = "datacenter"
 DEFAULT_SIMULATIONS_ROOT = Path("/users/deepmish/scarab/src/simulations")
 
 DEFAULT_BASELINE_DIR = DEFAULT_SIMULATIONS_ROOT / "baseline"
-DEFAULT_IFUSE_DIR = DEFAULT_SIMULATIONS_ROOT / "ifuse_pgo_freq_100"
-DEFAULT_IDEAL_DIR = DEFAULT_SIMULATIONS_ROOT / "ideal_fusion_pass2"
+DEFAULT_IFUSE_DIR = DEFAULT_SIMULATIONS_ROOT / "ifuse"
+DEFAULT_IDEAL_DIR = DEFAULT_SIMULATIONS_ROOT / "ideal-fusion"
 
 DEFAULT_BASELINE_CONFIG = "baseline"
-DEFAULT_IFUSE_CONFIG = "pgo_freq_100"
-DEFAULT_IDEAL_CONFIG = "pass2"
+DEFAULT_IFUSE_CONFIG = "ifuse"
+DEFAULT_IDEAL_CONFIG = "ideal-fusion"
 
 
 def rename_workload(workload: str) -> str:
@@ -640,8 +640,8 @@ def main() -> None:
 
     sim_root = args.simulations_root
     baseline_dir = args.baseline_dir or (sim_root / "baseline")
-    ifuse_dir = args.ifuse_dir or (sim_root / "ifuse_pgo_freq_100")
-    ideal_dir = args.ideal_fusion_dir or (sim_root / "ideal_fusion_pass2")
+    ifuse_dir = args.ifuse_dir or (sim_root / "ifuse")
+    ideal_dir = args.ideal_fusion_dir or (sim_root / "ideal-fusion")
 
     workloads = [wl for wl in SIMPOINT_WORKLOADS if wl not in set(args.exclude_workloads)]
     if not workloads:
