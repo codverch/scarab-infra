@@ -33,7 +33,12 @@ SCRIPTS_DIR = SCARAB_INFRA_ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from plot_pgo_ifuse_results import SimpointKey, load_stats_table  # noqa: E402
+from plot_pgo_ifuse_results import (  # noqa: E402
+    SimpointKey,
+    _ylim_speedup_pct_auto,
+    _ylim_with_bar_label_headroom,
+    load_stats_table,
+)
 
 try:
     from termcolor import colored
@@ -48,8 +53,8 @@ DATABASE_WORKLOADS = ["mongodb", "postgres"]
 
 SIMPOINT_WORKLOADS = GAP_WORKLOADS + AGENTIC_WORKLOADS + DATABASE_WORKLOADS
 
-IFUSE_COLOR = "lime"
-IDEAL_FUSION_COLOR = "#006666"
+IFUSE_COLOR = "#009900"
+IDEAL_FUSION_COLOR = "#000000"
 MAROON_COLOR = "#060771"
 ARROW_THRESHOLD = 0.54
 
@@ -69,17 +74,17 @@ DEFAULT_IDEAL_CONFIG = "pass2"
 
 def rename_workload(workload: str) -> str:
     mapping = {
-        "bfs": "breadth first search",
-        "dfs": "depth first search",
-        "pagerank": "pagerank",
-        "sssp_ego_fb": "single source shortest path",
-        "bc": "bc",
-        "feedsim": "feedsim",
-        "langchain_web": "langchain_web",
-        "mongodb": "mongodb",
-        "postgres": "postgres",
-        "rag_haystack": "rag_haystack",
-        "tao": "tao",
+        "bc": "BC",
+        "bfs": "BFS",
+        "dfs": "DFS",
+        "pagerank": "PR",
+        "sssp_ego_fb": "SSSP",
+        "feedsim": "FeedSim",
+        "langchain_web": "LangChain",
+        "mongodb": "MongoDB",
+        "postgres": "Postgres",
+        "rag_haystack": "RAG",
+        "tao": "Tao",
     }
     return mapping.get(workload, workload)
 
@@ -507,7 +512,6 @@ def plot_speedup_bars(
         ifuse_pct,
         width,
         label="I-Fuse",
-        alpha=0.8,
         color=IFUSE_COLOR,
         edgecolor=ifuse_edge_colors,
         linewidth=ifuse_edge_widths,
@@ -518,7 +522,6 @@ def plot_speedup_bars(
         ideal_pct,
         width,
         label="Ideal fusion",
-        alpha=0.8,
         color=IDEAL_FUSION_COLOR,
         edgecolor="black",
         linewidth=1.0,
@@ -575,7 +578,8 @@ def plot_speedup_bars(
         fontsize=26,
         fontfamily="serif",
     )
-    ax.set_ylim(0, 25)
+    ylim = _ylim_with_bar_label_headroom(_ylim_speedup_pct_auto(ifuse_pct, ideal_pct))
+    ax.set_ylim(ylim[0], ylim[1])
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
     ax.tick_params(axis="y", labelsize=20)
     for label in ax.get_yticklabels():
