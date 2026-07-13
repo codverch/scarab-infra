@@ -8,11 +8,12 @@ Reads per-simpoint Scarab stat CSVs under:
   {simulations-root}/ifuse/ifuse/datacenter/datacenter/<workload>/<cluster_id>/ifuse.stat.0.csv
   {simulations-root}/ideal-fusion/ideal-fusion/datacenter/datacenter/.../ideal_fusion.stat.0.csv
 
-Example:
-  /users/deepmish/miniconda3/envs/scarabinfra/bin/python \\
-    hpca2027-main-graphs/plot_ifuse_coverage.py \\
-    --simulations-root /users/deepmish/scarab/src/simulations \\
-    --output-dir /users/deepmish/scarab-infra/hpca2027-main-graphs/output
+Commands:
+
+/users/deepmish/miniconda3/envs/scarabinfra/bin/python \
+  /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_ifuse_coverage.py \
+  --simulations-root /users/deepmish/scarab/src/simulations \
+  --output-dir /users/deepmish/scarab-infra/hpca2027-main-graphs/output
 """
 
 from __future__ import annotations

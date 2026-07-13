@@ -1,0 +1,80 @@
+I-Fuse predictor accuracy on resolved pairs
+================================================================================
+resolved_predictions = IFUSE_CORRECT_PREDICTIONS_count + IFUSE_INCORRECT_PREDICTIONS_count
+accuracy_pct = 100 * weighted(IFUSE_CORRECT_PREDICTIONS_count) / weighted(resolved_predictions)
+mpki = 1000 * weighted(IFUSE_INCORRECT_PREDICTIONS_count) / weighted(Periodic_Instructions)
+
+bc (BC)
+  simpoints: 9
+  weighted resolved predictions: 4221978.7
+  weighted correct:           4221970.0
+  weighted incorrect:         8.7
+  accuracy:                   99.9998%
+  MPKI:                       0.000154
+
+bfs (BFS)
+  simpoints: 4
+  weighted resolved predictions: 5867560.0
+  weighted correct:           5867516.8
+  weighted incorrect:         43.2
+  accuracy:                   99.9993%
+  MPKI:                       0.000485
+
+dfs (DFS)
+  simpoints: 4
+  weighted resolved predictions: 5955711.3
+  weighted correct:           5955667.8
+  weighted incorrect:         43.5
+  accuracy:                   99.9993%
+  MPKI:                       0.000485
+
+pagerank (PR)
+  simpoints: 5
+  weighted resolved predictions: 6044171.0
+  weighted correct:           6044129.1
+  weighted incorrect:         41.9
+  accuracy:                   99.9993%
+  MPKI:                       0.000465
+
+sssp_ego_fb (SSSP)
+  simpoints: 5
+  weighted resolved predictions: 2820963.8
+  weighted correct:           2820932.8
+  weighted incorrect:         31.0
+  accuracy:                   99.9989%
+  MPKI:                       0.001038
+
+rag_haystack (RAG)
+  simpoints: 3
+  weighted resolved predictions: 5797418.2
+  weighted correct:           5797413.2
+  weighted incorrect:         5.0
+  accuracy:                   99.9999%
+  MPKI:                       0.000092
+
+tao (Tao)
+  simpoints: 2
+  weighted resolved predictions: 2719990.8
+  weighted correct:           2719987.9
+  weighted incorrect:         2.9
+  accuracy:                   99.9999%
+  MPKI:                       0.000158
+
+mongodb (MongoDB)
+  simpoints: 3
+  weighted resolved predictions: 256937.9
+  weighted correct:           256918.0
+  weighted incorrect:         19.9
+  accuracy:                   99.9923%
+  MPKI:                       0.000899
+
+postgres (Postgres)
+  simpoints: 3
+  weighted resolved predictions: 1167651.0
+  weighted correct:           1167632.7
+  weighted incorrect:         18.4
+  accuracy:                   99.9984%
+  MPKI:                       0.000852
+
+Arithmetic mean accuracy: 99.9986%
+Arithmetic mean MPKI:     0.000514

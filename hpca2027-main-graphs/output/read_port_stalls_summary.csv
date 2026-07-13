@@ -1,0 +1,10 @@
+workload,display_name,trace_count,weighted_baseline_stalls,weighted_ifuse_stalls,weighted_ideal_stalls,ifuse_reduction_pct,ideal_reduction_pct
+bc,BC,9,2600201.5,1110410.6,1116869.7,57.30,57.05
+bfs,BFS,4,2643737.1,1973015.0,1989148.7,25.37,24.76
+dfs,DFS,4,2691521.6,2007541.1,2007157.9,25.41,25.43
+pagerank,PR,5,3598354.7,3168591.2,3083796.9,11.94,14.30
+sssp_ego_fb,SSSP,5,2576396.1,2511801.2,2545545.6,2.51,1.20
+rag_haystack,RAG,3,2022923.6,873124.1,1119558.1,56.84,44.66
+tao,Tao,2,414781.4,160996.8,323879.5,61.19,21.92
+mongodb,MongoDB,3,616351.4,573000.9,370554.9,7.03,39.88
+postgres,Postgres,3,8244020.9,8115976.5,8126575.2,1.55,1.42

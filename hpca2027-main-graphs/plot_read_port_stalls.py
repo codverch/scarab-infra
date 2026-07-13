@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""Simpoint-weighted L1-D cache access reduction for I-Fuse and ideal fusion vs baseline.
+"""Simpoint-weighted L1-D read port stall reduction for I-Fuse and ideal fusion vs baseline.
 
-Counts all demand accesses issued to the L1-D as:
-  DCACHE_ACCESS_ONPATH_count + DCACHE_ACCESS_OFFPATH_count
+Counts all L1-D read port unavailable events as:
+  DCACHE_READ_PORT_UNAVAILABLE_ONPATH_count + DCACHE_READ_PORT_UNAVAILABLE_OFFPATH_count
 
-Baseline and I-Fuse read memory.stat.0.csv; ideal fusion reads ideal_fusion.stat.0.csv
-(these access counters are not present in ideal-fusion memory.stat.0.csv in this build).
+This scarab build does not expose DCACHE_READ_PORT_STALL_count; the UNAVAILABLE counters
+are the equivalent stall metrics.
+
+All configurations read memory.stat.0.csv.
 
 Per workload:
-  reduction_pct = 100 * (weighted_baseline_accesses - weighted_config_accesses)
-                  / weighted_baseline_accesses
+  reduction_pct = 100 * (weighted_baseline_stalls - weighted_config_stalls)
+                  / weighted_baseline_stalls
 
 Commands:
 
 /users/deepmish/miniconda3/envs/scarabinfra/bin/python \
-  /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_dcache_accesses.py \
+  /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_read_port_stalls.py \
   --simulations-root /users/deepmish/scarab/src/simulations \
   --output-dir /users/deepmish/scarab-infra/hpca2027-main-graphs/output
 """
@@ -50,16 +52,17 @@ from plot_ipc import (  # noqa: E402
     rename_workload,
 )
 
-DCACHE_ACCESS_ONPATH_STAT = "DCACHE_ACCESS_ONPATH_count"
-DCACHE_ACCESS_OFFPATH_STAT = "DCACHE_ACCESS_OFFPATH_count"
+READ_PORT_UNAVAILABLE_ONPATH_STAT = "DCACHE_READ_PORT_UNAVAILABLE_ONPATH_count"
+READ_PORT_UNAVAILABLE_OFFPATH_STAT = "DCACHE_READ_PORT_UNAVAILABLE_OFFPATH_count"
+MEMORY_STAT_FILE = "memory.stat.0.csv"
 
 
 @dataclass
-class DcacheAccessResult:
+class ReadPortStallResult:
     workload: str
-    baseline_accesses: float
-    ifuse_accesses: float
-    ideal_accesses: float
+    baseline_stalls: float
+    ifuse_stalls: float
+    ideal_stalls: float
     ifuse_reduction_pct: float
     ideal_reduction_pct: float
     trace_count: int
@@ -82,21 +85,20 @@ def stat_count_from_csv(stat_csv: Path, stat_name: str) -> float | None:
     return None
 
 
-def total_dcache_accesses_from_csv(stat_csv: Path) -> float | None:
-    onpath = stat_count_from_csv(stat_csv, DCACHE_ACCESS_ONPATH_STAT)
-    offpath = stat_count_from_csv(stat_csv, DCACHE_ACCESS_OFFPATH_STAT)
+def total_read_port_stalls_from_csv(stat_csv: Path) -> float | None:
+    onpath = stat_count_from_csv(stat_csv, READ_PORT_UNAVAILABLE_ONPATH_STAT)
+    offpath = stat_count_from_csv(stat_csv, READ_PORT_UNAVAILABLE_OFFPATH_STAT)
     if onpath is None or offpath is None:
         return None
     return onpath + offpath
 
 
-def simpoint_dcache_accesses(
+def simpoint_read_port_stalls(
     experiment_dir: Path,
     config: str,
     workload: str,
     cluster_id: str,
     *,
-    stat_file: str,
     suite: str,
     subsuite: str,
 ) -> float | None:
@@ -105,10 +107,10 @@ def simpoint_dcache_accesses(
     )
     if sim_dir is None:
         return None
-    return total_dcache_accesses_from_csv(sim_dir / stat_file)
+    return total_read_port_stalls_from_csv(sim_dir / MEMORY_STAT_FILE)
 
 
-def compute_workload_accesses(
+def compute_workload_stalls(
     workload: str,
     baseline_dir: Path,
     ifuse_dir: Path,
@@ -121,7 +123,7 @@ def compute_workload_accesses(
     ideal_config: str,
     suite: str,
     subsuite: str,
-) -> DcacheAccessResult | None:
+) -> ReadPortStallResult | None:
     weighted_baseline = 0.0
     weighted_ifuse = 0.0
     weighted_ideal = 0.0
@@ -132,30 +134,27 @@ def compute_workload_accesses(
         if wl != workload or weight <= 0 or cluster_id not in reference_traces:
             continue
 
-        baseline_val = simpoint_dcache_accesses(
+        baseline_val = simpoint_read_port_stalls(
             baseline_dir,
             baseline_config,
             workload,
             cluster_id,
-            stat_file="memory.stat.0.csv",
             suite=suite,
             subsuite=subsuite,
         )
-        ifuse_val = simpoint_dcache_accesses(
+        ifuse_val = simpoint_read_port_stalls(
             ifuse_dir,
             ifuse_config,
             workload,
             cluster_id,
-            stat_file="memory.stat.0.csv",
             suite=suite,
             subsuite=subsuite,
         )
-        ideal_val = simpoint_dcache_accesses(
+        ideal_val = simpoint_read_port_stalls(
             ideal_dir,
             ideal_config,
             workload,
             cluster_id,
-            stat_file="ideal_fusion.stat.0.csv",
             suite=suite,
             subsuite=subsuite,
         )
@@ -171,18 +170,18 @@ def compute_workload_accesses(
     if trace_count == 0 or weight_sum <= 0 or weighted_baseline <= 0:
         return None
 
-    return DcacheAccessResult(
+    return ReadPortStallResult(
         workload=workload,
-        baseline_accesses=weighted_baseline,
-        ifuse_accesses=weighted_ifuse,
-        ideal_accesses=weighted_ideal,
+        baseline_stalls=weighted_baseline,
+        ifuse_stalls=weighted_ifuse,
+        ideal_stalls=weighted_ideal,
         ifuse_reduction_pct=100.0 * (weighted_baseline - weighted_ifuse) / weighted_baseline,
         ideal_reduction_pct=100.0 * (weighted_baseline - weighted_ideal) / weighted_baseline,
         trace_count=trace_count,
     )
 
 
-def write_summary_csv(path: Path, results: list[DcacheAccessResult]) -> None:
+def write_summary_csv(path: Path, results: list[ReadPortStallResult]) -> None:
     with path.open("w", newline="") as fh:
         writer = csv.DictWriter(
             fh,
@@ -190,9 +189,9 @@ def write_summary_csv(path: Path, results: list[DcacheAccessResult]) -> None:
                 "workload",
                 "display_name",
                 "trace_count",
-                "weighted_baseline_accesses",
-                "weighted_ifuse_accesses",
-                "weighted_ideal_accesses",
+                "weighted_baseline_stalls",
+                "weighted_ifuse_stalls",
+                "weighted_ideal_stalls",
                 "ifuse_reduction_pct",
                 "ideal_reduction_pct",
             ],
@@ -204,39 +203,37 @@ def write_summary_csv(path: Path, results: list[DcacheAccessResult]) -> None:
                     "workload": result.workload,
                     "display_name": rename_workload(result.workload),
                     "trace_count": result.trace_count,
-                    "weighted_baseline_accesses": f"{result.baseline_accesses:.1f}",
-                    "weighted_ifuse_accesses": f"{result.ifuse_accesses:.1f}",
-                    "weighted_ideal_accesses": f"{result.ideal_accesses:.1f}",
+                    "weighted_baseline_stalls": f"{result.baseline_stalls:.1f}",
+                    "weighted_ifuse_stalls": f"{result.ifuse_stalls:.1f}",
+                    "weighted_ideal_stalls": f"{result.ideal_stalls:.1f}",
                     "ifuse_reduction_pct": f"{result.ifuse_reduction_pct:.2f}",
                     "ideal_reduction_pct": f"{result.ideal_reduction_pct:.2f}",
                 }
             )
 
 
-def write_computation_log(path: Path, results: list[DcacheAccessResult]) -> None:
+def write_computation_log(path: Path, results: list[ReadPortStallResult]) -> None:
     with path.open("w") as fh:
         fh.write(
-            "L1-D cache access reduction "
-            "(DCACHE_ACCESS_ONPATH_count + DCACHE_ACCESS_OFFPATH_count)\n"
+            "L1-D read port stall reduction "
+            "(DCACHE_READ_PORT_UNAVAILABLE_ONPATH_count + "
+            "DCACHE_READ_PORT_UNAVAILABLE_OFFPATH_count)\n"
         )
         fh.write("=" * 80 + "\n")
         fh.write(
             "reduction_pct = 100 * (weighted_baseline - weighted_config) / weighted_baseline\n"
         )
-        fh.write(
-            "Baseline and I-Fuse read memory.stat.0.csv; "
-            "ideal fusion reads ideal_fusion.stat.0.csv.\n\n"
-        )
+        fh.write("All configurations read memory.stat.0.csv.\n\n")
         for result in results:
             fh.write(f"{result.workload} ({rename_workload(result.workload)})\n")
             fh.write(f"  simpoints: {result.trace_count}\n")
-            fh.write(f"  weighted baseline accesses: {result.baseline_accesses:.1f}\n")
+            fh.write(f"  weighted baseline stalls: {result.baseline_stalls:.1f}\n")
             fh.write(
-                f"  weighted ifuse accesses:    {result.ifuse_accesses:.1f}  "
+                f"  weighted ifuse stalls:    {result.ifuse_stalls:.1f}  "
                 f"({result.ifuse_reduction_pct:.2f}% reduction)\n"
             )
             fh.write(
-                f"  weighted ideal accesses:    {result.ideal_accesses:.1f}  "
+                f"  weighted ideal stalls:    {result.ideal_stalls:.1f}  "
                 f"({result.ideal_reduction_pct:.2f}% reduction)\n\n"
             )
 
@@ -247,7 +244,7 @@ def write_computation_log(path: Path, results: list[DcacheAccessResult]) -> None
             fh.write(f"Arithmetic mean Ideal reduction:   {ideal_avg:.2f}%\n")
 
 
-def plot_dcache_reduction_bars(results: list[DcacheAccessResult], output_dir: Path) -> None:
+def plot_read_port_stall_bars(results: list[ReadPortStallResult], output_dir: Path) -> None:
     import matplotlib.pyplot as plt
 
     ifuse_pct = [r.ifuse_reduction_pct for r in results]
@@ -338,13 +335,12 @@ def plot_dcache_reduction_bars(results: list[DcacheAccessResult], output_dir: Pa
             label.set_weight("bold")
 
     ax.set_ylabel(
-        "Reduction in number of\nL1-D cache accesses (%)\n(normalized to no-fusion)",
+        "L1 D-cache read port \nstalls reduction (%)\n(normalized to no-fusion)",
         fontsize=26,
         fontfamily="serif",
     )
-    ymax = max(ifuse_pct + ideal_pct)
     ymin = min(0.0, min(ifuse_pct + ideal_pct))
-    ax.set_ylim(ymin, ymax * 1.12 + 2.0)
+    ax.set_ylim(ymin, 100.0)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
     ax.tick_params(axis="y", labelsize=20)
     for label in ax.get_yticklabels():
@@ -369,7 +365,7 @@ def plot_dcache_reduction_bars(results: list[DcacheAccessResult], output_dir: Pa
 
     plt.tight_layout()
     output_dir.mkdir(parents=True, exist_ok=True)
-    for stem in ("dcache_accesses",):
+    for stem in ("read_port_stalls",):
         out = output_dir / stem
         fig.savefig(f"{out}.png", bbox_inches="tight", dpi=300)
         fig.savefig(f"{out}.pdf", bbox_inches="tight", dpi=300)
@@ -380,7 +376,7 @@ def plot_dcache_reduction_bars(results: list[DcacheAccessResult], output_dir: Pa
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Plot simpoint-weighted L1-D cache access reduction for I-Fuse and "
+            "Plot simpoint-weighted L1-D read port stall reduction for I-Fuse and "
             "ideal fusion vs baseline."
         )
     )
@@ -416,7 +412,7 @@ def main() -> None:
 
     sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
 
-    print("Computing L1-D cache access reductions (on-path + off-path)...")
+    print("Computing L1-D read port stall reductions (on-path + off-path)...")
     print(f"  baseline:     {baseline_dir} (config={args.baseline_config})")
     print(f"  ifuse:        {ifuse_dir} (config={args.ifuse_config})")
     print(f"  ideal fusion: {ideal_dir} (config={args.ideal_fusion_config})")
@@ -433,19 +429,19 @@ def main() -> None:
         sp_weights,
         suite=DEFAULT_SUITE,
         subsuite=DEFAULT_SUBSUITE,
-        report_path=output_dir / "dcache_accesses_simpoint_coverage_report.txt",
+        report_path=output_dir / "read_port_stalls_simpoint_coverage_report.txt",
     )
     if not complete_apps:
         raise SystemExit(
             "No apps have complete simpoint files across baseline, ifuse, and ideal fusion."
         )
 
-    results: list[DcacheAccessResult] = []
+    results: list[ReadPortStallResult] = []
     for workload in workloads:
         if workload not in complete_apps:
             print(f"  skip {workload}: incomplete simpoint coverage")
             continue
-        result = compute_workload_accesses(
+        result = compute_workload_stalls(
             workload,
             baseline_dir,
             ifuse_dir,
@@ -459,22 +455,22 @@ def main() -> None:
             subsuite=DEFAULT_SUBSUITE,
         )
         if result is None:
-            print(f"  skip {workload}: missing DCACHE_ACCESS_ONPATH/OFFPATH stats")
+            print(f"  skip {workload}: missing read port stall stats (on-path/off-path)")
             continue
         results.append(result)
         print(
-            f"  {workload:14s}  baseline={result.baseline_accesses:,.0f}  "
+            f"  {workload:14s}  baseline={result.baseline_stalls:,.0f}  "
             f"ifuse={result.ifuse_reduction_pct:5.2f}%  "
             f"ideal={result.ideal_reduction_pct:5.2f}%  "
             f"(simpoints={result.trace_count})"
         )
 
     if not results:
-        raise SystemExit("No workloads with complete L1-D cache access data.")
+        raise SystemExit("No workloads with complete read port stall data.")
 
-    write_summary_csv(output_dir / "dcache_accesses_summary.csv", results)
-    write_computation_log(output_dir / "dcache_accesses_computation_log.txt", results)
-    plot_dcache_reduction_bars(results, output_dir)
+    write_summary_csv(output_dir / "read_port_stalls_summary.csv", results)
+    write_computation_log(output_dir / "read_port_stalls_computation_log.txt", results)
+    plot_read_port_stall_bars(results, output_dir)
 
     ifuse_avg = sum(r.ifuse_reduction_pct for r in results) / len(results)
     ideal_avg = sum(r.ideal_reduction_pct for r in results) / len(results)
@@ -483,11 +479,11 @@ def main() -> None:
     print(f"  I-Fuse mean reduction:       {ifuse_avg:.2f}%")
     print(f"  Ideal fusion mean reduction: {ideal_avg:.2f}%")
     print("\nOutputs:")
-    print(f"  - {output_dir / 'dcache_accesses.png'}")
-    print(f"  - {output_dir / 'dcache_accesses.pdf'}")
-    print(f"  - {output_dir / 'dcache_accesses.eps'}")
-    print(f"  - {output_dir / 'dcache_accesses_summary.csv'}")
-    print(f"  - {output_dir / 'dcache_accesses_computation_log.txt'}")
+    print(f"  - {output_dir / 'read_port_stalls.png'}")
+    print(f"  - {output_dir / 'read_port_stalls.pdf'}")
+    print(f"  - {output_dir / 'read_port_stalls.eps'}")
+    print(f"  - {output_dir / 'read_port_stalls_summary.csv'}")
+    print(f"  - {output_dir / 'read_port_stalls_computation_log.txt'}")
 
 
 if __name__ == "__main__":

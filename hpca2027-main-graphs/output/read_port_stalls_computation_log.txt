@@ -1,0 +1,61 @@
+L1-D read port stall reduction (DCACHE_READ_PORT_UNAVAILABLE_ONPATH_count)
+================================================================================
+reduction_pct = 100 * (weighted_baseline - weighted_config) / weighted_baseline
+All configurations read memory.stat.0.csv.
+
+bc (BC)
+  simpoints: 9
+  weighted baseline stalls: 2600201.5
+  weighted ifuse stalls:    1110410.6  (57.30% reduction)
+  weighted ideal stalls:    1116869.7  (57.05% reduction)
+
+bfs (BFS)
+  simpoints: 4
+  weighted baseline stalls: 2643737.1
+  weighted ifuse stalls:    1973015.0  (25.37% reduction)
+  weighted ideal stalls:    1989148.7  (24.76% reduction)
+
+dfs (DFS)
+  simpoints: 4
+  weighted baseline stalls: 2691521.6
+  weighted ifuse stalls:    2007541.1  (25.41% reduction)
+  weighted ideal stalls:    2007157.9  (25.43% reduction)
+
+pagerank (PR)
+  simpoints: 5
+  weighted baseline stalls: 3598354.7
+  weighted ifuse stalls:    3168591.2  (11.94% reduction)
+  weighted ideal stalls:    3083796.9  (14.30% reduction)
+
+sssp_ego_fb (SSSP)
+  simpoints: 5
+  weighted baseline stalls: 2576396.1
+  weighted ifuse stalls:    2511801.2  (2.51% reduction)
+  weighted ideal stalls:    2545545.6  (1.20% reduction)
+
+rag_haystack (RAG)
+  simpoints: 3
+  weighted baseline stalls: 2022923.6
+  weighted ifuse stalls:    873124.1  (56.84% reduction)
+  weighted ideal stalls:    1119558.1  (44.66% reduction)
+
+tao (Tao)
+  simpoints: 2
+  weighted baseline stalls: 414781.4
+  weighted ifuse stalls:    160996.8  (61.19% reduction)
+  weighted ideal stalls:    323879.5  (21.92% reduction)
+
+mongodb (MongoDB)
+  simpoints: 3
+  weighted baseline stalls: 616351.4
+  weighted ifuse stalls:    573000.9  (7.03% reduction)
+  weighted ideal stalls:    370554.9  (39.88% reduction)
+
+postgres (Postgres)
+  simpoints: 3
+  weighted baseline stalls: 8244020.9
+  weighted ifuse stalls:    8115976.5  (1.55% reduction)
+  weighted ideal stalls:    8126575.2  (1.42% reduction)
+
+Arithmetic mean I-Fuse reduction:  27.68%
+Arithmetic mean Ideal reduction:   25.62%

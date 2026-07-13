@@ -1,0 +1,183 @@
+====================================================================================================
+SIMPOINT COVERAGE REPORT
+Reference: baseline — all other directories checked against it.
+====================================================================================================
+
+
+================================================================================
+APP: bc
+================================================================================
+  Reference traces from baseline: ['120', '313', '342', '466', '493', '571', '589', '641', '679']
+  Total reference traces: 9
+
+  [baseline]  (/users/deepmish/scarab/src/simulations/baseline)
+    REFERENCE - 9 trace(s): ['120', '313', '342', '466', '493', '571', '589', '641', '679']
+
+  [ifuse]  (/users/deepmish/scarab/src/simulations/ifuse)
+    OK  - All 9 trace(s) present.
+    Found: ['120', '313', '342', '466', '493', '571', '589', '641', '679']
+
+  [ideal_fusion]  (/users/deepmish/scarab/src/simulations/ideal-fusion)
+    OK  - All 9 trace(s) present.
+    Found: ['120', '313', '342', '466', '493', '571', '589', '641', '679']
+
+  >> RESULT: COMPLETE - will be included in plot
+
+================================================================================
+APP: bfs
+================================================================================
+  Reference traces from baseline: ['103', '17', '94', '96']
+  Total reference traces: 4
+
+  [baseline]  (/users/deepmish/scarab/src/simulations/baseline)
+    REFERENCE - 4 trace(s): ['103', '17', '94', '96']
+
+  [ifuse]  (/users/deepmish/scarab/src/simulations/ifuse)
+    OK  - All 4 trace(s) present.
+    Found: ['103', '17', '94', '96']
+
+  [ideal_fusion]  (/users/deepmish/scarab/src/simulations/ideal-fusion)
+    OK  - All 4 trace(s) present.
+    Found: ['103', '17', '94', '96']
+
+  >> RESULT: COMPLETE - will be included in plot
+
+================================================================================
+APP: dfs
+================================================================================
+  Reference traces from baseline: ['28', '8', '94', '96']
+  Total reference traces: 4
+
+  [baseline]  (/users/deepmish/scarab/src/simulations/baseline)
+    REFERENCE - 4 trace(s): ['28', '8', '94', '96']
+
+  [ifuse]  (/users/deepmish/scarab/src/simulations/ifuse)
+    OK  - All 4 trace(s) present.
+    Found: ['28', '8', '94', '96']
+
+  [ideal_fusion]  (/users/deepmish/scarab/src/simulations/ideal-fusion)
+    OK  - All 4 trace(s) present.
+    Found: ['28', '8', '94', '96']
+
+  >> RESULT: COMPLETE - will be included in plot
+
+================================================================================
+APP: pagerank
+================================================================================
+  Reference traces from baseline: ['107', '91', '94', '97', '99']
+  Total reference traces: 5
+
+  [baseline]  (/users/deepmish/scarab/src/simulations/baseline)
+    REFERENCE - 5 trace(s): ['107', '91', '94', '97', '99']
+
+  [ifuse]  (/users/deepmish/scarab/src/simulations/ifuse)
+    OK  - All 5 trace(s) present.
+    Found: ['107', '91', '94', '97', '99']
+
+  [ideal_fusion]  (/users/deepmish/scarab/src/simulations/ideal-fusion)
+    OK  - All 5 trace(s) present.
+    Found: ['107', '91', '94', '97', '99']
+
+  >> RESULT: COMPLETE - will be included in plot
+
+================================================================================
+APP: sssp_ego_fb
+================================================================================
+  Reference traces from baseline: ['249', '293', '296', '297', '90']
+  Total reference traces: 5
+
+  [baseline]  (/users/deepmish/scarab/src/simulations/baseline)
+    REFERENCE - 5 trace(s): ['249', '293', '296', '297', '90']
+
+  [ifuse]  (/users/deepmish/scarab/src/simulations/ifuse)
+    OK  - All 5 trace(s) present.
+    Found: ['249', '293', '296', '297', '90']
+
+  [ideal_fusion]  (/users/deepmish/scarab/src/simulations/ideal-fusion)
+    OK  - All 5 trace(s) present.
+    Found: ['249', '293', '296', '297', '90']
+
+  >> RESULT: COMPLETE - will be included in plot
+
+================================================================================
+APP: rag_haystack
+================================================================================
+  Reference traces from baseline: ['0', '4', '7']
+  Total reference traces: 3
+
+  [baseline]  (/users/deepmish/scarab/src/simulations/baseline)
+    REFERENCE - 3 trace(s): ['0', '4', '7']
+
+  [ifuse]  (/users/deepmish/scarab/src/simulations/ifuse)
+    OK  - All 3 trace(s) present.
+    Found: ['0', '4', '7']
+
+  [ideal_fusion]  (/users/deepmish/scarab/src/simulations/ideal-fusion)
+    OK  - All 3 trace(s) present.
+    Found: ['0', '4', '7']
+
+  >> RESULT: COMPLETE - will be included in plot
+
+================================================================================
+APP: tao
+================================================================================
+  Reference traces from baseline: ['1', '9']
+  Total reference traces: 2
+
+  [baseline]  (/users/deepmish/scarab/src/simulations/baseline)
+    REFERENCE - 2 trace(s): ['1', '9']
+
+  [ifuse]  (/users/deepmish/scarab/src/simulations/ifuse)
+    OK  - All 2 trace(s) present.
+    Found: ['1', '9']
+
+  [ideal_fusion]  (/users/deepmish/scarab/src/simulations/ideal-fusion)
+    OK  - All 2 trace(s) present.
+    Found: ['1', '9']
+
+  >> RESULT: COMPLETE - will be included in plot
+
+================================================================================
+APP: mongodb
+================================================================================
+  Reference traces from baseline: ['1', '4', '8']
+  Total reference traces: 3
+
+  [baseline]  (/users/deepmish/scarab/src/simulations/baseline)
+    REFERENCE - 3 trace(s): ['1', '4', '8']
+
+  [ifuse]  (/users/deepmish/scarab/src/simulations/ifuse)
+    OK  - All 3 trace(s) present.
+    Found: ['1', '4', '8']
+
+  [ideal_fusion]  (/users/deepmish/scarab/src/simulations/ideal-fusion)
+    OK  - All 3 trace(s) present.
+    Found: ['1', '4', '8']
+
+  >> RESULT: COMPLETE - will be included in plot
+
+================================================================================
+APP: postgres
+================================================================================
+  Reference traces from baseline: ['1', '12', '2']
+  Total reference traces: 3
+
+  [baseline]  (/users/deepmish/scarab/src/simulations/baseline)
+    REFERENCE - 3 trace(s): ['1', '12', '2']
+
+  [ifuse]  (/users/deepmish/scarab/src/simulations/ifuse)
+    OK  - All 3 trace(s) present.
+    Found: ['1', '12', '2']
+
+  [ideal_fusion]  (/users/deepmish/scarab/src/simulations/ideal-fusion)
+    OK  - All 3 trace(s) present.
+    Found: ['1', '12', '2']
+
+  >> RESULT: COMPLETE - will be included in plot
+
+
+====================================================================================================
+COMPLETE apps (9): ['bc', 'bfs', 'dfs', 'mongodb', 'pagerank', 'postgres', 'rag_haystack', 'sssp_ego_fb', 'tao']
+INCOMPLETE apps (0): []
+OVERALL: ALL PRESENT
+====================================================================================================

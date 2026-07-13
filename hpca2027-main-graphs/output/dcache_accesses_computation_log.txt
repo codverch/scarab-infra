@@ -1,0 +1,61 @@
+L1-D cache access reduction (DCACHE_ACCESS_ONPATH_count + DCACHE_ACCESS_OFFPATH_count)
+================================================================================
+reduction_pct = 100 * (weighted_baseline - weighted_config) / weighted_baseline
+Baseline and I-Fuse read memory.stat.0.csv; ideal fusion reads ideal_fusion.stat.0.csv.
+
+bc (BC)
+  simpoints: 9
+  weighted baseline accesses: 25681732.9
+  weighted ifuse accesses:    21332365.1  (16.94% reduction)
+  weighted ideal accesses:    19141137.0  (25.47% reduction)
+
+bfs (BFS)
+  simpoints: 4
+  weighted baseline accesses: 32385295.1
+  weighted ifuse accesses:    26527872.6  (18.09% reduction)
+  weighted ideal accesses:    25369652.9  (21.66% reduction)
+
+dfs (DFS)
+  simpoints: 4
+  weighted baseline accesses: 32289760.3
+  weighted ifuse accesses:    26331039.7  (18.45% reduction)
+  weighted ideal accesses:    25255075.2  (21.79% reduction)
+
+pagerank (PR)
+  simpoints: 5
+  weighted baseline accesses: 35977232.8
+  weighted ifuse accesses:    30008804.7  (16.59% reduction)
+  weighted ideal accesses:    29091924.6  (19.14% reduction)
+
+sssp_ego_fb (SSSP)
+  simpoints: 5
+  weighted baseline accesses: 21245345.1
+  weighted ifuse accesses:    18357014.0  (13.60% reduction)
+  weighted ideal accesses:    17805985.2  (16.19% reduction)
+
+rag_haystack (RAG)
+  simpoints: 3
+  weighted baseline accesses: 26853132.5
+  weighted ifuse accesses:    21054628.0  (21.59% reduction)
+  weighted ideal accesses:    20149584.3  (24.96% reduction)
+
+tao (Tao)
+  simpoints: 2
+  weighted baseline accesses: 6878894.6
+  weighted ifuse accesses:    4158896.8  (39.54% reduction)
+  weighted ideal accesses:    4082479.5  (40.65% reduction)
+
+mongodb (MongoDB)
+  simpoints: 3
+  weighted baseline accesses: 5559224.1
+  weighted ifuse accesses:    5325929.5  (4.20% reduction)
+  weighted ideal accesses:    4257752.5  (23.41% reduction)
+
+postgres (Postgres)
+  simpoints: 3
+  weighted baseline accesses: 67099673.7
+  weighted ifuse accesses:    65912010.6  (1.77% reduction)
+  weighted ideal accesses:    65899099.7  (1.79% reduction)
+
+Arithmetic mean I-Fuse reduction:  16.75%
+Arithmetic mean Ideal reduction:   21.67%

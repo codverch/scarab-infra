@@ -6,10 +6,6 @@ Expects scarab-infra simulation results under:
   {simulations-root}/ideal-fusion/ideal-fusion/datacenter/datacenter/...
   {simulations-root}/ifuse/ifuse/datacenter/datacenter/...
 
-Example:
-  python hpca2027-main-graphs/plot_ipc.py
-  python hpca2027-main-graphs/plot_ipc.py --simulations-root /users/deepmish/scarab/src/simulations
-
 Commands:
 
 /users/deepmish/miniconda3/envs/scarabinfra/bin/python \
