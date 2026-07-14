@@ -47,15 +47,26 @@ WORKLOAD_LABELS = {
     "toolformer": "toolformer",
     "django": "django",
     "videotranscode": "videotranscode",
+    "appworld": "AppWorld",
+    "core_bench": "Core Bench",
+    "mlgym_fmnist": "MLGym FMNIST",
+    "terminal_bench": "TerminalBench",
+    "rocksdb": "RocksDB",
 }
 
 # Level-1 x-axis groups (benchmark suite) and level-2 short application labels.
 WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("GAP", ("bc", "bfs", "cc", "cd", "dfs", "pagerank", "sssp_ego_fb", "tc")),
-    ("Agentic", ("langchain_web", "rag_haystack", "swe_agent")),
-    ("DCPerf", ("django", "feedsim", "tao", "videotranscode")),
-    ("Database", ("mongodb", "postgres")),
-    ("SPEC", ()),
+    ("GAP", ("bc", "bfs", "dfs", "pagerank", "sssp_ego_fb")),
+    (
+        "Agentic",
+        (
+            "appworld",
+            "core_bench",
+            "mlgym_fmnist",
+            "terminal_bench",
+        ),
+    ),
+    ("Database", ("rocksdb",)),
 )
 
 WORKLOAD_SHORT_LABELS = {
@@ -76,6 +87,11 @@ WORKLOAD_SHORT_LABELS = {
     "videotranscode": "VT",
     "mongodb": "MongoDB",
     "postgres": "Postgres",
+    "appworld": "AppWorld",
+    "core_bench": "CoreBench",
+    "mlgym_fmnist": "MLGym",
+    "terminal_bench": "TerminalBench",
+    "rocksdb": "RocksDB",
 }
 
 WORKLOAD_TO_SUITE: dict[str, str] = {
@@ -193,8 +209,37 @@ def load_weights(
     return merged
 
 
+def find_trace_root(app_dir: Path) -> Path | None:
+    if (app_dir / "simpoints").is_dir():
+        return app_dir
+    for child in sorted(app_dir.iterdir()):
+        if child.is_dir() and (child / "simpoints").is_dir():
+            return child
+    return None
+
+
+def installed_trace_workloads(traces_dir: Path) -> set[str]:
+    """Workload names with SimPoint bundles under simpoint_traces."""
+    installed: set[str] = set()
+    if not traces_dir.is_dir():
+        return installed
+
+    for candidate in (traces_dir, traces_dir / "datacenter" / "datacenter"):
+        if not candidate.is_dir():
+            continue
+        for app_dir in sorted(candidate.iterdir()):
+            if not app_dir.is_dir():
+                continue
+            if find_trace_root(app_dir) is not None:
+                installed.add(app_dir.name)
+    return installed
+
+
 def collect(
-    root: Path, weights_db: dict[str, dict[str, float]]
+    root: Path,
+    weights_db: dict[str, dict[str, float]],
+    *,
+    allowed_workloads: set[str] | None = None,
 ) -> tuple[list[dict[str, float]], list[dict[str, float]]]:
     per_simpoint: dict[str, list[tuple[str, dict[str, float]]]] = defaultdict(list)
     seen: dict[str, dict[tuple, Path]] = defaultdict(dict)
@@ -223,6 +268,8 @@ def collect(
     rows: list[dict[str, float]] = []
     simpoint_rows: list[dict[str, float]] = []
     for workload, entries in sorted(per_simpoint.items()):
+        if allowed_workloads is not None and workload not in allowed_workloads:
+            continue
         wl_weights = weights_db.get(workload)
         if wl_weights is None:
             raise SystemExit(f"{workload}: no simpoints/weights entry in the workload DB")
@@ -272,6 +319,14 @@ def collect(
             )
         row["Topdown sum"] = sum(row[metric] for metric, _ in METRICS)
         rows.append(row)
+
+    if not rows:
+        hint = (
+            f" (allowed traces: {', '.join(sorted(allowed_workloads))})"
+            if allowed_workloads
+            else ""
+        )
+        raise SystemExit(f"No matching workload stats found under {root}{hint}")
 
     average = {
         "workload": "Average",
@@ -424,7 +479,7 @@ def _add_hierarchical_xaxis(
     for x_start, x_end, group_name in group_spans:
         ax.text(
             (x_start + x_end) / 2.0,
-            -0.32,
+            -0.40,
             group_name,
             transform=group_transform,
             ha="center",
@@ -585,7 +640,7 @@ def plot(
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
-    fig.subplots_adjust(bottom=0.32)
+    fig.subplots_adjust(bottom=0.36)
     fig.savefig(out_png, bbox_inches="tight", dpi=300, pad_inches=0.06)
     if out_pdf:
         fig.savefig(out_pdf, bbox_inches="tight", dpi=300, pad_inches=0.06)
@@ -611,6 +666,12 @@ def main() -> None:
         required=True,
         help="workloads DB JSON (e.g. workloads/workloads_db.json) providing SimPoint cluster weights.",
     )
+    parser.add_argument(
+        "--traces-dir",
+        type=Path,
+        default=Path("/dev/shm/baseline/simpoint_traces"),
+        help="Only plot workloads with SimPoint bundles under this directory.",
+    )
     parser.add_argument("--suite", default="datacenter")
     parser.add_argument("--subsuite", default="datacenter")
     parser.add_argument("--no-pdf", action="store_true", help="Skip PDF output.")
@@ -628,9 +689,28 @@ def main() -> None:
     parser.add_argument("--sum-tolerance", type=float, default=0.01)
     args = parser.parse_args()
 
+    allowed = installed_trace_workloads(args.traces_dir)
+    if not allowed:
+        raise SystemExit(f"No SimPoint workloads found under {args.traces_dir}")
+
     weights = load_weights(args.weights_db, args.suite, args.subsuite)
-    rows, simpoint_rows = collect(args.root, weights)
+    rows, simpoint_rows = collect(args.root, weights, allowed_workloads=allowed)
     validate(rows, args.sum_tolerance)
+
+    skipped = sorted(
+        {
+            infer_workload(path, args.root)
+            for path in args.root.rglob("core.stat.0.csv")
+        }
+        - allowed
+        - {"Average"}
+    )
+    if skipped:
+        print(
+            "Skipping sim results without installed traces: "
+            + ", ".join(skipped)
+        )
+    print(f"Plotting installed traces: {', '.join(sorted(allowed))}")
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     csv_path = args.out_dir / "topdown_backend_stalls.csv"
