@@ -1,27 +1,77 @@
 # HPCA 2027 simulation descriptors
 
-## Runtime I-Fuse with 10M warmup and 20M measurement
+## Runtime I-Fuse, no warmup, full-trace measurement
 
-`runtime_ifuse_10m_warmup_20m_run.json` compares an I-Fuse-disabled baseline
-with runtime-trained I-Fuse on `bfs`, `dfs`, `pagerank`, and `tc`. Both
-configurations use the first 10M instructions for fast warmup and measure the
-following 20M instructions.
+`runtime_ifuse_no_warmup_full_trace.json` compares baseline vs runtime I-Fuse
+on `appworld`, `bc`, `bfs`, `dfs`, `duckdb`, `leveldb`, and `pagerank` with:
 
-The current `workloads/workloads_db.json` entries describe 30M-instruction
-segments but record `warmup: 0`. Scarab-infra's validator therefore rejects a
-10M descriptor warmup even though the locally available `trace_then_cluster`
-archives for `bfs`, `dfs`, and `pagerank` contain multiple chunks. The `tc`
-trace is not currently installed under `/dev/shm/baseline/simpoint_traces`.
+- `warmup: 0` / `--full_warmup 0` (no warmup; all retired instructions count)
+- `--inst_limit 200000000` (upper bound; Scarab stops at EOF if the zip is shorter)
 
-Intended trace interpretation:
+Because `inst_limit` exceeds each workload's segment size, `run_memtrace_single_simpoint.sh`
+starts at instruction 1 and measures the whole available zip contents.
 
-- first 10M instructions: fast warmup;
-- next 20M instructions: measured interval; and
-- 30M instructions consumed per selected trace in total.
+Launch:
 
-Before launching, either record 10M as available warmup for these traces after
-verifying their chunk layout, or extend Scarab-infra with an explicit
-"consume ROI prefix as warmup" mode. Do not silently change global workload
-metadata: it would alter the semantics of other descriptors. SimPoints at the
-beginning of a trace have no preceding instructions and require either a
-shorter warmup or exclusion from a uniform-warmup experiment.
+```bash
+cd ~/scarab-infra
+./json/hpca2027/run_runtime_ifuse_no_warmup.sh            # build + sim
+./json/hpca2027/run_runtime_ifuse_no_warmup.sh --sim-only  # skip rebuild
+./json/hpca2027/run_runtime_ifuse_no_warmup.sh --status
+./json/hpca2027/run_runtime_ifuse_no_warmup.sh --collect-stats
+./json/hpca2027/run_runtime_ifuse_no_warmup.sh --visualize
+```
+
+Or manually:
+
+```bash
+./sci --build-scarab hpca2027/runtime_ifuse_no_warmup_full_trace
+./sci --sim hpca2027/runtime_ifuse_no_warmup_full_trace
+```
+
+## Runtime I-Fuse on GAP apps: 10M warmup + rest of trace
+
+`runtime_ifuse_gap_10m_warmup_rest_of_trace.json` compares baseline vs runtime
+I-Fuse on GAP workloads `bc`, `bfs`, `dfs`, and `pagerank` with:
+
+- `--full_warmup 10000000` (10M warmup)
+- `--inst_limit 200000000` (upper bound; Scarab stops at EOF, so the measured
+  window is whatever remains after warmup)
+
+Approximate measured windows: bc ~50M; bfs/dfs/pagerank ~80M.
+
+Launch:
+
+```bash
+cd ~/scarab-infra
+./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_rest.sh            # build + sim
+./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_rest.sh --sim-only  # skip rebuild
+./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_rest.sh --status
+./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_rest.sh --collect-stats
+./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_rest.sh --visualize
+```
+
+## Runtime I-Fuse on GAP apps: 10M warmup + 10M measurement
+
+`runtime_ifuse_gap_10m_warmup_10m_run.json` compares baseline vs runtime I-Fuse
+on GAP workloads `bc`, `bfs`, `dfs`, and `pagerank` with:
+
+- `--full_warmup 10000000` (10M warmup)
+- `--inst_limit 20000000` (measured window is instructions 10M–20M)
+
+Launch:
+
+```bash
+cd ~/scarab-infra
+./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_10m.sh            # build + sim
+./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_10m.sh --sim-only  # skip rebuild
+./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_10m.sh --status
+./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_10m.sh --collect-stats
+./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_10m.sh --visualize
+```
+
+## Runtime I-Fuse with 40M warmup and 10M measurement
+
+`runtime_ifuse_10m_warmup_20m_run.json` (experiment name
+`hpca2027_runtime_ifuse_40m_warmup_10m_run`) uses `--full_warmup 40000000` and
+`--inst_limit 50000000` so the measured window is instructions 40M–50M.
