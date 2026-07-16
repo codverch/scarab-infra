@@ -1,77 +1,44 @@
-# HPCA 2027 simulation descriptors
+# Runtime I-Fuse experiment descriptors (HPCA 2027)
 
-## Runtime I-Fuse, no warmup, full-trace measurement
+## `runtime_ifuse_10m_warmup_20M_run`
 
-`runtime_ifuse_no_warmup_full_trace.json` compares baseline vs runtime I-Fuse
-on `appworld`, `bc`, `bfs`, `dfs`, `duckdb`, `leveldb`, and `pagerank` with:
+Compares **baseline** vs **runtime I-Fuse** on every app in
+`/dev/shm/baseline/simpoint_traces` with a fixed window:
 
-- `warmup: 0` / `--full_warmup 0` (no warmup; all retired instructions count)
-- `--inst_limit 200000000` (upper bound; Scarab stops at EOF if the zip is shorter)
+| Parameter | Value |
+|-----------|-------|
+| Warmup | 10M (`--full_warmup 10000000`) |
+| Measured | 20M (`--inst_limit 30000000`) |
+| Experiment dir | `scarab/src/simulations/runtime-ifuse/` |
 
-Because `inst_limit` exceeds each workload's segment size, `run_memtrace_single_simpoint.sh`
-starts at instruction 1 and measures the whole available zip contents.
+### Result layout (after finalize)
 
-Launch:
+```
+simulations/runtime-ifuse/
+  baseline/{app}/{simpoint}/
+  runtime_ifuse/{app}/{simpoint}/
+  collected_stats.csv
+  .gitignore
+```
+
+Suite/subsuite nesting (`datacenter/datacenter/`), job `logs/`, and Scarab
+binaries are removed by `--finalize` so the tree is easy to commit.
+
+### Launch
 
 ```bash
 cd ~/scarab-infra
-./json/hpca2027/run_runtime_ifuse_no_warmup.sh            # build + sim
-./json/hpca2027/run_runtime_ifuse_no_warmup.sh --sim-only  # skip rebuild
-./json/hpca2027/run_runtime_ifuse_no_warmup.sh --status
-./json/hpca2027/run_runtime_ifuse_no_warmup.sh --collect-stats
-./json/hpca2027/run_runtime_ifuse_no_warmup.sh --visualize
+./json/hpca2027/runtime_ifuse_10m_warmup_20M_run.sh            # build + sim + finalize
+./json/hpca2027/runtime_ifuse_10m_warmup_20M_run.sh --sim-only
+./json/hpca2027/runtime_ifuse_10m_warmup_20M_run.sh --status
+./json/hpca2027/runtime_ifuse_10m_warmup_20M_run.sh --finalize
 ```
 
-Or manually:
+Or via `./sci` directly (nested layout until you run `--finalize`):
 
 ```bash
-./sci --build-scarab hpca2027/runtime_ifuse_no_warmup_full_trace
-./sci --sim hpca2027/runtime_ifuse_no_warmup_full_trace
+./sci --build-scarab hpca2027/runtime_ifuse_10m_warmup_20M_run
+./sci --sim hpca2027/runtime_ifuse_10m_warmup_20M_run
+./sci --collect-stats hpca2027/runtime_ifuse_10m_warmup_20M_run
+./json/hpca2027/runtime_ifuse_10m_warmup_20M_run.sh --finalize
 ```
-
-## Runtime I-Fuse on GAP apps: 10M warmup + rest of trace
-
-`runtime_ifuse_gap_10m_warmup_rest_of_trace.json` compares baseline vs runtime
-I-Fuse on GAP workloads `bc`, `bfs`, `dfs`, and `pagerank` with:
-
-- `--full_warmup 10000000` (10M warmup)
-- `--inst_limit 200000000` (upper bound; Scarab stops at EOF, so the measured
-  window is whatever remains after warmup)
-
-Approximate measured windows: bc ~50M; bfs/dfs/pagerank ~80M.
-
-Launch:
-
-```bash
-cd ~/scarab-infra
-./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_rest.sh            # build + sim
-./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_rest.sh --sim-only  # skip rebuild
-./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_rest.sh --status
-./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_rest.sh --collect-stats
-./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_rest.sh --visualize
-```
-
-## Runtime I-Fuse on GAP apps: 10M warmup + 10M measurement
-
-`runtime_ifuse_gap_10m_warmup_10m_run.json` compares baseline vs runtime I-Fuse
-on GAP workloads `bc`, `bfs`, `dfs`, and `pagerank` with:
-
-- `--full_warmup 10000000` (10M warmup)
-- `--inst_limit 20000000` (measured window is instructions 10M–20M)
-
-Launch:
-
-```bash
-cd ~/scarab-infra
-./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_10m.sh            # build + sim
-./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_10m.sh --sim-only  # skip rebuild
-./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_10m.sh --status
-./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_10m.sh --collect-stats
-./json/hpca2027/run_runtime_ifuse_gap_10m_warmup_10m.sh --visualize
-```
-
-## Runtime I-Fuse with 40M warmup and 10M measurement
-
-`runtime_ifuse_10m_warmup_20m_run.json` (experiment name
-`hpca2027_runtime_ifuse_40m_warmup_10m_run`) uses `--full_warmup 40000000` and
-`--inst_limit 50000000` so the measured window is instructions 40M–50M.
