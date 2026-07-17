@@ -15,18 +15,13 @@
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
-        "appworld",
         "bc",
         "bfs",
-        "core_bench",
+        "community",
+        "connected_components",
         "dfs",
-        "duckdb",
-        "leveldb",
-        "mlgym_fmnist",
         "pagerank",
-        "rocksdb",
-        "sssp_ego_fb",
-        "terminal_bench"
+        "sssp"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
@@ -35,13 +30,13 @@
   ],
   "configurations": {
     "baseline": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 10000000 --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0",
+      "params": "--icache_size 32768 --inst_limit 20000000 --full_warmup 10000000 --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
     },
     "runtime_ifuse": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 10000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 10",
+      "params": "--icache_size 32768 --inst_limit 20000000 --full_warmup 10000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 10",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0

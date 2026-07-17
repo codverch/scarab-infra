@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-# Runtime I-Fuse: 10M warmup + 20M measured window
+# Runtime I-Fuse: 10M warmup + 10M measured window
 # =============================================================================
-# Descriptor : runtime_ifuse_10m_warmup_20m_run.json
+# Descriptor : runtime_ifuse_10m_warmup_10m_run.json
 # Experiment : simulations/runtime-ifuse/
 # Layout     : simulations/runtime-ifuse/{baseline|runtime_ifuse}/{app}/{simpoint}/
 #              (suite/subsuite nesting is removed after the run for easy commits)
 #
-# Window     : --full_warmup 10000000 --inst_limit 30000000
+# Window     : --full_warmup 10000000 --inst_limit 20000000
 # Workloads  : all apps under /dev/shm/baseline/simpoint_traces (except suite dirs)
 #
 # Usage:
-#   ./runtime_ifuse_10m_warmup_20m_run.sh              # register, build, sim, finalize
-#   ./runtime_ifuse_10m_warmup_20m_run.sh --sim-only   # register + sim + finalize
-#   ./runtime_ifuse_10m_warmup_20m_run.sh --status
-#   ./runtime_ifuse_10m_warmup_20m_run.sh --collect-stats
-#   ./runtime_ifuse_10m_warmup_20m_run.sh --finalize   # flatten layout + strip junk
-#   ./runtime_ifuse_10m_warmup_20m_run.sh --visualize
+#   ./runtime_ifuse_10m_warmup_10m_run.sh              # register, build, sim, finalize
+#   ./runtime_ifuse_10m_warmup_10m_run.sh --sim-only   # register + sim + finalize
+#   ./runtime_ifuse_10m_warmup_10m_run.sh --status
+#   ./runtime_ifuse_10m_warmup_10m_run.sh --collect-stats
+#   ./runtime_ifuse_10m_warmup_10m_run.sh --finalize   # flatten layout + strip junk
+#   ./runtime_ifuse_10m_warmup_10m_run.sh --visualize
 #
 # Finalize removes job logs, scarab binaries, and the datacenter/datacenter/
 # nesting so the tree is commit-friendly under src/simulations/runtime-ifuse/.
@@ -23,7 +23,7 @@
 set -euo pipefail
 
 INFRA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-DESCRIPTOR="hpca2027/runtime_ifuse_10m_warmup_20m_run"
+DESCRIPTOR="hpca2027/runtime_ifuse_10m_warmup_10m_run"
 TRACES_DIR="/dev/shm/baseline/simpoint_traces"
 EXPERIMENT_DIR="/users/deepmish/scarab/src/simulations/runtime-ifuse"
 SUITE="datacenter"
@@ -45,7 +45,7 @@ fi
 
 usage() {
   cat <<'EOF'
-Usage: runtime_ifuse_10m_warmup_20m_run.sh [option]
+Usage: runtime_ifuse_10m_warmup_10m_run.sh [option]
 
   (default)          Register traces, build Scarab, simulate, collect stats, finalize
   --sim-only         Register traces, simulate, collect stats, finalize (skip build)
