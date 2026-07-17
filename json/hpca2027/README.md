@@ -1,47 +1,33 @@
-# Runtime I-Fuse experiment descriptors (HPCA 2027)
+# HPCA 2027 simulation descriptors
 
-## `runtime_ifuse_20m_warmup_rest_of_trace`
-
-Compares **baseline** vs **runtime I-Fuse** on every app in
-`/dev/shm/baseline/simpoint_traces` with:
+All experiments use a fixed window:
 
 | Parameter | Value |
 |-----------|-------|
-| Warmup | 20M (`--full_warmup 20000000`) |
-| Measured | rest of each simpoint zip (`--inst_limit 200000000` ceiling; stops at EOF) |
-| Experiment dir | `scarab/src/simulations/runtime-ifuse/` |
+| Warmup | 10M (`--full_warmup 10000000`) |
+| Measured | 10M (`--inst_limit 20000000`) |
 
-Approximate measured windows after 20M warmup: `sssp_ego_fb` ~10M; most
-60M zips ~40M; `bfs`/`dfs`/`pagerank` ~70M.
+## Descriptors
 
-### Result layout (after finalize)
+| File | Experiment dir | Configs |
+|------|----------------|---------|
+| `baseline_10m_warmup_10m_run.json` | `simulations/baseline/` | `baseline` |
+| `ideal_fusion_pass2_10m_warmup_10m_run.json` | `simulations/ideal-fusion/` | `pass2` |
+| `runtime_ifuse_10m_warmup_10m_run.json` | `simulations/runtime-ifuse/` | `baseline`, `runtime_ifuse` |
 
-```
-simulations/runtime-ifuse/
-  baseline/{app}/{simpoint}/
-  runtime_ifuse/{app}/{simpoint}/
-  collected_stats.csv
-  .gitignore
-```
-
-Suite/subsuite nesting (`datacenter/datacenter/`), job `logs/`, and Scarab
-binaries are removed by `--finalize` so the tree is easy to commit.
-
-### Launch
+## Launch runtime I-Fuse
 
 ```bash
 cd ~/scarab-infra
-./json/hpca2027/runtime_ifuse_20m_warmup_rest_of_trace.sh            # build + sim + finalize
-./json/hpca2027/runtime_ifuse_20m_warmup_rest_of_trace.sh --sim-only
-./json/hpca2027/runtime_ifuse_20m_warmup_rest_of_trace.sh --status
-./json/hpca2027/runtime_ifuse_20m_warmup_rest_of_trace.sh --finalize
+./json/hpca2027/runtime_ifuse_10m_warmup_10m_run.sh            # build + sim + finalize
+./json/hpca2027/runtime_ifuse_10m_warmup_10m_run.sh --sim-only
 ```
 
-Or via `./sci` directly (nested layout until you run `--finalize`):
+Or via `./sci`:
 
 ```bash
-./sci --build-scarab hpca2027/runtime_ifuse_20m_warmup_rest_of_trace
-./sci --sim hpca2027/runtime_ifuse_20m_warmup_rest_of_trace
-./sci --collect-stats hpca2027/runtime_ifuse_20m_warmup_rest_of_trace
-./json/hpca2027/runtime_ifuse_20m_warmup_rest_of_trace.sh --finalize
+./sci --build-scarab hpca2027/runtime_ifuse_10m_warmup_10m_run
+./sci --sim hpca2027/runtime_ifuse_10m_warmup_10m_run
+./sci --sim hpca2027/baseline_10m_warmup_10m_run
+./sci --sim hpca2027/ideal_fusion_pass2_10m_warmup_10m_run
 ```

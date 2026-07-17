@@ -1,28 +1,21 @@
 #!/usr/bin/env bash
-# Runtime I-Fuse: 20M warmup, then measure until end of each simpoint zip
+# Runtime I-Fuse: 10M warmup + 10M measured window
 # =============================================================================
-# Descriptor : runtime_ifuse_20m_warmup_rest_of_trace.json
+# Descriptor : runtime_ifuse_10m_warmup_10m_run.json
 # Experiment : simulations/runtime-ifuse/
 # Layout     : simulations/runtime-ifuse/{baseline|runtime_ifuse}/{app}/{simpoint}/
 #              (suite/subsuite nesting is removed after the run for easy commits)
 #
-# Window     : --full_warmup 20000000 --inst_limit 200000000
-#              (200M is a ceiling; Scarab stops at EOF if the zip is shorter)
+# Window     : --full_warmup 10000000 --inst_limit 20000000
 # Workloads  : all apps under /dev/shm/baseline/simpoint_traces (except suite dirs)
 #
-# Approximate measured windows after 20M warmup:
-#   sssp_ego_fb              ~10M
-#   appworld/4, core_bench/4 ~30M
-#   most 60M zips            ~40M
-#   bfs/dfs/pagerank         ~70M
-#
 # Usage:
-#   ./runtime_ifuse_20m_warmup_rest_of_trace.sh              # register, build, sim, finalize
-#   ./runtime_ifuse_20m_warmup_rest_of_trace.sh --sim-only   # register + sim + finalize
-#   ./runtime_ifuse_20m_warmup_rest_of_trace.sh --status
-#   ./runtime_ifuse_20m_warmup_rest_of_trace.sh --collect-stats
-#   ./runtime_ifuse_20m_warmup_rest_of_trace.sh --finalize   # flatten layout + strip junk
-#   ./runtime_ifuse_20m_warmup_rest_of_trace.sh --visualize
+#   ./runtime_ifuse_10m_warmup_10m_run.sh              # register, build, sim, finalize
+#   ./runtime_ifuse_10m_warmup_10m_run.sh --sim-only   # register + sim + finalize
+#   ./runtime_ifuse_10m_warmup_10m_run.sh --status
+#   ./runtime_ifuse_10m_warmup_10m_run.sh --collect-stats
+#   ./runtime_ifuse_10m_warmup_10m_run.sh --finalize   # flatten layout + strip junk
+#   ./runtime_ifuse_10m_warmup_10m_run.sh --visualize
 #
 # Finalize removes job logs, scarab binaries, and the datacenter/datacenter/
 # nesting so the tree is commit-friendly under src/simulations/runtime-ifuse/.
@@ -30,7 +23,7 @@
 set -euo pipefail
 
 INFRA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-DESCRIPTOR="hpca2027/runtime_ifuse_20m_warmup_rest_of_trace"
+DESCRIPTOR="hpca2027/runtime_ifuse_10m_warmup_10m_run"
 TRACES_DIR="/dev/shm/baseline/simpoint_traces"
 EXPERIMENT_DIR="/users/deepmish/scarab/src/simulations/runtime-ifuse"
 SUITE="datacenter"
@@ -52,7 +45,7 @@ fi
 
 usage() {
   cat <<'EOF'
-Usage: runtime_ifuse_20m_warmup_rest_of_trace.sh [option]
+Usage: runtime_ifuse_10m_warmup_10m_run.sh [option]
 
   (default)          Register traces, build Scarab, simulate, collect stats, finalize
   --sim-only         Register traces, simulate, collect stats, finalize (skip build)
