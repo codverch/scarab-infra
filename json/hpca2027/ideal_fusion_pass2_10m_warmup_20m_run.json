@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "baseline",
+  "experiment": "ideal-fusion",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -34,8 +34,8 @@
     }
   ],
   "configurations": {
-    "baseline": {
-      "params": "--icache_size 32768 --inst_limit 20000000 --full_warmup 10000000",
+    "pass2": {
+      "params": "--inst_limit 30000000 --full_warmup 10000000 --ideal_fusion_pass 2 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{workload}/{cluster_id}.csv",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
@@ -45,22 +45,20 @@
     "configs": null
   },
   "visualize": {
-    "baseline": "baseline",
+    "baseline": "pass2",
     "configs": [],
     "counters": [
       "IPC"
-    ],
-    "average": false
+    ]
   },
   "mem": {
     "collection_baseline": null,
     "fallback_mb": 16384
   },
   "perf_analyze": {
-    "baseline": "baseline",
+    "baseline": "pass2",
     "counters": [
-      "IPC",
-      "ICACHE_MISS"
+      "IPC"
     ],
     "stat_groups": [
       "bp",
@@ -68,7 +66,7 @@
       "core"
     ],
     "compare_all_stats": false,
-    "drift_top_workloads": 4,
+    "drift_top_workloads": 5,
     "drift_top_simpoints": 5,
     "prompt_budget_tokens": 12000,
     "threshold_pct": 2.0,

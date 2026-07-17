@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "runtime-ifuse",
+  "experiment": "baseline",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -35,13 +35,7 @@
   ],
   "configurations": {
     "baseline": {
-      "params": "--icache_size 32768 --inst_limit 20000000 --full_warmup 10000000 --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0",
-      "binary": "scarab_current",
-      "slurm_options": "",
-      "memory_overhead_mb": 0
-    },
-    "runtime_ifuse": {
-      "params": "--icache_size 32768 --inst_limit 20000000 --full_warmup 10000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 10",
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 10000000",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
@@ -52,20 +46,9 @@
   },
   "visualize": {
     "baseline": "baseline",
-    "configs": [
-      "runtime_ifuse"
-    ],
+    "configs": [],
     "counters": [
-      "IPC",
-      "IFUSE_FUSED_LOADS",
-      "IFUSE_LOAD1_PREDICTIONS",
-      "IFUSE_CORRECT_PREDICTIONS",
-      "IFUSE_INCORRECT_PREDICTIONS",
-      "IFUSE_MISPREDICTED_LOADS",
-      "IFUSE_TRAINING_PAIRS_DISCOVERED",
-      "TRAINING_TABLE_OBSERVATIONS",
-      "TRAINING_TABLE_PROMOTIONS",
-      "TRAINING_TABLE_PROMOTION_REJECTS"
+      "IPC"
     ],
     "average": false
   },
@@ -77,10 +60,7 @@
     "baseline": "baseline",
     "counters": [
       "IPC",
-      "IFUSE_FUSED_LOADS",
-      "IFUSE_CORRECT_PREDICTIONS",
-      "IFUSE_INCORRECT_PREDICTIONS",
-      "TRAINING_TABLE_PROMOTIONS"
+      "ICACHE_MISS"
     ],
     "stat_groups": [
       "bp",

@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "ideal-fusion",
+  "experiment": "runtime-ifuse",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -34,8 +34,14 @@
     }
   ],
   "configurations": {
-    "pass2": {
-      "params": "--inst_limit 20000000 --full_warmup 10000000 --ideal_fusion_pass 2 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{workload}/{cluster_id}.csv",
+    "baseline": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 10000000 --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "runtime_ifuse": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 10000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 10",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
@@ -45,20 +51,36 @@
     "configs": null
   },
   "visualize": {
-    "baseline": "pass2",
-    "configs": [],
+    "baseline": "baseline",
+    "configs": [
+      "runtime_ifuse"
+    ],
     "counters": [
-      "IPC"
-    ]
+      "IPC",
+      "IFUSE_FUSED_LOADS",
+      "IFUSE_LOAD1_PREDICTIONS",
+      "IFUSE_CORRECT_PREDICTIONS",
+      "IFUSE_INCORRECT_PREDICTIONS",
+      "IFUSE_MISPREDICTED_LOADS",
+      "IFUSE_TRAINING_PAIRS_DISCOVERED",
+      "TRAINING_TABLE_OBSERVATIONS",
+      "TRAINING_TABLE_PROMOTIONS",
+      "TRAINING_TABLE_PROMOTION_REJECTS"
+    ],
+    "average": false
   },
   "mem": {
     "collection_baseline": null,
     "fallback_mb": 16384
   },
   "perf_analyze": {
-    "baseline": "pass2",
+    "baseline": "baseline",
     "counters": [
-      "IPC"
+      "IPC",
+      "IFUSE_FUSED_LOADS",
+      "IFUSE_CORRECT_PREDICTIONS",
+      "IFUSE_INCORRECT_PREDICTIONS",
+      "TRAINING_TABLE_PROMOTIONS"
     ],
     "stat_groups": [
       "bp",
@@ -66,7 +88,7 @@
       "core"
     ],
     "compare_all_stats": false,
-    "drift_top_workloads": 5,
+    "drift_top_workloads": 4,
     "drift_top_simpoints": 5,
     "prompt_budget_tokens": 12000,
     "threshold_pct": 2.0,
