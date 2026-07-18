@@ -1,0 +1,94 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "in",
+  "experiment": "helios",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/scarab/src",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline/simpoint_traces",
+  "workload_db": "baseline.json",
+  "top_simpoint": false,
+  "_comment": "No Scarab warmup; inst_limit=91000000 (>= max SP 90000000). Each simpoint runs to EOF (full available instructions).",
+  "simulations": [
+    {
+      "suite": "datacenter",
+      "subsuite": "datacenter",
+      "workload": [
+        "appworld",
+        "bc",
+        "bfs",
+        "community",
+        "connected_components",
+        "core_bench",
+        "dfs",
+        "duckdb",
+        "leveldb",
+        "mlgym_fmnist",
+        "pagerank",
+        "rocksdb",
+        "sssp_ego_fb",
+        "terminal_bench"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 0
+    }
+  ],
+  "configurations": {
+    "helios": {
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --helios_do_fusion 1 --helios_enable_flushes 1 --helios_confidence_threshold 150 --helios_confidence_increment 10 --helios_confidence_decrement 10 --helios_fusion_window 64 --helios_fuse_stores 1 --helios_fused_wait_tail_srcs 1 --helios_extended_commit_group 1",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "helios",
+    "configs": [],
+    "counters": [
+      "IPC",
+      "HELIOS_FUSIONS",
+      "HELIOS_FUSION_CANDIDATES",
+      "HELIOS_FUSIONS_COMMITTED",
+      "HELIOS_FUSION_MISPREDICT",
+      "HELIOS_FLUSHES",
+      "HELIOS_ONPATH_LOADS",
+      "HELIOS_ONPATH_STORES",
+      "HELIOS_DCACHE_PORTS_SAVED",
+      "HELIOS_SELECTOR_LOCAL_WINS",
+      "HELIOS_SELECTOR_GLOBAL_WINS"
+    ],
+    "average": false
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 16384
+  },
+  "perf_analyze": {
+    "baseline": "helios",
+    "counters": [
+      "IPC",
+      "HELIOS_FUSIONS",
+      "HELIOS_FUSIONS_COMMITTED",
+      "HELIOS_FUSION_MISPREDICT",
+      "HELIOS_FLUSHES",
+      "HELIOS_DCACHE_PORTS_SAVED"
+    ],
+    "stat_groups": [
+      "bp",
+      "fetch",
+      "core"
+    ],
+    "compare_all_stats": false,
+    "drift_top_workloads": 4,
+    "drift_top_simpoints": 5,
+    "prompt_budget_tokens": 12000,
+    "threshold_pct": 2.0,
+    "analyzer_cli_cmd": "codex"
+  }
+}

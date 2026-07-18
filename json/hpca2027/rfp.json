@@ -1,0 +1,133 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "rfp",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/scarab/src",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline/simpoint_traces",
+  "workload_db": "baseline.json",
+  "top_simpoint": false,
+  "_comment": "Register File Prefetch (RFP) sweep: baseline (--rfp_on 0) vs rfp (--rfp_on 1). No Scarab warmup; each simpoint runs to EOF.",
+  "simulations": [
+    {
+      "suite": "datacenter",
+      "subsuite": "datacenter",
+      "workload": [
+        "appworld",
+        "bc",
+        "bfs",
+        "core_bench",
+        "dfs",
+        "duckdb",
+        "leveldb",
+        "mlgym_fmnist",
+        "pagerank",
+        "rocksdb",
+        "sssp_ego_fb",
+        "terminal_bench"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 0
+    }
+  ],
+  "configurations": {
+    "baseline": {
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --rfp_on 0",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "rfp": {
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --rfp_on 1",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "baseline",
+    "configs": [
+      "rfp"
+    ],
+    "counters": [
+      "IPC",
+      "LD_EXEC_MINUS_FETCH_LATENCY",
+      "LD_RETIRE_MINUS_FETCH_LATENCY",
+      "LD_EXEC_TO_DONE_LATENCY",
+      "RFP_ALL_LOADS",
+      "RFP_ELIGIBLE",
+      "RFP_ISSUED",
+      "RFP_ELIGIBLE_NOT_ISSUED",
+      "RFP_PREFETCH_EXECUTED",
+      "RFP_USED_NO_DEMAND",
+      "RFP_NUM_PREFETCHED_LOADS",
+      "RFP_COVERAGE",
+      "RFP_ON_TIME",
+      "RFP_FULL_MITIGATED",
+      "RFP_PARTIAL_MITIGATED",
+      "RFP_DROPPED_SINCE_LOAD_BEAT_PREFETCH",
+      "RFP_PRED_RESOLVED",
+      "RFP_PRED_CORRECT",
+      "RFP_PRED_WRONG_LINE",
+      "RFP_PRED_WRONG_ADDR",
+      "RFP_PREDICTION_WRONG",
+      "RFP_SAVED_CYCLES",
+      "RFP_TOTAL_CYCLES_SAVED",
+      "RFP_AVG_LAT_REDUCTION_PER_PREF",
+      "RFP_AVG_LAT_REDUCTION_FULL",
+      "RFP_AVG_LAT_REDUCTION_PARTIAL",
+      "RFP_REMAINING_LAT_SERVED",
+      "RFP_LD_EXEC_MINUS_FETCH",
+      "RFP_LD_RETIRE_MINUS_FETCH",
+      "RFP_LD_EXEC_TO_DONE",
+      "RFP_LD_EXEC_TO_DONE_SERVED",
+      "RFP_LD_EXEC_TO_DONE_DEMAND",
+      "RFP_RETIRE_COVERED"
+    ],
+    "average": false
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 16384
+  },
+  "perf_analyze": {
+    "baseline": "baseline",
+    "counters": [
+      "IPC",
+      "LD_EXEC_MINUS_FETCH_LATENCY",
+      "LD_RETIRE_MINUS_FETCH_LATENCY",
+      "LD_EXEC_TO_DONE_LATENCY",
+      "RFP_COVERAGE",
+      "RFP_PRED_CORRECT",
+      "RFP_USED_NO_DEMAND",
+      "RFP_NUM_PREFETCHED_LOADS",
+      "RFP_ON_TIME",
+      "RFP_TOTAL_CYCLES_SAVED",
+      "RFP_AVG_LAT_REDUCTION_PER_PREF",
+      "RFP_AVG_LAT_REDUCTION_FULL",
+      "RFP_AVG_LAT_REDUCTION_PARTIAL",
+      "RFP_REMAINING_LAT_SERVED",
+      "RFP_LD_EXEC_TO_DONE",
+      "RFP_LD_EXEC_TO_DONE_SERVED",
+      "RFP_LD_EXEC_TO_DONE_DEMAND"
+    ],
+    "stat_groups": [
+      "bp",
+      "fetch",
+      "core"
+    ],
+    "compare_all_stats": false,
+    "drift_top_workloads": 4,
+    "drift_top_simpoints": 5,
+    "prompt_budget_tokens": 12000,
+    "threshold_pct": 2.0,
+    "analyzer_cli_cmd": "codex"
+  }
+}
