@@ -1,31 +1,27 @@
 # HPCA 2027 simulation descriptors
 
-Traces under `/dev/shm/baseline/simpoint_traces`.
+Traces under `/dev/shm/baseline/simpoint_traces` (all apps with `traces_simp/trace/*.zip`).
 
-## 50M + 50M per-app budget (split across simpoints)
+## Full-trace, no warmup
 
-`runtime_ifuse_50m_warmup_50m_app_budget.sh` targets **~50M warmup + ~50M measure per app** by setting, for each app with `n` simpoints:
+| | Value |
+|--|--|
+| `full_warmup` | `0` |
+| `inst_limit` | suite max SP size + 1M (each SP runs to EOF) |
 
-| | Formula |
-|--|---------|
-| `full_warmup` | `50e6 // n` |
-| `inst_limit` | `2 * (50e6 // n)` |
+Separate experiments — runtime I-Fuse does **not** also run baseline:
 
-Scarab-infra cannot attach different params to different workloads in one descriptor, so the launcher writes one generated JSON per unique `n` under `generated/` and runs them into the same experiment.
-
-Excludes `sssp_ego_fb`. Preview with `--dry-run`.
-
-## Descriptors
-
-| File | Experiment dir | Configs |
-|------|----------------|---------|
-| `runtime_ifuse_50m_warmup_50m_app_budget.json` | `simulations/runtime-ifuse-50m-app-budget/` | `baseline`, `runtime_ifuse` |
-
-## Launch
+| Launcher | Descriptor | Experiment dir | Config |
+|----------|------------|----------------|--------|
+| `runtime_ifuse.sh` | `runtime_ifuse.json` | `simulations/runtime-ifuse/` | `runtime_ifuse` |
+| `baseline.sh` | `baseline.json` | `simulations/baseline/` | `baseline` |
 
 ```bash
 cd ~/scarab-infra
-./json/hpca2027/runtime_ifuse_50m_warmup_50m_app_budget.sh --dry-run   # budget table
-./json/hpca2027/runtime_ifuse_50m_warmup_50m_app_budget.sh             # full run
-./json/hpca2027/runtime_ifuse_50m_warmup_50m_app_budget.sh --sim-only
+./json/hpca2027/baseline.sh --sim-only
+./json/hpca2027/runtime_ifuse.sh --sim-only
+
+# or:
+./sci --sim hpca2027/baseline
+./sci --sim hpca2027/runtime_ifuse
 ```

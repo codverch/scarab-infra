@@ -4,6 +4,7 @@
 
 import json
 import os
+import fcntl
 import subprocess
 import re
 import shlex
@@ -973,6 +974,31 @@ def _build_missing_scarab_version(
 
 # Wrapper function that handles rebuilding scarab if needed, and caching
 def rebuild_scarab(infra_dir, scarab_path, user, docker_home, docker_prefix, githash, scarab_githash, scarab_build, stream_build=False, dbg_lvl=1):
+    # Serialize rebuilds across concurrent `./sci --sim` processes (parallel n-groups).
+    # Without this, they race on the shared docker name `{image}_{user}_scarab_build`.
+    builds_dir = Path(infra_dir) / "scarab_builds"
+    builds_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = builds_dir / ".rebuild.lock"
+    with open(lock_path, "a+", encoding="utf-8") as lockf:
+        fcntl.flock(lockf, fcntl.LOCK_EX)
+        try:
+            return _rebuild_scarab_locked(
+                infra_dir,
+                scarab_path,
+                user,
+                docker_home,
+                docker_prefix,
+                githash,
+                scarab_githash,
+                scarab_build,
+                stream_build=stream_build,
+                dbg_lvl=dbg_lvl,
+            )
+        finally:
+            fcntl.flock(lockf, fcntl.LOCK_UN)
+
+
+def _rebuild_scarab_locked(infra_dir, scarab_path, user, docker_home, docker_prefix, githash, scarab_githash, scarab_build, stream_build=False, dbg_lvl=1):
     build_mode = scarab_build if scarab_build else "opt"
     current_cache_name = _cache_bin_name("scarab_current", build_mode)
     current_scarab_bin = f"{infra_dir}/scarab_builds/{current_cache_name}"

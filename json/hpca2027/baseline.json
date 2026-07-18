@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "runtime-ifuse-50m-app-budget",
+  "experiment": "baseline",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -10,7 +10,7 @@
   "traces_dir": "/dev/shm/baseline/simpoint_traces",
   "workload_db": "baseline.json",
   "top_simpoint": false,
-  "_comment": "Master descriptor for status/collect-stats/visualize. Per-app warmup/inst_limit are applied by runtime_ifuse_50m_warmup_50m_app_budget.sh (50M warm + 50M measure split across that app's simpoints). Do not ./sci --sim this file directly \u2014 params here are placeholders.",
+  "_comment": "No Scarab warmup; inst_limit=91000000 (>= max SP 90000000). Each simpoint runs to EOF (full available instructions).",
   "simulations": [
     {
       "suite": "datacenter",
@@ -19,6 +19,8 @@
         "appworld",
         "bc",
         "bfs",
+        "community",
+        "connected_components",
         "core_bench",
         "dfs",
         "duckdb",
@@ -26,6 +28,7 @@
         "mlgym_fmnist",
         "pagerank",
         "rocksdb",
+        "sssp_ego_fb",
         "terminal_bench"
       ],
       "cluster_id": null,
@@ -35,13 +38,7 @@
   ],
   "configurations": {
     "baseline": {
-      "params": "--icache_size 32768 --inst_limit 50000000 --full_warmup 25000000 --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0",
-      "binary": "scarab_current",
-      "slurm_options": "",
-      "memory_overhead_mb": 0
-    },
-    "runtime_ifuse": {
-      "params": "--icache_size 32768 --inst_limit 50000000 --full_warmup 25000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 10",
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
@@ -52,20 +49,9 @@
   },
   "visualize": {
     "baseline": "baseline",
-    "configs": [
-      "runtime_ifuse"
-    ],
+    "configs": [],
     "counters": [
-      "IPC",
-      "IFUSE_FUSED_LOADS",
-      "IFUSE_LOAD1_PREDICTIONS",
-      "IFUSE_CORRECT_PREDICTIONS",
-      "IFUSE_INCORRECT_PREDICTIONS",
-      "IFUSE_MISPREDICTED_LOADS",
-      "IFUSE_TRAINING_PAIRS_DISCOVERED",
-      "TRAINING_TABLE_OBSERVATIONS",
-      "TRAINING_TABLE_PROMOTIONS",
-      "TRAINING_TABLE_PROMOTION_REJECTS"
+      "IPC"
     ],
     "average": false
   },
@@ -76,11 +62,7 @@
   "perf_analyze": {
     "baseline": "baseline",
     "counters": [
-      "IPC",
-      "IFUSE_FUSED_LOADS",
-      "IFUSE_CORRECT_PREDICTIONS",
-      "IFUSE_INCORRECT_PREDICTIONS",
-      "TRAINING_TABLE_PROMOTIONS"
+      "IPC"
     ],
     "stat_groups": [
       "bp",

@@ -1,0 +1,289 @@
+#!/usr/bin/env bash
+# Shared helpers for hpca2027 full-trace (no warmup) launchers.
+# Required vars set by caller before sourcing:
+#   INFRA_DIR, HPCA_DIR, DESCRIPTOR, DESCRIPTOR_JSON, TRACES_DIR, EXPERIMENT_DIR,
+#   SUITE, SUBSUITE, CONFIGS, EXCLUDE_APPS
+
+is_excluded() {
+  local app="$1" x
+  for x in "${EXCLUDE_APPS[@]+"${EXCLUDE_APPS[@]}"}"; do
+    [[ "${app}" == "${x}" ]] && return 0
+  done
+  return 1
+}
+
+discover_workloads() {
+  local d app
+  WORKLOADS=()
+  while IFS= read -r -d '' d; do
+    app="$(basename "${d}")"
+    if [[ "${app}" == .* ]]; then
+      continue
+    fi
+    if is_excluded "${app}"; then
+      continue
+    fi
+    if ! compgen -G "${d}/traces_simp/trace/*.zip" > /dev/null; then
+      continue
+    fi
+    WORKLOADS+=("${app}")
+  done < <(find "${TRACES_DIR}" -mindepth 1 -maxdepth 1 -type d ! -name "${SUITE}" -print0 | sort -z)
+}
+
+usage_full_trace() {
+  local name
+  name="$(basename "$0")"
+  cat <<EOF
+Usage: ${name} [option]
+
+  (default)          Register traces, build Scarab, sim (full SP, no warmup), finalize
+  --sim-only         Register + update JSON + sim + finalize (skip build)
+  --dry-run          Print per-app SP capacity and update descriptor only
+  --status           Show simulation status
+  --collect-stats    Collect stats only
+  --finalize         Flatten to {config}/{app}/{simpoint} and strip binaries/logs
+  --visualize        Run descriptor visualization
+  -h, --help         Show this help
+EOF
+}
+
+# Refresh workload list + full_warmup=0 / inst_limit=suite_max+1M on every
+# configuration entry present in the descriptor JSON.
+update_descriptor() {
+  discover_workloads
+  if [[ ${#WORKLOADS[@]} -eq 0 ]]; then
+    echo "ERROR: no workloads found under ${TRACES_DIR}" >&2
+    exit 1
+  fi
+
+  python3 - "${TRACES_DIR}" "${DESCRIPTOR_JSON}" "${WORKLOADS[@]}" <<'PY'
+import json, sys, zipfile
+from pathlib import Path
+
+traces_dir = Path(sys.argv[1])
+desc_path = Path(sys.argv[2])
+workloads = sys.argv[3:]
+
+def segment_size(app_dir: Path):
+    for p in [app_dir / "fingerprint" / "segment_size", app_dir / "simpoints" / "segment_size"]:
+        if p.is_file():
+            try:
+                return int(p.read_text().strip().split()[0])
+            except Exception:
+                pass
+    cl = app_dir / "trace_clustering_info.json"
+    if cl.is_file():
+        c = json.loads(cl.read_text())
+        if "segment_size" in c:
+            return int(c["segment_size"])
+    return None
+
+def sp_insts(app_dir: Path):
+    rel = app_dir / "RELEASE_MANIFEST.json"
+    if rel.is_file():
+        out = []
+        for sp in json.loads(rel.read_text()).get("simpoints", []):
+            out.append(int(sp["captured_fetched_instructions"]))
+        if out:
+            return out
+    seg = segment_size(app_dir)
+    zdir = app_dir / "traces_simp" / "trace"
+    out = []
+    for z in sorted(zdir.glob("*.zip"), key=lambda p: int(p.stem) if p.stem.isdigit() else p.stem):
+        with zipfile.ZipFile(z) as zf:
+            chunks = sum(1 for n in zf.namelist() if Path(n).name.startswith("chunk."))
+        if seg is None:
+            raise SystemExit(f"{app_dir.name}: missing segment_size and RELEASE_MANIFEST")
+        out.append(chunks * seg)
+    return out
+
+rows = []
+suite_max = 0
+for app in workloads:
+    vals = sp_insts(traces_dir / app)
+    if not vals:
+        print(f"WARN: {app}: no simpoints, skipping", file=sys.stderr)
+        continue
+    rows.append((app, len(vals), min(vals), max(vals), sum(vals)))
+    suite_max = max(suite_max, max(vals))
+
+if not rows:
+    raise SystemExit("no apps with simpoints")
+
+inst_limit = suite_max + 1_000_000
+
+print(f"{'app':16} {'n_sp':>4} {'min/SP':>12} {'max/SP':>12} {'app TOTAL':>14}")
+print("-" * 64)
+for app, n, mn, mx, tot in rows:
+    print(f"{app:16} {n:4} {mn:12,} {mx:12,} {tot:14,}")
+print(f"\nfull_warmup=0  inst_limit={inst_limit:,}  (suite max SP={suite_max:,} + 1M pad)")
+
+desc = json.loads(desc_path.read_text())
+desc["simulations"][0]["workload"] = [r[0] for r in rows]
+desc["_comment"] = (
+    f"No Scarab warmup; inst_limit={inst_limit} (>= max SP {suite_max}). "
+    "Each simpoint runs to EOF (full available instructions)."
+)
+
+common = f"--icache_size 32768 --inst_limit {inst_limit} --full_warmup 0"
+for name, cfg in desc.get("configurations", {}).items():
+    if name == "runtime_ifuse":
+        cfg["params"] = (
+            f"{common} --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 "
+            f"--ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 "
+            f"--ifuse_fct_hash_bits 10"
+        )
+    elif name == "baseline":
+        cfg["params"] = (
+            f"{common} --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0"
+        )
+    else:
+        # Preserve unknown configs but force window.
+        prev = cfg.get("params", "")
+        # Strip old inst_limit / full_warmup if present, then prepend common.
+        cfg["params"] = f"{common} {prev}".strip()
+
+desc_path.write_text(json.dumps(desc, indent=2) + "\n")
+print(f"Updated {desc_path}")
+print(f"Configs: {list(desc.get('configurations', {}))}")
+PY
+}
+
+register_traces() {
+  discover_workloads
+  if [[ ${#WORKLOADS[@]} -eq 0 ]]; then
+    echo "ERROR: no workloads found under ${TRACES_DIR}" >&2
+    exit 1
+  fi
+  echo "Registering ${#WORKLOADS[@]} workload(s): ${WORKLOADS[*]}"
+  python -m scripts.register_local_traces \
+    --traces-dir "${TRACES_DIR}" \
+    --workloads "${WORKLOADS[@]}" \
+    --warmup 0
+}
+
+write_experiment_gitignore() {
+  mkdir -p "${EXPERIMENT_DIR}"
+  cat > "${EXPERIMENT_DIR}/.gitignore" <<'EOF'
+# Job / infrastructure noise (do not commit)
+logs/
+scarab_stage/
+**/scarab_current*
+**/scarab_*
+**/*.warmup
+**/ramulator.stat.out
+**/PARAMS.in
+EOF
+}
+
+finalize_results() {
+  if [[ ! -d "${EXPERIMENT_DIR}" ]]; then
+    echo "ERROR: experiment dir not found: ${EXPERIMENT_DIR}" >&2
+    exit 1
+  fi
+
+  echo "Finalizing ${EXPERIMENT_DIR} (flatten + strip binaries/logs)..."
+  write_experiment_gitignore
+
+  for config in "${CONFIGS[@]}"; do
+    local nested="${EXPERIMENT_DIR}/${config}/${SUITE}/${SUBSUITE}"
+    if [[ ! -d "${nested}" ]]; then
+      continue
+    fi
+    mkdir -p "${EXPERIMENT_DIR}/${config}"
+    find "${nested}" -mindepth 1 -maxdepth 1 -type d -print0 | while IFS= read -r -d '' app_dir; do
+      local app dest
+      app="$(basename "${app_dir}")"
+      dest="${EXPERIMENT_DIR}/${config}/${app}"
+      if [[ -e "${dest}" ]]; then
+        echo "  merging ${app_dir} -> ${dest}"
+        mkdir -p "${dest}"
+        find "${app_dir}" -mindepth 1 -maxdepth 1 -print0 | while IFS= read -r -d '' sp; do
+          local sp_name dest_sp
+          sp_name="$(basename "${sp}")"
+          dest_sp="${dest}/${sp_name}"
+          if [[ -e "${dest_sp}" ]]; then
+            rm -rf "${dest_sp}"
+          fi
+          mv "${sp}" "${dest_sp}"
+        done
+        rmdir "${app_dir}" 2>/dev/null || rm -rf "${app_dir}"
+      else
+        echo "  moving ${app_dir} -> ${dest}"
+        mv "${app_dir}" "${dest}"
+      fi
+    done
+    rm -rf "${EXPERIMENT_DIR}/${config}/${SUITE}"
+  done
+
+  rm -rf "${EXPERIMENT_DIR}/logs"
+  find "${EXPERIMENT_DIR}" -type f \( \
+      -name 'scarab_current*' -o \
+      -name 'scarab' -o \
+      -name 'PARAMS.in' -o \
+      -name '*.warmup' -o \
+      -name 'ramulator.stat.out' \
+    \) -delete 2>/dev/null || true
+
+  echo "Final layout:"
+  find "${EXPERIMENT_DIR}" -mindepth 1 -maxdepth 3 -type d | sort | head -80
+  echo "..."
+  echo "Done. Commit-friendly tree is at: ${EXPERIMENT_DIR}"
+}
+
+run_sim() {
+  register_traces
+  update_descriptor
+  write_experiment_gitignore
+  ./sci --sim "${DESCRIPTOR}"
+  ./sci --collect-stats "${DESCRIPTOR}" || true
+  finalize_results
+}
+
+main_full_trace() {
+  cd "${INFRA_DIR}"
+
+  if [[ -f "${HOME}/miniconda3/etc/profile.d/conda.sh" ]]; then
+    # shellcheck source=/dev/null
+    source "${HOME}/miniconda3/etc/profile.d/conda.sh"
+    conda activate scarabinfra 2>/dev/null || true
+  fi
+
+  case "${1:-}" in
+    ""|--all)
+      register_traces
+      update_descriptor
+      write_experiment_gitignore
+      ./sci --build-scarab "${DESCRIPTOR}"
+      ./sci --sim "${DESCRIPTOR}"
+      ./sci --collect-stats "${DESCRIPTOR}" || true
+      finalize_results
+      ;;
+    --sim-only)
+      run_sim
+      ;;
+    --dry-run)
+      update_descriptor
+      ;;
+    --status)
+      ./sci --status "${DESCRIPTOR}"
+      ;;
+    --collect-stats)
+      ./sci --collect-stats "${DESCRIPTOR}"
+      ;;
+    --finalize)
+      finalize_results
+      ;;
+    --visualize)
+      ./sci --visualize "${DESCRIPTOR}"
+      ;;
+    -h|--help)
+      usage_full_trace
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage_full_trace >&2
+      exit 1
+      ;;
+  esac
+}

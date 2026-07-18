@@ -147,6 +147,7 @@ def run_simulation(user, descriptor_data, workloads_data, infra_dir, descriptor_
     process_logs = {}
     tmp_files = set()
     remove_jobs = set()
+    old_job_logs = {}
     log_dir = os.path.join(docker_home, "simulations", experiment_name, "logs")
     log_files = set()
     log_index = 0
