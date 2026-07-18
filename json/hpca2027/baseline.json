@@ -38,7 +38,7 @@
   ],
   "configurations": {
     "baseline": {
-      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0",
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0

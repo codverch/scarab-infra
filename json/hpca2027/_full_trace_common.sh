@@ -269,9 +269,8 @@ for name, cfg in desc.get("configurations", {}).items():
         if has_rfp:
             cfg["params"] = f"{common} --rfp_on 0"
         else:
-            cfg["params"] = (
-                f"{common} --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0"
-            )
+            # Baseline Scarab has no iFuse knobs; do not pass --ifuse_*.
+            cfg["params"] = common
     elif name == "pass1":
         cfg["params"] = (
             f"{common} --ideal_fusion_pass 1 "
