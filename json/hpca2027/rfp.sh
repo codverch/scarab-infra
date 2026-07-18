@@ -29,8 +29,8 @@ SUBSUITE="datacenter"
 CONFIGS=(baseline rfp)
 # Keep {config}/{app}/{sp} so baseline and rfp do not overwrite each other.
 KEEP_CONFIG_NESTING=1
-# Empty = all apps under TRACES_DIR.
-EXCLUDE_APPS=()
+# Broken/unportable traces (module mapper crash).
+EXCLUDE_APPS=(community connected_components)
 
 # shellcheck source=/dev/null
 source "${HPCA_DIR}/_full_trace_common.sh"

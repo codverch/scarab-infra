@@ -19,8 +19,6 @@
         "appworld",
         "bc",
         "bfs",
-        "community",
-        "connected_components",
         "core_bench",
         "dfs",
         "duckdb",
