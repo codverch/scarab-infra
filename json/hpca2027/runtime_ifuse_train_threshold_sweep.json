@@ -1,0 +1,117 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "runtime-ifuse-train-threshold-sweep",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/scarab/src",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline/simpoint_traces",
+  "workload_db": "baseline.json",
+  "top_simpoint": false,
+  "_comment": "No Scarab warmup; inst_limit=91000000 (>= max SP 90000000). Each simpoint runs to EOF (full available instructions).",
+  "simulations": [
+    {
+      "suite": "datacenter",
+      "subsuite": "datacenter",
+      "workload": [
+        "appworld",
+        "bc",
+        "bfs",
+        "community",
+        "connected_components",
+        "core_bench",
+        "dfs",
+        "duckdb",
+        "leveldb",
+        "mlgym_fmnist",
+        "pagerank",
+        "rocksdb",
+        "sssp_ego_fb",
+        "terminal_bench"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 0
+    }
+  ],
+  "configurations": {
+    "train_thresh_10": {
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 10 --ifuse_training_insert_threshold 10",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "train_thresh_100": {
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 10 --ifuse_training_insert_threshold 100",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "train_thresh_1000": {
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 10 --ifuse_training_insert_threshold 1000",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "train_thresh_10000": {
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 10 --ifuse_training_insert_threshold 10000",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "train_thresh_1000",
+    "configs": [
+      "train_thresh_10",
+      "train_thresh_100",
+      "train_thresh_1000",
+      "train_thresh_10000"
+    ],
+    "counters": [
+      "IPC",
+      "IFUSE_FUSED_LOADS",
+      "IFUSE_LOAD1_PREDICTIONS",
+      "IFUSE_CORRECT_PREDICTIONS",
+      "IFUSE_INCORRECT_PREDICTIONS",
+      "IFUSE_MISPREDICTED_LOADS",
+      "IFUSE_TRAINING_PAIRS_DISCOVERED",
+      "TRAINING_TABLE_OBSERVATIONS",
+      "TRAINING_TABLE_PROMOTIONS",
+      "TRAINING_TABLE_PROMOTION_REJECTS",
+      "FCT_RUNTIME_INSERTS",
+      "FCT_RUNTIME_CONFLICTS"
+    ],
+    "average": false
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 16384
+  },
+  "perf_analyze": {
+    "baseline": "train_thresh_1000",
+    "counters": [
+      "IPC",
+      "IFUSE_FUSED_LOADS",
+      "IFUSE_CORRECT_PREDICTIONS",
+      "IFUSE_INCORRECT_PREDICTIONS",
+      "TRAINING_TABLE_PROMOTIONS"
+    ],
+    "stat_groups": [
+      "bp",
+      "fetch",
+      "core"
+    ],
+    "compare_all_stats": false,
+    "drift_top_workloads": 4,
+    "drift_top_simpoints": 5,
+    "prompt_budget_tokens": 12000,
+    "threshold_pct": 2.0,
+    "analyzer_cli_cmd": "codex"
+  }
+}

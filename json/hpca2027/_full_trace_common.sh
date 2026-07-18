@@ -213,12 +213,25 @@ desc["_comment"] = (
 )
 
 common = f"--icache_size 32768 --inst_limit {inst_limit} --full_warmup 0"
+runtime_ifuse_knobs = (
+    "--ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 "
+    "--ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 10"
+)
 for name, cfg in desc.get("configurations", {}).items():
     if name == "runtime_ifuse":
         cfg["params"] = (
-            f"{common} --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 "
-            f"--ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 "
-            f"--ifuse_fct_hash_bits 10"
+            f"{common} {runtime_ifuse_knobs} "
+            f"--ifuse_training_insert_threshold 1000"
+        )
+    elif name.startswith("train_thresh_"):
+        # Sweep configs: train_thresh_10 / _100 / _1000 / _10000
+        try:
+            thresh = int(name[len("train_thresh_"):])
+        except ValueError:
+            raise SystemExit(f"bad train_thresh config name: {name}")
+        cfg["params"] = (
+            f"{common} {runtime_ifuse_knobs} "
+            f"--ifuse_training_insert_threshold {thresh}"
         )
     elif name == "baseline":
         cfg["params"] = (
@@ -293,16 +306,61 @@ _move_app_to_experiment_root() {
   fi
 }
 
+# Flatten suite/subsuite under each config to {config}/{app}/{simpoint}/.
+# Used for multi-config sweeps where configs must not share an app root.
+_flatten_config_keep_nesting() {
+  local config="$1"
+  local nested="${EXPERIMENT_DIR}/${config}/${SUITE}/${SUBSUITE}"
+  local flat_config="${EXPERIMENT_DIR}/${config}"
+
+  if [[ -d "${nested}" ]]; then
+    find "${nested}" -mindepth 1 -maxdepth 1 -type d -print0 | while IFS= read -r -d '' app_dir; do
+      local app dest
+      app="$(basename "${app_dir}")"
+      dest="${flat_config}/${app}"
+      if [[ -e "${dest}" ]]; then
+        echo "  merging ${app_dir} -> ${dest}"
+        mkdir -p "${dest}"
+        find "${app_dir}" -mindepth 1 -maxdepth 1 -print0 | while IFS= read -r -d '' sp; do
+          local sp_name dest_sp
+          sp_name="$(basename "${sp}")"
+          dest_sp="${dest}/${sp_name}"
+          if [[ -e "${dest_sp}" ]]; then
+            rm -rf "${dest_sp}"
+          fi
+          mv "${sp}" "${dest_sp}"
+        done
+        rmdir "${app_dir}" 2>/dev/null || rm -rf "${app_dir}"
+      else
+        echo "  moving ${app_dir} -> ${dest}"
+        mv "${app_dir}" "${dest}"
+      fi
+    done
+    rm -rf "${flat_config}/${SUITE}"
+  fi
+}
+
 finalize_results() {
   if [[ ! -d "${EXPERIMENT_DIR}" ]]; then
     echo "ERROR: experiment dir not found: ${EXPERIMENT_DIR}" >&2
     exit 1
   fi
 
-  echo "Finalizing ${EXPERIMENT_DIR} -> {app}/{simpoint}/ (no config/suite/logs)..."
+  # KEEP_CONFIG_NESTING=1 -> {config}/{app}/{sp}/ (multi-config sweeps)
+  # default         -> {app}/{sp}/               (single-config experiments)
+  if [[ "${KEEP_CONFIG_NESTING:-0}" == "1" ]]; then
+    echo "Finalizing ${EXPERIMENT_DIR} -> {config}/{app}/{simpoint}/ ..."
+  else
+    echo "Finalizing ${EXPERIMENT_DIR} -> {app}/{simpoint}/ (no config/suite/logs)..."
+  fi
   write_experiment_gitignore
 
   for config in "${CONFIGS[@]}"; do
+    if [[ "${KEEP_CONFIG_NESTING:-0}" == "1" ]]; then
+      _flatten_config_keep_nesting "${config}"
+      continue
+    fi
+
     local nested="${EXPERIMENT_DIR}/${config}/${SUITE}/${SUBSUITE}"
     local flat_config="${EXPERIMENT_DIR}/${config}"
 
@@ -338,8 +396,15 @@ finalize_results() {
       -name 'job_*.err' \
     \) -delete 2>/dev/null || true
 
-  echo "Final layout (apps at experiment root):"
-  find "${EXPERIMENT_DIR}" -mindepth 1 -maxdepth 2 \( -type d -o -type f \) | sort | head -80
-  echo "..."
-  echo "Done. Commit-friendly tree: ${EXPERIMENT_DIR}/{app}/{simpoint}/"
+  if [[ "${KEEP_CONFIG_NESTING:-0}" == "1" ]]; then
+    echo "Final layout (configs kept):"
+    find "${EXPERIMENT_DIR}" -mindepth 1 -maxdepth 3 \( -type d -o -type f \) | sort | head -80
+    echo "..."
+    echo "Done. Commit-friendly tree: ${EXPERIMENT_DIR}/{config}/{app}/{simpoint}/"
+  else
+    echo "Final layout (apps at experiment root):"
+    find "${EXPERIMENT_DIR}" -mindepth 1 -maxdepth 2 \( -type d -o -type f \) | sort | head -80
+    echo "..."
+    echo "Done. Commit-friendly tree: ${EXPERIMENT_DIR}/{app}/{simpoint}/"
+  fi
 }
