@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "runtime-ifuse",
+  "experiment": "runtime-ifuse-50m-app-budget",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -10,18 +10,23 @@
   "traces_dir": "/dev/shm/baseline/simpoint_traces",
   "workload_db": "baseline.json",
   "top_simpoint": false,
+  "_comment": "Master descriptor for status/collect-stats/visualize. Per-app warmup/inst_limit are applied by runtime_ifuse_50m_warmup_50m_app_budget.sh (50M warm + 50M measure split across that app's simpoints). Do not ./sci --sim this file directly \u2014 params here are placeholders.",
   "simulations": [
     {
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
+        "appworld",
         "bc",
         "bfs",
-        "community",
-        "connected_components",
+        "core_bench",
         "dfs",
+        "duckdb",
+        "leveldb",
+        "mlgym_fmnist",
         "pagerank",
-        "sssp"
+        "rocksdb",
+        "terminal_bench"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
@@ -30,13 +35,13 @@
   ],
   "configurations": {
     "baseline": {
-      "params": "--icache_size 32768 --inst_limit 20000000 --full_warmup 10000000 --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0",
+      "params": "--icache_size 32768 --inst_limit 50000000 --full_warmup 25000000 --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
     },
     "runtime_ifuse": {
-      "params": "--icache_size 32768 --inst_limit 20000000 --full_warmup 10000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 10",
+      "params": "--icache_size 32768 --inst_limit 50000000 --full_warmup 25000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 10",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0

@@ -1,31 +1,31 @@
 # HPCA 2027 simulation descriptors
 
-CRONO LiveJournal workloads under `/dev/shm/baseline/simpoint_traces`.
+Traces under `/dev/shm/baseline/simpoint_traces`.
 
-| Parameter | Value |
-|-----------|-------|
-| Warmup | 10M (`--full_warmup 10000000`) |
-| Measured | 10M (`--inst_limit 20000000`) |
+## 50M + 50M per-app budget (split across simpoints)
 
-## Workloads
+`runtime_ifuse_50m_warmup_50m_app_budget.sh` targets **~50M warmup + ~50M measure per app** by setting, for each app with `n` simpoints:
 
-`bc`, `bfs`, `community`, `connected_components`, `dfs`, `pagerank`, `sssp`
+| | Formula |
+|--|---------|
+| `full_warmup` | `50e6 // n` |
+| `inst_limit` | `2 * (50e6 // n)` |
+
+Scarab-infra cannot attach different params to different workloads in one descriptor, so the launcher writes one generated JSON per unique `n` under `generated/` and runs them into the same experiment.
+
+Excludes `sssp_ego_fb`. Preview with `--dry-run`.
 
 ## Descriptors
 
 | File | Experiment dir | Configs |
 |------|----------------|---------|
-| `baseline_10m_warmup_10m_run.json` | `simulations/baseline/` | `baseline` |
-| `ideal_fusion_pass2_10m_warmup_10m_run.json` | `simulations/ideal-fusion/` | `pass2` |
-| `runtime_ifuse_10m_warmup_10m_run.json` | `simulations/runtime-ifuse/` | `baseline`, `runtime_ifuse` |
+| `runtime_ifuse_50m_warmup_50m_app_budget.json` | `simulations/runtime-ifuse-50m-app-budget/` | `baseline`, `runtime_ifuse` |
 
 ## Launch
 
 ```bash
 cd ~/scarab-infra
-./sci --build-scarab hpca2027/baseline_10m_warmup_10m_run
-./sci --sim hpca2027/baseline_10m_warmup_10m_run
-
-./json/hpca2027/runtime_ifuse_10m_warmup_10m_run.sh
-./sci --sim hpca2027/ideal_fusion_pass2_10m_warmup_10m_run
+./json/hpca2027/runtime_ifuse_50m_warmup_50m_app_budget.sh --dry-run   # budget table
+./json/hpca2027/runtime_ifuse_50m_warmup_50m_app_budget.sh             # full run
+./json/hpca2027/runtime_ifuse_50m_warmup_50m_app_budget.sh --sim-only
 ```
