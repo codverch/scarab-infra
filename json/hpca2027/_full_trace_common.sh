@@ -226,6 +226,9 @@ runtime_ifuse_knobs = (
     "--ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 "
     "--ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 10"
 )
+# RFP sweep descriptors include both "baseline" and "rfp"; those use --rfp_on
+# instead of I-Fuse knobs (hpca2027-rfp Scarab has no ifuse params).
+has_rfp = "rfp" in desc.get("configurations", {})
 for name, cfg in desc.get("configurations", {}).items():
     if name == "runtime_ifuse":
         cfg["params"] = (
@@ -242,10 +245,15 @@ for name, cfg in desc.get("configurations", {}).items():
             f"{common} {runtime_ifuse_knobs} "
             f"--ifuse_training_insert_threshold {thresh}"
         )
+    elif name == "rfp":
+        cfg["params"] = f"{common} --rfp_on 1"
     elif name == "baseline":
-        cfg["params"] = (
-            f"{common} --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0"
-        )
+        if has_rfp:
+            cfg["params"] = f"{common} --rfp_on 0"
+        else:
+            cfg["params"] = (
+                f"{common} --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0"
+            )
     elif name == "pass1":
         cfg["params"] = (
             f"{common} --ifuse_fusion_distance 0 --ideal_fusion_pass 1 "
