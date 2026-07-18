@@ -11,9 +11,11 @@ Traces under `/dev/shm/baseline/simpoint_traces`.
 
 | Launcher | Experiment dir | Config |
 |----------|----------------|--------|
+| `baseline.sh` | `simulations/baseline/{app}/{sp}/` | `baseline` only |
+| `ideal_fusion_pass1.sh` | `simulations/ideal-fusion-pass1/{app}/{sp}/` | `pass1` — candidates → `/dev/shm/baseline/ideal_fusion_candidates/` |
+| `ideal_fusion_pass2.sh` | `simulations/ideal-fusion-pass2/{app}/{sp}/` | `pass2` — reads candidates from `/dev/shm/baseline/ideal_fusion_candidates/` |
 | `runtime_ifuse.sh` | `simulations/runtime-ifuse/{app}/{sp}/` | `runtime_ifuse` only (threshold=1000) |
 | `runtime_ifuse_train_threshold_sweep.sh` | `simulations/runtime-ifuse-train-threshold-sweep/{config}/{app}/{sp}/` | `train_thresh_{10,100,1000,10000}` |
-| `baseline.sh` | `simulations/baseline/{app}/{sp}/` | `baseline` only |
 
 ## Fast path (recommended)
 
@@ -22,6 +24,8 @@ Do **not** rebuild Scarab/docker every time — that is what makes setup slow.
 ```bash
 cd ~/scarab-infra
 ./json/hpca2027/baseline.sh          # register + sim + finalize (reuses cache)
+./json/hpca2027/ideal_fusion_pass1.sh
+./json/hpca2027/ideal_fusion_pass2.sh   # requires pass-1 candidates
 ./json/hpca2027/runtime_ifuse.sh
 
 # Training-threshold sweep: promote PC pairs to FCT after N=10/100/1000/10000 obs
@@ -29,16 +33,34 @@ cd ~/scarab-infra
 
 # equivalent sci-only (after a one-time --dry-run if JSON is stale):
 ./sci --sim hpca2027/baseline
+./sci --sim hpca2027/ideal_fusion_pass1
+./sci --sim hpca2027/ideal_fusion_pass2
 ./sci --sim hpca2027/runtime_ifuse
 ./sci --sim hpca2027/runtime_ifuse_train_threshold_sweep
 ./json/hpca2027/baseline.sh --finalize
+./json/hpca2027/ideal_fusion_pass1.sh --finalize
+./json/hpca2027/ideal_fusion_pass2.sh --finalize
 ./json/hpca2027/runtime_ifuse.sh --finalize
 ./json/hpca2027/runtime_ifuse_train_threshold_sweep.sh --finalize
+```
+
+Ideal fusion workflow:
+
+```bash
+# Pass-1 writes candidates to tmpfs (not under simulations/)
+./json/hpca2027/ideal_fusion_pass1.sh
+./json/hpca2027/ideal_fusion_pass1.sh --check-candidates
+
+# Pass-2 consumes those candidates; results under simulations/ideal-fusion-pass2/
+./json/hpca2027/ideal_fusion_pass2.sh --check-candidates   # optional preflight
+./json/hpca2027/ideal_fusion_pass2.sh
 ```
 
 Only rebuild when Scarab source or the workload Dockerfile changed:
 
 ```bash
+./json/hpca2027/ideal_fusion_pass1.sh --build
+./json/hpca2027/ideal_fusion_pass2.sh --build
 ./json/hpca2027/runtime_ifuse.sh --build
 ./json/hpca2027/runtime_ifuse_train_threshold_sweep.sh --build
 # or:

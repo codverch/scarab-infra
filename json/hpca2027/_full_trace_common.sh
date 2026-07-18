@@ -73,6 +73,9 @@ ensure_docker_image_reuse() {
   docker tag "${src}" "${img}"
 }
 
+pre_sim_hook() { :; }
+post_sim_hook() { :; }
+
 register_and_prepare() {
   register_traces
   update_descriptor
@@ -82,7 +85,9 @@ register_and_prepare() {
 
 run_sim() {
   register_and_prepare
+  pre_sim_hook
   ./sci --sim "${DESCRIPTOR}"
+  post_sim_hook
   ./sci --collect-stats "${DESCRIPTOR}" || true
   finalize_results
 }
@@ -104,7 +109,9 @@ main_full_trace() {
     --build)
       register_and_prepare
       ./sci --build-scarab "${DESCRIPTOR}"
+      pre_sim_hook
       ./sci --sim "${DESCRIPTOR}"
+      post_sim_hook
       ./sci --collect-stats "${DESCRIPTOR}" || true
       finalize_results
       ;;
@@ -176,7 +183,9 @@ def sp_insts(app_dir: Path):
     seg = segment_size(app_dir)
     zdir = app_dir / "traces_simp" / "trace"
     out = []
-    for z in sorted(zdir.glob("*.zip"), key=lambda p: int(p.stem) if p.stem.isdigit() else p.stem):
+    for z in sorted(zdir.glob("*.zip"), key=lambda p: (0, int(p.stem)) if p.stem.isdigit() else (1, p.stem)):
+        if not z.stem.isdigit():
+            continue
         with zipfile.ZipFile(z) as zf:
             chunks = sum(1 for n in zf.namelist() if Path(n).name.startswith("chunk."))
         if seg is None:
@@ -236,6 +245,16 @@ for name, cfg in desc.get("configurations", {}).items():
     elif name == "baseline":
         cfg["params"] = (
             f"{common} --ifuse_fusion_distance 0 --ifuse_runtime_training_enabled 0"
+        )
+    elif name == "pass1":
+        cfg["params"] = (
+            f"{common} --ifuse_fusion_distance 0 --ideal_fusion_pass 1 "
+            f"--ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{{workload}}/{{cluster_id}}.csv"
+        )
+    elif name == "pass2":
+        cfg["params"] = (
+            f"{common} --ifuse_fusion_distance 0 --ideal_fusion_pass 2 "
+            f"--ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{{workload}}/{{cluster_id}}.csv"
         )
     else:
         # Preserve unknown configs but force window.
