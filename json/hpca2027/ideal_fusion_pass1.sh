@@ -35,6 +35,7 @@ SUITE="datacenter"
 SUBSUITE="datacenter"
 CONFIGS=(pass1)
 EXCLUDE_APPS=()
+SKIP_COLLECT_STATS=1
 
 # shellcheck source=/dev/null
 source "${HPCA_DIR}/_full_trace_common.sh"
@@ -47,6 +48,15 @@ pre_sim_hook() {
 
 post_sim_hook() {
   verify_ideal_fusion_candidates || true
+}
+
+# Pass-1 primary output is candidate CSVs, not stat CSVs — skip collect-stats.
+run_sim() {
+  register_and_prepare
+  pre_sim_hook
+  ./sci --sim "${DESCRIPTOR}"
+  post_sim_hook
+  finalize_results
 }
 
 case "${1:-}" in

@@ -88,7 +88,9 @@ run_sim() {
   pre_sim_hook
   ./sci --sim "${DESCRIPTOR}"
   post_sim_hook
-  ./sci --collect-stats "${DESCRIPTOR}" || true
+  if [[ "${SKIP_COLLECT_STATS:-0}" != "1" ]]; then
+    ./sci --collect-stats "${DESCRIPTOR}" || true
+  fi
   finalize_results
 }
 
@@ -112,7 +114,9 @@ main_full_trace() {
       pre_sim_hook
       ./sci --sim "${DESCRIPTOR}"
       post_sim_hook
-      ./sci --collect-stats "${DESCRIPTOR}" || true
+      if [[ "${SKIP_COLLECT_STATS:-0}" != "1" ]]; then
+        ./sci --collect-stats "${DESCRIPTOR}" || true
+      fi
       finalize_results
       ;;
     --dry-run)
@@ -248,12 +252,12 @@ for name, cfg in desc.get("configurations", {}).items():
         )
     elif name == "pass1":
         cfg["params"] = (
-            f"{common} --ifuse_fusion_distance 0 --ideal_fusion_pass 1 "
+            f"{common} --ideal_fusion_pass 1 "
             f"--ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{{workload}}/{{cluster_id}}.csv"
         )
     elif name == "pass2":
         cfg["params"] = (
-            f"{common} --ifuse_fusion_distance 0 --ideal_fusion_pass 2 "
+            f"{common} --ideal_fusion_pass 2 "
             f"--ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{{workload}}/{{cluster_id}}.csv"
         )
     else:

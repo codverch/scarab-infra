@@ -19,8 +19,6 @@
         "appworld",
         "bc",
         "bfs",
-        "community",
-        "connected_components",
         "core_bench",
         "dfs",
         "duckdb",
@@ -38,7 +36,7 @@
   ],
   "configurations": {
     "pass2": {
-      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 0 --ideal_fusion_pass 2 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{workload}/{cluster_id}.csv",
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ideal_fusion_pass 2 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{workload}/{cluster_id}.csv",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
