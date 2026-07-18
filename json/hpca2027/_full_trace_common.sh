@@ -36,15 +36,102 @@ usage_full_trace() {
   cat <<EOF
 Usage: ${name} [option]
 
-  (default)          Register traces, build Scarab, sim (full SP, no warmup), finalize
-  --sim-only         Register + update JSON + sim + finalize (skip build)
+  (default) / --sim-only
+                     Register traces, refresh JSON, sim (reuse existing Scarab/docker), finalize
+  --build            Same as default, but also ./sci --build-scarab first (slow; rarely needed)
   --dry-run          Print per-app SP capacity and update descriptor only
   --status           Show simulation status
   --collect-stats    Collect stats only
-  --finalize         Flatten to {config}/{app}/{simpoint} and strip binaries/logs
+  --finalize         Flatten to {app}/{simpoint} and strip binaries/logs
   --visualize        Run descriptor visualization
   -h, --help         Show this help
+
+Tip: do NOT run ./sci --build-scarab every time. A cached Scarab binary + docker image is enough
+unless you changed Scarab source or the workload Dockerfile.
 EOF
+}
+
+# Avoid a full docker rebuild just because scarab-infra HEAD moved (descriptor-only commits).
+# Retag the newest local allbench_traces image to the current infra short hash if missing.
+ensure_docker_image_reuse() {
+  local githash img src
+  githash="$(git -C "${INFRA_DIR}" rev-parse --short HEAD 2>/dev/null || true)"
+  if [[ -z "${githash}" ]]; then
+    return 0
+  fi
+  img="allbench_traces:${githash}"
+  if docker image inspect "${img}" >/dev/null 2>&1; then
+    return 0
+  fi
+  src="$(docker images allbench_traces --format '{{.Repository}}:{{.Tag}}' 2>/dev/null \
+    | grep -v '<none>' | head -1 || true)"
+  if [[ -z "${src}" ]]; then
+    echo "WARN: no local allbench_traces image to retag; first sim may build docker (slow)." >&2
+    return 0
+  fi
+  echo "Reusing docker image: ${src} -> ${img} (skip full --build-image)"
+  docker tag "${src}" "${img}"
+}
+
+register_and_prepare() {
+  register_traces
+  update_descriptor
+  write_experiment_gitignore
+  ensure_docker_image_reuse
+}
+
+run_sim() {
+  register_and_prepare
+  ./sci --sim "${DESCRIPTOR}"
+  ./sci --collect-stats "${DESCRIPTOR}" || true
+  finalize_results
+}
+
+main_full_trace() {
+  cd "${INFRA_DIR}"
+
+  if [[ -f "${HOME}/miniconda3/etc/profile.d/conda.sh" ]]; then
+    # shellcheck source=/dev/null
+    source "${HOME}/miniconda3/etc/profile.d/conda.sh"
+    conda activate scarabinfra 2>/dev/null || true
+  fi
+
+  case "${1:-}" in
+    ""|--all|--sim-only)
+      # Default path: no --build-scarab (reuse cached binary).
+      run_sim
+      ;;
+    --build)
+      register_and_prepare
+      ./sci --build-scarab "${DESCRIPTOR}"
+      ./sci --sim "${DESCRIPTOR}"
+      ./sci --collect-stats "${DESCRIPTOR}" || true
+      finalize_results
+      ;;
+    --dry-run)
+      update_descriptor
+      ;;
+    --status)
+      ./sci --status "${DESCRIPTOR}"
+      ;;
+    --collect-stats)
+      ./sci --collect-stats "${DESCRIPTOR}"
+      ;;
+    --finalize)
+      finalize_results
+      ;;
+    --visualize)
+      ./sci --visualize "${DESCRIPTOR}"
+      ;;
+    -h|--help)
+      usage_full_trace
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage_full_trace >&2
+      exit 1
+      ;;
+  esac
 }
 
 # Refresh workload list + full_warmup=0 / inst_limit=suite_max+1M on every
@@ -167,13 +254,43 @@ write_experiment_gitignore() {
   cat > "${EXPERIMENT_DIR}/.gitignore" <<'EOF'
 # Job / infrastructure noise (do not commit)
 logs/
+tmp/
 scarab_stage/
 **/scarab_current*
 **/scarab_*
 **/*.warmup
 **/ramulator.stat.out
 **/PARAMS.in
+**/collected_stats.csv
 EOF
+}
+
+# Move app dirs into EXPERIMENT_DIR/{app}/{simpoint}/ from any of:
+#   {config}/datacenter/datacenter/{app}
+#   {config}/{app}
+# so the commit tree is just apps under the experiment root (no config / suite / logs).
+_move_app_to_experiment_root() {
+  local app_dir="$1"
+  local app dest
+  app="$(basename "${app_dir}")"
+  dest="${EXPERIMENT_DIR}/${app}"
+  if [[ -e "${dest}" ]]; then
+    echo "  merging ${app_dir} -> ${dest}"
+    mkdir -p "${dest}"
+    find "${app_dir}" -mindepth 1 -maxdepth 1 -print0 | while IFS= read -r -d '' sp; do
+      local sp_name dest_sp
+      sp_name="$(basename "${sp}")"
+      dest_sp="${dest}/${sp_name}"
+      if [[ -e "${dest_sp}" ]]; then
+        rm -rf "${dest_sp}"
+      fi
+      mv "${sp}" "${dest_sp}"
+    done
+    rmdir "${app_dir}" 2>/dev/null || rm -rf "${app_dir}"
+  else
+    echo "  moving ${app_dir} -> ${dest}"
+    mv "${app_dir}" "${dest}"
+  fi
 }
 
 finalize_results() {
@@ -182,108 +299,47 @@ finalize_results() {
     exit 1
   fi
 
-  echo "Finalizing ${EXPERIMENT_DIR} (flatten + strip binaries/logs)..."
+  echo "Finalizing ${EXPERIMENT_DIR} -> {app}/{simpoint}/ (no config/suite/logs)..."
   write_experiment_gitignore
 
   for config in "${CONFIGS[@]}"; do
     local nested="${EXPERIMENT_DIR}/${config}/${SUITE}/${SUBSUITE}"
-    if [[ ! -d "${nested}" ]]; then
-      continue
+    local flat_config="${EXPERIMENT_DIR}/${config}"
+
+    if [[ -d "${nested}" ]]; then
+      find "${nested}" -mindepth 1 -maxdepth 1 -type d -print0 | while IFS= read -r -d '' app_dir; do
+        _move_app_to_experiment_root "${app_dir}"
+      done
+      rm -rf "${EXPERIMENT_DIR}/${config}"
+    elif [[ -d "${flat_config}" ]]; then
+      # Already flattened once to {config}/{app}; lift apps to experiment root.
+      find "${flat_config}" -mindepth 1 -maxdepth 1 -type d -print0 | while IFS= read -r -d '' app_dir; do
+        # Skip leftover suite dirs if any.
+        local name
+        name="$(basename "${app_dir}")"
+        if [[ "${name}" == "${SUITE}" || "${name}" == "${SUBSUITE}" ]]; then
+          continue
+        fi
+        _move_app_to_experiment_root "${app_dir}"
+      done
+      rm -rf "${flat_config}"
     fi
-    mkdir -p "${EXPERIMENT_DIR}/${config}"
-    find "${nested}" -mindepth 1 -maxdepth 1 -type d -print0 | while IFS= read -r -d '' app_dir; do
-      local app dest
-      app="$(basename "${app_dir}")"
-      dest="${EXPERIMENT_DIR}/${config}/${app}"
-      if [[ -e "${dest}" ]]; then
-        echo "  merging ${app_dir} -> ${dest}"
-        mkdir -p "${dest}"
-        find "${app_dir}" -mindepth 1 -maxdepth 1 -print0 | while IFS= read -r -d '' sp; do
-          local sp_name dest_sp
-          sp_name="$(basename "${sp}")"
-          dest_sp="${dest}/${sp_name}"
-          if [[ -e "${dest_sp}" ]]; then
-            rm -rf "${dest_sp}"
-          fi
-          mv "${sp}" "${dest_sp}"
-        done
-        rmdir "${app_dir}" 2>/dev/null || rm -rf "${app_dir}"
-      else
-        echo "  moving ${app_dir} -> ${dest}"
-        mv "${app_dir}" "${dest}"
-      fi
-    done
-    rm -rf "${EXPERIMENT_DIR}/${config}/${SUITE}"
   done
 
-  rm -rf "${EXPERIMENT_DIR}/logs"
+  # Drop infra noise at experiment root and under apps.
+  rm -rf "${EXPERIMENT_DIR}/logs" "${EXPERIMENT_DIR}/tmp" "${EXPERIMENT_DIR}/scarab_stage"
   find "${EXPERIMENT_DIR}" -type f \( \
       -name 'scarab_current*' -o \
       -name 'scarab' -o \
       -name 'PARAMS.in' -o \
       -name '*.warmup' -o \
-      -name 'ramulator.stat.out' \
+      -name 'ramulator.stat.out' -o \
+      -name 'job_*.out' -o \
+      -name 'job_*.err' \
     \) -delete 2>/dev/null || true
 
-  echo "Final layout:"
-  find "${EXPERIMENT_DIR}" -mindepth 1 -maxdepth 3 -type d | sort | head -80
+  echo "Final layout (apps at experiment root):"
+  find "${EXPERIMENT_DIR}" -mindepth 1 -maxdepth 2 \( -type d -o -type f \) | sort | head -80
   echo "..."
-  echo "Done. Commit-friendly tree is at: ${EXPERIMENT_DIR}"
-}
-
-run_sim() {
-  register_traces
-  update_descriptor
-  write_experiment_gitignore
-  ./sci --sim "${DESCRIPTOR}"
-  ./sci --collect-stats "${DESCRIPTOR}" || true
-  finalize_results
-}
-
-main_full_trace() {
-  cd "${INFRA_DIR}"
-
-  if [[ -f "${HOME}/miniconda3/etc/profile.d/conda.sh" ]]; then
-    # shellcheck source=/dev/null
-    source "${HOME}/miniconda3/etc/profile.d/conda.sh"
-    conda activate scarabinfra 2>/dev/null || true
-  fi
-
-  case "${1:-}" in
-    ""|--all)
-      register_traces
-      update_descriptor
-      write_experiment_gitignore
-      ./sci --build-scarab "${DESCRIPTOR}"
-      ./sci --sim "${DESCRIPTOR}"
-      ./sci --collect-stats "${DESCRIPTOR}" || true
-      finalize_results
-      ;;
-    --sim-only)
-      run_sim
-      ;;
-    --dry-run)
-      update_descriptor
-      ;;
-    --status)
-      ./sci --status "${DESCRIPTOR}"
-      ;;
-    --collect-stats)
-      ./sci --collect-stats "${DESCRIPTOR}"
-      ;;
-    --finalize)
-      finalize_results
-      ;;
-    --visualize)
-      ./sci --visualize "${DESCRIPTOR}"
-      ;;
-    -h|--help)
-      usage_full_trace
-      ;;
-    *)
-      echo "Unknown option: $1" >&2
-      usage_full_trace >&2
-      exit 1
-      ;;
-  esac
+  echo "Done. Commit-friendly tree: ${EXPERIMENT_DIR}/{app}/{simpoint}/"
 }

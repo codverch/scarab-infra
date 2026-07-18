@@ -5,17 +5,15 @@
 #   --full_warmup 0
 #   --inst_limit  = max SP size in the suite + 1M (Scarab stops at EOF on shorter zips)
 #
-# Experiment : simulations/runtime-ifuse/
+# Experiment : simulations/runtime-ifuse/{app}/{simpoint}/   (after finalize; no logs/config nesting)
 # Descriptor : runtime_ifuse.json   (config: runtime_ifuse only — no baseline)
 #
 # Usage:
-#   ./runtime_ifuse.sh              # register, build, sim, finalize
-#   ./runtime_ifuse.sh --sim-only
+#   ./runtime_ifuse.sh              # fast: register + sim + finalize (no rebuild)
+#   ./runtime_ifuse.sh --build      # slow: also rebuild Scarab first
 #   ./runtime_ifuse.sh --dry-run
-#   ./runtime_ifuse.sh --status
-#   ./runtime_ifuse.sh --collect-stats
 #   ./runtime_ifuse.sh --finalize
-#   ./runtime_ifuse.sh --visualize
+#   ./runtime_ifuse.sh --status
 
 set -euo pipefail
 

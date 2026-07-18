@@ -5,17 +5,15 @@
 #   --full_warmup 0
 #   --inst_limit  = max SP size in the suite + 1M (Scarab stops at EOF on shorter zips)
 #
-# Experiment : simulations/baseline/
+# Experiment : simulations/baseline/{app}/{simpoint}/   (after finalize; no logs/config nesting)
 # Descriptor : baseline.json   (config: baseline only)
 #
 # Usage:
-#   ./baseline.sh              # register, build, sim, finalize
-#   ./baseline.sh --sim-only
+#   ./baseline.sh              # fast: register + sim + finalize (no rebuild)
+#   ./baseline.sh --build      # slow: also rebuild Scarab first
 #   ./baseline.sh --dry-run
-#   ./baseline.sh --status
-#   ./baseline.sh --collect-stats
 #   ./baseline.sh --finalize
-#   ./baseline.sh --visualize
+#   ./baseline.sh --status
 
 set -euo pipefail
 
