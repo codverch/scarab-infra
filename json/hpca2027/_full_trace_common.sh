@@ -229,6 +229,18 @@ runtime_ifuse_knobs = (
 # RFP sweep descriptors include both "baseline" and "rfp"; those use --rfp_on
 # instead of I-Fuse knobs (hpca2027-rfp Scarab has no ifuse params).
 has_rfp = "rfp" in desc.get("configurations", {})
+# Helios defaults from scarab/src/general.param.def
+# (hpca2027-helios Scarab has no I-Fuse knobs — do not pass --ifuse_*)
+helios_knobs = (
+    "--helios_do_fusion 1 --helios_enable_flushes 1 "
+    "--helios_confidence_threshold 150 "
+    "--helios_confidence_increment 10 "
+    "--helios_confidence_decrement 10 "
+    "--helios_fusion_window 64 "
+    "--helios_fuse_stores 1 "
+    "--helios_fused_wait_tail_srcs 1 "
+    "--helios_extended_commit_group 1"
+)
 for name, cfg in desc.get("configurations", {}).items():
     if name == "runtime_ifuse":
         cfg["params"] = (
@@ -245,6 +257,8 @@ for name, cfg in desc.get("configurations", {}).items():
             f"{common} {runtime_ifuse_knobs} "
             f"--ifuse_training_insert_threshold {thresh}"
         )
+    elif name == "helios":
+        cfg["params"] = f"{common} {helios_knobs}"
     elif name == "rfp":
         cfg["params"] = f"{common} --rfp_on 1"
     elif name == "baseline":
