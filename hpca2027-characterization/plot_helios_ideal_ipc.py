@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Simpoint-weighted Helios + Ideal Fusion IPC speedup, normalized to baseline.
+"""Simpoint-weighted IPC speedup vs baseline for Helios, Runtime iFuse, PGO iFuse, Ideal fusion.
 
 Expects:
   {simulations}/baseline/baseline/datacenter/datacenter/<app>/<chunk>/
-  {simulations}/helios/<app>/<chunk>/                         (flat)
+  {simulations}/helios/<app>/<chunk>/                                      (flat)
+  {simulations}/runtime-ifuse-train-threshold-sweep/train_thresh_1000/
+      datacenter/datacenter/<app>/<chunk>/
+  {simulations}/pgo-ifuse/pgo_freq_1000/<app>/<chunk>/                     (flat)
   {simulations}/ideal-fusion-pass2/pass2/datacenter/datacenter/<app>/<chunk>/
 
 Example:
@@ -16,9 +19,7 @@ from __future__ import annotations
 
 import argparse
 import csv
-import math
 import sys
-from collections import defaultdict
 from pathlib import Path
 
 import matplotlib
@@ -66,16 +67,22 @@ SHORT_LABELS = {
     "rocksdb": "RocksDB",
 }
 
-HELIOS_COLOR = "#E67E22"  # Atre et al. SIGCOMM'22–style orange
-IDEAL_COLOR = "#2E7D32"  # green
-CATEGORY_GAP = 1.05
-GROUP_GAP = 0.40
-SUMMARY_GAP = 0.05
-BAR_WIDTH = 0.38
+# Series order left→right within each app group.
+SERIES = (
+    ("helios", "Helios", "#E67E22"),
+    ("runtime_ifuse", "Dynamic I-Fuse", "#1565C0"),
+    ("pgo_ifuse", "PGO-driven I-Fuse", "#009900"),
+    ("ideal_fusion", "Ideal fusion", "#2E7D32"),
+)
+
+CATEGORY_GAP = 1.35
+GROUP_GAP = 0.45
+SUMMARY_GAP = 0.08
+BAR_WIDTH = 0.28
 AXIS_FONT = 34
 GROUP_FONT = 30
 APP_FONT = 28
-FIGSIZE = (24.0, 11.9)
+FIGSIZE = (26.0, 11.9)
 GROUP_SEPARATOR_COLOR = "#666666"
 SUMMARY_SEPARATOR_COLOR = "#424242"
 SUMMARY_XTICK = "Average"
@@ -92,7 +99,7 @@ def find_simpoint_dir(
     workload: str,
     cluster_id: str,
 ) -> Path | None:
-    """Resolve nested (baseline/ideal) or flat (helios) layouts."""
+    """Resolve nested (baseline/ideal/runtime) or flat (helios/pgo) layouts."""
     candidates = [
         experiment_dir / config / SUITE / SUBSUITE / workload / cluster_id,
         experiment_dir / SUITE / SUBSUITE / workload / cluster_id,
@@ -187,9 +194,11 @@ def check_coverage(
 
 
 def _tight_x_limits(ax, x_min: float, x_max: float) -> None:
-    left_pad = 0.18
-    right_pad = 0.14
-    ax.set_xlim(x_min - BAR_WIDTH - left_pad, x_max + BAR_WIDTH + right_pad)
+    left_pad = 0.22
+    right_pad = 0.18
+    n = len(SERIES)
+    half_span = (n * BAR_WIDTH) / 2.0
+    ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
     ax.margins(x=0)
 
 
@@ -225,27 +234,34 @@ def _add_hierarchical_xaxis(
         )
 
 
+def _bar_offsets(n: int) -> list[float]:
+    """Centered offsets for n equal-width bars at each category x."""
+    return [(i - (n - 1) / 2.0) * BAR_WIDTH for i in range(n)]
+
+
 def plot_speedup(
     apps: list[str],
-    helios_pct: list[float],
-    ideal_pct: list[float],
+    series_pct: dict[str, list[float]],
     output_dir: Path,
 ) -> None:
     # Floor at 0 so the figure never shows slowdowns.
-    helios_pct = [max(0.0, float(v)) for v in helios_pct]
-    ideal_pct = [max(0.0, float(v)) for v in ideal_pct]
-
-    by_name = {
-        app: (h, i) for app, h, i in zip(apps, helios_pct, ideal_pct)
+    clipped: dict[str, list[float]] = {
+        key: [max(0.0, float(v)) for v in vals] for key, vals in series_pct.items()
     }
-    positions_h: list[float] = []
-    positions_i: list[float] = []
-    values_h: list[float] = []
-    values_i: list[float] = []
+    by_name = {
+        app: {key: clipped[key][i] for key, _label, _color in SERIES}
+        for i, app in enumerate(apps)
+    }
+
+    positions: dict[str, list[float]] = {key: [] for key, _, _ in SERIES}
+    values: dict[str, list[float]] = {key: [] for key, _, _ in SERIES}
     app_labels: list[str] = []
     tick_positions: list[float] = []
     group_spans: list[tuple[float, float, str]] = []
     group_separators: list[float] = []
+    offsets = _bar_offsets(len(SERIES))
+    n = len(SERIES)
+    half_span = (n * BAR_WIDTH) / 2.0
 
     x = 0.0
     group_idx = 0
@@ -255,13 +271,11 @@ def plot_speedup(
             continue
         group_start = x
         if group_idx > 0:
-            group_separators.append(group_start - BAR_WIDTH - 0.22)
+            group_separators.append(group_start - half_span - 0.18)
         for wl in present:
-            h, i = by_name[wl]
-            positions_h.append(x - BAR_WIDTH / 2.0)
-            positions_i.append(x + BAR_WIDTH / 2.0)
-            values_h.append(h)
-            values_i.append(i)
+            for (key, _label, _color), off in zip(SERIES, offsets):
+                positions[key].append(x + off)
+                values[key].append(by_name[wl][key])
             tick_positions.append(x)
             app_labels.append(SHORT_LABELS.get(wl, wl))
             x += CATEGORY_GAP
@@ -271,17 +285,15 @@ def plot_speedup(
 
     x += SUMMARY_GAP
     avg_x = x
-    avg_h = float(np.mean(helios_pct)) if helios_pct else 0.0
-    avg_i = float(np.mean(ideal_pct)) if ideal_pct else 0.0
-    positions_h.append(avg_x - BAR_WIDTH / 2.0)
-    positions_i.append(avg_x + BAR_WIDTH / 2.0)
-    values_h.append(avg_h)
-    values_i.append(avg_i)
+    for (key, _label, _color), off in zip(SERIES, offsets):
+        avg = float(np.mean(clipped[key])) if clipped[key] else 0.0
+        positions[key].append(avg_x + off)
+        values[key].append(avg)
     tick_positions.append(avg_x)
     app_labels.append(SUMMARY_XTICK)
     summary_sep = avg_x - CATEGORY_GAP / 2.0 - SUMMARY_GAP / 2.0
 
-    fig_width = max(FIGSIZE[0], len(tick_positions) * 1.15 + len(group_spans) * 0.4)
+    fig_width = max(FIGSIZE[0], len(tick_positions) * 1.35 + len(group_spans) * 0.4)
     plt.rcParams.update(
         {"font.size": 15, "font.family": "serif", "axes.labelsize": AXIS_FONT}
     )
@@ -289,26 +301,17 @@ def plot_speedup(
 
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
-    ax.bar(
-        positions_h,
-        values_h,
-        BAR_WIDTH,
-        label="Helios",
-        color=HELIOS_COLOR,
-        edgecolor="black",
-        linewidth=1.5,
-        zorder=3,
-    )
-    ax.bar(
-        positions_i,
-        values_i,
-        BAR_WIDTH,
-        label="Ideal fusion",
-        color=IDEAL_COLOR,
-        edgecolor="black",
-        linewidth=1.5,
-        zorder=3,
-    )
+    for key, label, color in SERIES:
+        ax.bar(
+            positions[key],
+            values[key],
+            BAR_WIDTH,
+            label=label,
+            color=color,
+            edgecolor="black",
+            linewidth=1.5,
+            zorder=3,
+        )
 
     for sep_x in group_separators:
         ax.axvline(
@@ -328,7 +331,8 @@ def plot_speedup(
         zorder=2,
     )
 
-    y_max = max(values_h + values_i) if (values_h or values_i) else 10.0
+    all_vals = [v for key, _, _ in SERIES for v in values[key]]
+    y_max = max(all_vals) if all_vals else 10.0
     ax.set_ylim(0.0, max(y_max * 1.12, 10.0))
     ax.set_ylabel(
         "Speedup (%)\n(normalized to baseline)",
@@ -353,9 +357,10 @@ def plot_speedup(
         fancybox=False,
         framealpha=1.0,
         loc="upper left",
-        fontsize=GROUP_FONT,
+        fontsize=GROUP_FONT - 4,
         edgecolor="black",
         facecolor="white",
+        ncol=2,
     )
     legend.get_frame().set_linewidth(1.5)
     legend.get_frame().set_alpha(1.0)
@@ -366,7 +371,7 @@ def plot_speedup(
         spine.set_linewidth(2.0)
 
     fig.tight_layout()
-    for stem in ("ipc-helios-ideal",):
+    for stem in ("ipc-helios-ideal", "ipc-helios-runtime-pgo-ideal"):
         fig.savefig(output_dir / f"{stem}.png", bbox_inches="tight", dpi=300)
         fig.savefig(output_dir / f"{stem}.pdf", bbox_inches="tight")
         print(f"Wrote {output_dir / stem}.png")
@@ -378,10 +383,14 @@ def main() -> None:
     parser.add_argument("--simulations-root", type=Path, default=DEFAULT_SIM_ROOT)
     parser.add_argument("--baseline-dir", type=Path, default=None)
     parser.add_argument("--helios-dir", type=Path, default=None)
+    parser.add_argument("--runtime-ifuse-dir", type=Path, default=None)
+    parser.add_argument("--pgo-ifuse-dir", type=Path, default=None)
     parser.add_argument("--ideal-fusion-dir", type=Path, default=None)
     parser.add_argument("--trace-root", type=Path, default=DEFAULT_TRACE_ROOT)
     parser.add_argument("--baseline-config", default="baseline")
     parser.add_argument("--helios-config", default="helios")
+    parser.add_argument("--runtime-ifuse-config", default="train_thresh_10000")
+    parser.add_argument("--pgo-ifuse-config", default="pgo_freq_10000")
     parser.add_argument("--ideal-fusion-config", default="pass2")
     parser.add_argument("--output-dir", type=Path, default=GRAPH_DIR)
     args = parser.parse_args()
@@ -389,6 +398,10 @@ def main() -> None:
     sim_root = args.simulations_root
     baseline_dir = args.baseline_dir or (sim_root / "baseline")
     helios_dir = args.helios_dir or (sim_root / "helios")
+    runtime_dir = args.runtime_ifuse_dir or (
+        sim_root / "runtime-ifuse-train-threshold-sweep"
+    )
+    pgo_dir = args.pgo_ifuse_dir or (sim_root / "pgo-ifuse")
     ideal_dir = args.ideal_fusion_dir or (sim_root / "ideal-fusion-pass2")
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -396,103 +409,120 @@ def main() -> None:
     workloads = list(SIMPOINT_WORKLOADS)
     sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
 
-    print("Loading IPC from sim directories...")
+    print("Loading IPC from simpoints...")
     baseline_ipc = load_experiment_ipc(
         baseline_dir, args.baseline_config, sp_weights, workloads, "baseline"
     )
     helios_ipc = load_experiment_ipc(
         helios_dir, args.helios_config, sp_weights, workloads, "helios"
     )
+    runtime_ipc = load_experiment_ipc(
+        runtime_dir,
+        args.runtime_ifuse_config,
+        sp_weights,
+        workloads,
+        "runtime ifuse",
+    )
+    pgo_ipc = load_experiment_ipc(
+        pgo_dir, args.pgo_ifuse_config, sp_weights, workloads, "pgo ifuse"
+    )
     ideal_ipc = load_experiment_ipc(
         ideal_dir, args.ideal_fusion_config, sp_weights, workloads, "ideal fusion"
     )
 
+    ipc_by_epoch = {
+        "baseline": baseline_ipc,
+        "helios": helios_ipc,
+        "runtime_ifuse": runtime_ipc,
+        "pgo_ifuse": pgo_ipc,
+        "ideal_fusion": ideal_ipc,
+    }
     epochs = {
         "baseline": (baseline_dir, args.baseline_config),
         "helios": (helios_dir, args.helios_config),
+        "runtime_ifuse": (runtime_dir, args.runtime_ifuse_config),
+        "pgo_ifuse": (pgo_dir, args.pgo_ifuse_config),
         "ideal_fusion": (ideal_dir, args.ideal_fusion_config),
     }
+    config_by_epoch = {k: cfg for k, (_d, cfg) in epochs.items()}
+
     complete, refs = check_coverage(
         epochs, workloads, sp_weights, output_dir / "ipc_simpoint_coverage.txt"
     )
     if not complete:
-        raise SystemExit("No apps have complete coverage across baseline/helios/ideal.")
+        raise SystemExit(
+            "No apps have complete coverage across baseline/helios/runtime/pgo/ideal."
+        )
 
     apps = [wl for wl in workloads if wl in complete]
-    helios_pct: list[float] = []
-    ideal_pct: list[float] = []
+    series_pct: dict[str, list[float]] = {key: [] for key, _, _ in SERIES}
     rows: list[dict[str, float | str]] = []
 
+    header_keys = [key for key, _, _ in SERIES]
     print(
-        f"\n{'App':<18} {'BaseIPC':>8} {'Helios':>8} {'Ideal':>8} "
-        f"{'Helios%':>9} {'Ideal%':>9}"
+        f"\n{'App':<18} {'BaseIPC':>8} "
+        + " ".join(f"{k:>10}" for k in header_keys)
+        + " "
+        + " ".join(f"{k+'%':>10}" for k in header_keys)
     )
-    print("-" * 72)
+    print("-" * 120)
+
     for wl in apps:
         ref = refs[wl]
-        bp = collect_trace_pairs(
-            baseline_ipc, sp_weights, config=args.baseline_config,
-            workload=wl, reference_traces=ref,
-        )
-        hp = collect_trace_pairs(
-            helios_ipc, sp_weights, config=args.helios_config,
-            workload=wl, reference_traces=ref,
-        )
-        ip = collect_trace_pairs(
-            ideal_ipc, sp_weights, config=args.ideal_fusion_config,
-            workload=wl, reference_traces=ref,
-        )
-        b_avg = weighted_avg(bp)
-        h_avg = weighted_avg(hp)
-        i_avg = weighted_avg(ip)
-        h_norm = h_avg / b_avg if b_avg else float("nan")
-        i_norm = i_avg / b_avg if b_avg else float("nan")
-        h_pct = 100.0 * (h_norm - 1.0)
-        i_pct = 100.0 * (i_norm - 1.0)
-        helios_pct.append(h_pct)
-        ideal_pct.append(i_pct)
-        rows.append(
-            {
-                "workload": wl,
-                "baseline_ipc": b_avg,
-                "helios_ipc": h_avg,
-                "ideal_ipc": i_avg,
-                "helios_norm": h_norm,
-                "ideal_norm": i_norm,
-                "helios_speedup_pct": h_pct,
-                "ideal_speedup_pct": i_pct,
-            }
-        )
-        print(
-            f"{wl:<18} {b_avg:8.3f} {h_avg:8.3f} {i_avg:8.3f} "
-            f"{h_pct:+8.2f}% {i_pct:+8.2f}%"
-        )
+        avgs: dict[str, float] = {}
+        for epoch_key, ipc_map in ipc_by_epoch.items():
+            pairs = collect_trace_pairs(
+                ipc_map,
+                sp_weights,
+                config=config_by_epoch[epoch_key],
+                workload=wl,
+                reference_traces=ref,
+            )
+            avgs[epoch_key] = weighted_avg(pairs)
 
-    avg_h = float(np.mean(helios_pct))
-    avg_i = float(np.mean(ideal_pct))
-    print("-" * 72)
-    print(f"{'Average':<18} {'':>8} {'':>8} {'':>8} {avg_h:+8.2f}% {avg_i:+8.2f}%")
+        b_avg = avgs["baseline"]
+        row: dict[str, float | str] = {"workload": wl, "baseline_ipc": b_avg}
+        pct_parts: list[str] = []
+        ipc_parts: list[str] = [f"{b_avg:8.3f}"]
+        for key, _label, _color in SERIES:
+            avg = avgs[key]
+            norm = avg / b_avg if b_avg else float("nan")
+            pct = 100.0 * (norm - 1.0)
+            series_pct[key].append(pct)
+            row[f"{key}_ipc"] = avg
+            row[f"{key}_norm"] = norm
+            row[f"{key}_speedup_pct"] = pct
+            ipc_parts.append(f"{avg:10.3f}")
+            pct_parts.append(f"{pct:+9.2f}%")
+        rows.append(row)
+        print(f"{wl:<18} " + " ".join(ipc_parts) + " " + " ".join(pct_parts))
+
+    avgs_pct = {key: float(np.mean(series_pct[key])) for key, _, _ in SERIES}
+    print("-" * 120)
+    print(
+        f"{'Average':<18} {'':>8} "
+        + " ".join(f"{'':>10}" for _ in SERIES)
+        + " "
+        + " ".join(f"{avgs_pct[k]:+9.2f}%" for k, _, _ in SERIES)
+    )
 
     csv_path = output_dir / "ipc_helios_ideal.csv"
+    fieldnames = ["workload", "baseline_ipc"]
+    for key, _, _ in SERIES:
+        fieldnames.extend([f"{key}_ipc", f"{key}_norm", f"{key}_speedup_pct"])
     with csv_path.open("w", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
-        writer.writerow(
-            {
-                "workload": "Average",
-                "baseline_ipc": "",
-                "helios_ipc": "",
-                "ideal_ipc": "",
-                "helios_norm": "",
-                "ideal_norm": "",
-                "helios_speedup_pct": avg_h,
-                "ideal_speedup_pct": avg_i,
-            }
-        )
+        avg_row: dict[str, float | str] = {"workload": "Average", "baseline_ipc": ""}
+        for key, _, _ in SERIES:
+            avg_row[f"{key}_ipc"] = ""
+            avg_row[f"{key}_norm"] = ""
+            avg_row[f"{key}_speedup_pct"] = avgs_pct[key]
+        writer.writerow(avg_row)
     print(f"Wrote {csv_path}")
 
-    plot_speedup(apps, helios_pct, ideal_pct, output_dir)
+    plot_speedup(apps, series_pct, output_dir)
 
 
 if __name__ == "__main__":
