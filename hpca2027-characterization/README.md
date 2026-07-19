@@ -17,6 +17,6 @@ python3 hpca2027-characterization/plot_topdown_backend_stalls.py \
 
 ## Outputs
 
-- `topdown_backend_stalls.png` / `.pdf`
+- `backend-stalls.png` / `.pdf`
 - `topdown_backend_stalls.csv`
 - `topdown_backend_stalls_per_simpoint.csv`

@@ -748,8 +748,8 @@ def main() -> None:
     args.out_dir.mkdir(parents=True, exist_ok=True)
     csv_path = args.out_dir / "topdown_backend_stalls.csv"
     simpoint_csv_path = args.out_dir / "topdown_backend_stalls_per_simpoint.csv"
-    png_path = args.out_dir / "topdown_backend_stalls.png"
-    pdf_path = None if args.no_pdf else args.out_dir / "topdown_backend_stalls.pdf"
+    png_path = args.out_dir / "backend-stalls.png"
+    pdf_path = None if args.no_pdf else args.out_dir / "backend-stalls.pdf"
 
     write_csv(rows, csv_path)
     write_simpoint_csv(simpoint_rows, simpoint_csv_path)
