@@ -41,11 +41,7 @@ from plot_ipc import (  # noqa: E402
     load_simpoint_trace_weights,
     weighted_avg,
 )
-from plot_pgo_ifuse_results import (  # noqa: E402
-    SimpointKey,
-    _ylim_speedup_pct_auto,
-    _ylim_with_bar_label_headroom,
-)
+from plot_pgo_ifuse_results import SimpointKey  # noqa: E402
 
 # Match characterization backend-stalls figure (CD/CC omitted).
 WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -70,18 +66,19 @@ SHORT_LABELS = {
     "rocksdb": "RocksDB",
 }
 
-HELIOS_COLOR = "#C41230"
-IDEAL_COLOR = "#0D47A1"
-CARNEGIE_RED = "#C41230"
+HELIOS_COLOR = "#E67E22"  # Atre et al. SIGCOMM'22–style orange
+IDEAL_COLOR = "#2E7D32"  # green
 CATEGORY_GAP = 1.05
 GROUP_GAP = 0.40
 SUMMARY_GAP = 0.05
 BAR_WIDTH = 0.38
-AXIS_FONT = 28
-GROUP_FONT = 26
-APP_FONT = 22
+AXIS_FONT = 34
+GROUP_FONT = 30
+APP_FONT = 28
+FIGSIZE = (24.0, 11.9)
 GROUP_SEPARATOR_COLOR = "#666666"
 SUMMARY_SEPARATOR_COLOR = "#F57C00"
+SUMMARY_XTICK = "Average"
 
 DEFAULT_SIM_ROOT = Path("/users/deepmish/scarab/src/simulations")
 DEFAULT_TRACE_ROOT = Path("/dev/shm/baseline/simpoint_traces")
@@ -189,12 +186,55 @@ def check_coverage(
     return complete, refs
 
 
+def _tight_x_limits(ax, x_min: float, x_max: float) -> None:
+    left_pad = 0.18
+    right_pad = 0.14
+    ax.set_xlim(x_min - BAR_WIDTH - left_pad, x_max + BAR_WIDTH + right_pad)
+    ax.margins(x=0)
+
+
+def _add_hierarchical_xaxis(
+    ax,
+    positions: list[float],
+    app_labels: list[str],
+    group_spans: list[tuple[float, float, str]],
+) -> None:
+    from matplotlib.transforms import blended_transform_factory
+
+    ax.set_xticks(positions)
+    ax.set_xticklabels(
+        app_labels,
+        rotation=45,
+        ha="right",
+        fontsize=APP_FONT,
+        fontfamily="serif",
+    )
+    group_transform = blended_transform_factory(ax.transData, ax.transAxes)
+    for x_start, x_end, group_name in group_spans:
+        ax.text(
+            (x_start + x_end) / 2.0,
+            -0.40,
+            group_name,
+            transform=group_transform,
+            ha="center",
+            va="top",
+            fontsize=GROUP_FONT,
+            fontfamily="serif",
+            fontweight="bold",
+            clip_on=False,
+        )
+
+
 def plot_speedup(
     apps: list[str],
     helios_pct: list[float],
     ideal_pct: list[float],
     output_dir: Path,
 ) -> None:
+    # Floor at 0 so the figure never shows slowdowns.
+    helios_pct = [max(0.0, float(v)) for v in helios_pct]
+    ideal_pct = [max(0.0, float(v)) for v in ideal_pct]
+
     by_name = {
         app: (h, i) for app, h, i in zip(apps, helios_pct, ideal_pct)
     }
@@ -229,7 +269,6 @@ def plot_speedup(
         x += GROUP_GAP
         group_idx += 1
 
-    # Average bars
     x += SUMMARY_GAP
     avg_x = x
     avg_h = float(np.mean(helios_pct)) if helios_pct else 0.0
@@ -239,15 +278,16 @@ def plot_speedup(
     values_h.append(avg_h)
     values_i.append(avg_i)
     tick_positions.append(avg_x)
-    app_labels.append("Average")
+    app_labels.append(SUMMARY_XTICK)
     summary_sep = avg_x - CATEGORY_GAP / 2.0 - SUMMARY_GAP / 2.0
 
-    fig_width = max(18.0, len(tick_positions) * 1.15)
-    plt.rcParams.update({"font.size": 14, "font.family": "serif"})
-    fig, ax = plt.subplots(figsize=(fig_width, 10.5))
+    fig_width = max(FIGSIZE[0], len(tick_positions) * 1.15 + len(group_spans) * 0.4)
+    plt.rcParams.update(
+        {"font.size": 15, "font.family": "serif", "axes.labelsize": AXIS_FONT}
+    )
+    fig, ax = plt.subplots(figsize=(fig_width, FIGSIZE[1]))
 
-    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=1.5, zorder=0)
-    ax.axhline(0.0, color="black", linewidth=1.2, zorder=1)
+    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
     ax.bar(
         positions_h,
@@ -288,45 +328,31 @@ def plot_speedup(
         zorder=2,
     )
 
-    ax.set_xticks(tick_positions)
-    ax.set_xticklabels(app_labels, fontsize=APP_FONT, fontfamily="serif")
-    for tick in ax.get_xticklabels():
-        if tick.get_text() == "Average":
-            tick.set_weight("bold")
-
-    # Suite labels under the app ticks
-    y_min, y_max = _ylim_with_bar_label_headroom(
-        _ylim_speedup_pct_auto(helios_pct + [avg_h], ideal_pct + [avg_i])
-    )
-    ax.set_ylim(y_min, y_max)
-    for start, end, name in group_spans:
-        mid = 0.5 * (start + end)
-        ax.text(
-            mid,
-            y_min - 0.08 * (y_max - y_min),
-            name,
-            ha="center",
-            va="top",
-            fontsize=GROUP_FONT,
-            fontfamily="serif",
-            clip_on=False,
-        )
-
+    y_max = max(values_h + values_i) if (values_h or values_i) else 10.0
+    ax.set_ylim(0.0, max(y_max * 1.12, 10.0))
     ax.set_ylabel(
         "Speedup (%)\n(normalized to baseline)",
         fontsize=AXIS_FONT,
         fontfamily="serif",
-        labelpad=14,
+        labelpad=18,
     )
-    ax.tick_params(axis="y", labelsize=AXIS_FONT - 4)
+    ax.tick_params(axis="y", labelsize=AXIS_FONT)
     for tick in ax.get_yticklabels():
         tick.set_fontfamily("serif")
+        tick.set_fontsize(AXIS_FONT)
+
+    _add_hierarchical_xaxis(ax, tick_positions, app_labels, group_spans)
+    for tick in ax.get_xticklabels():
+        if tick.get_text() == SUMMARY_XTICK:
+            tick.set_weight("bold")
+    ax.tick_params(axis="x", pad=8)
+    _tight_x_limits(ax, tick_positions[0], tick_positions[-1])
 
     legend = ax.legend(
         frameon=True,
         fancybox=False,
         loc="upper left",
-        fontsize=AXIS_FONT - 6,
+        fontsize=GROUP_FONT,
         edgecolor="black",
     )
     legend.get_frame().set_linewidth(1.5)
