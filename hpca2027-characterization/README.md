@@ -1,9 +1,6 @@
-# HPCA 2027 characterization: backend-bound stalls
+# HPCA 2027 characterization plots
 
-Weighted TopDown backend-bound stall % for the full-trace baseline
-(CD / CC omitted).
-
-## Regenerate
+## Backend-bound stalls (baseline)
 
 ```bash
 cd /users/deepmish/scarab-infra
@@ -15,8 +12,20 @@ python3 hpca2027-characterization/plot_topdown_backend_stalls.py \
   --eval-backend-threshold -1
 ```
 
-## Outputs
+Outputs: `backend-stalls.png` / `.pdf`, CSVs.
 
-- `backend-stalls.png` / `.pdf`
-- `topdown_backend_stalls.csv`
-- `topdown_backend_stalls_per_simpoint.csv`
+## Helios + Ideal Fusion IPC (normalized to baseline)
+
+Requires results under:
+- `scarab/src/simulations/baseline/...`
+- `scarab/src/simulations/helios/...`
+- `scarab/src/simulations/ideal-fusion-pass2/pass2/...`
+
+```bash
+cd /users/deepmish/scarab-infra
+python3 hpca2027-characterization/plot_helios_ideal_ipc.py \
+  --simulations-root /users/deepmish/scarab/src/simulations \
+  --output-dir hpca2027-characterization
+```
+
+Outputs: `ipc-helios-ideal.png` / `.pdf`, `ipc_helios_ideal.csv`.
