@@ -77,7 +77,7 @@ GROUP_FONT = 30
 APP_FONT = 28
 FIGSIZE = (24.0, 11.9)
 GROUP_SEPARATOR_COLOR = "#666666"
-SUMMARY_SEPARATOR_COLOR = "#F57C00"
+SUMMARY_SEPARATOR_COLOR = "#424242"
 SUMMARY_XTICK = "Average"
 
 DEFAULT_SIM_ROOT = Path("/users/deepmish/scarab/src/simulations")
@@ -303,7 +303,7 @@ def plot_speedup(
         positions_i,
         values_i,
         BAR_WIDTH,
-        label="Ideal Fusion",
+        label="Ideal fusion",
         color=IDEAL_COLOR,
         edgecolor="black",
         linewidth=1.5,
@@ -351,11 +351,14 @@ def plot_speedup(
     legend = ax.legend(
         frameon=True,
         fancybox=False,
+        framealpha=1.0,
         loc="upper left",
         fontsize=GROUP_FONT,
         edgecolor="black",
+        facecolor="white",
     )
     legend.get_frame().set_linewidth(1.5)
+    legend.get_frame().set_alpha(1.0)
 
     for spine in ax.spines.values():
         spine.set_visible(True)
