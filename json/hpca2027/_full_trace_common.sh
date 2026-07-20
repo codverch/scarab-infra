@@ -228,8 +228,9 @@ desc["_comment"] = (
 common = f"--icache_size 32768 --inst_limit {inst_limit} --full_warmup 0"
 runtime_ifuse_knobs = (
     "--ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 "
-    "--ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 10"
+    "--ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 9"
 )
+
 # RFP sweep descriptors include both "baseline" and "rfp"; those use --rfp_on
 # instead of I-Fuse knobs (hpca2027-rfp Scarab has no ifuse params).
 has_rfp = "rfp" in desc.get("configurations", {})
@@ -245,6 +246,23 @@ helios_knobs = (
     "--helios_fused_wait_tail_srcs 1 "
     "--helios_extended_commit_group 1"
 )
+
+def refresh_window(prev: str) -> str:
+    """Keep per-config I-Fuse knobs; only rewrite the sim window flags."""
+    parts = prev.split()
+    cleaned = []
+    skip = 0
+    for p in parts:
+        if skip:
+            skip -= 1
+            continue
+        if p in ("--inst_limit", "--full_warmup", "--icache_size"):
+            skip = 1
+            continue
+        cleaned.append(p)
+    rest = " ".join(cleaned).strip()
+    return f"{common} {rest}".strip() if rest else common
+
 for name, cfg in desc.get("configurations", {}).items():
     if name == "runtime_ifuse":
         cfg["params"] = (
@@ -252,13 +270,24 @@ for name, cfg in desc.get("configurations", {}).items():
             f"--ifuse_training_insert_threshold 1000"
         )
     elif name.startswith("train_thresh_"):
-        # Sweep configs: train_thresh_10 / _100 / _1000 / _10000
+        # Sweep configs: train_thresh_10 / _100 / _1000 / _10000 (default TT=32x4)
         try:
             thresh = int(name[len("train_thresh_"):])
         except ValueError:
             raise SystemExit(f"bad train_thresh config name: {name}")
         cfg["params"] = (
             f"{common} {runtime_ifuse_knobs} "
+            f"--ifuse_training_insert_threshold {thresh}"
+        )
+    elif name.startswith("tt64_thresh_"):
+        # 2x training table (64 sets x 4 ways = 256) + insert-threshold sweep
+        try:
+            thresh = int(name[len("tt64_thresh_"):])
+        except ValueError:
+            raise SystemExit(f"bad tt64_thresh config name: {name}")
+        cfg["params"] = (
+            f"{common} {runtime_ifuse_knobs} "
+            f"--ifuse_training_table_sets 64 --ifuse_training_table_ways 4 "
             f"--ifuse_training_insert_threshold {thresh}"
         )
     elif name == "helios":
@@ -282,10 +311,8 @@ for name, cfg in desc.get("configurations", {}).items():
             f"--ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{{workload}}/{{cluster_id}}.csv"
         )
     else:
-        # Preserve unknown configs but force window.
-        prev = cfg.get("params", "")
-        # Strip old inst_limit / full_warmup if present, then prepend common.
-        cfg["params"] = f"{common} {prev}".strip()
+        # Named sweeps (rt_hb22_..., conf sweeps, etc.): preserve knobs.
+        cfg["params"] = refresh_window(cfg.get("params", ""))
 
 desc_path.write_text(json.dumps(desc, indent=2) + "\n")
 print(f"Updated {desc_path}")

@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "runtime-ifuse",
+  "experiment": "runtime-ifuse-tt64-thresh-sweep",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -37,8 +37,26 @@
     }
   ],
   "configurations": {
-    "runtime_ifuse": {
-      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 9",
+    "tt64_thresh_10": {
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 9 --ifuse_training_table_sets 64 --ifuse_training_table_ways 4 --ifuse_training_insert_threshold 10",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "tt64_thresh_100": {
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 9 --ifuse_training_table_sets 64 --ifuse_training_table_ways 4 --ifuse_training_insert_threshold 100",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "tt64_thresh_1000": {
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 9 --ifuse_training_table_sets 64 --ifuse_training_table_ways 4 --ifuse_training_insert_threshold 1000",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "tt64_thresh_10000": {
+      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 9 --ifuse_training_table_sets 64 --ifuse_training_table_ways 4 --ifuse_training_insert_threshold 10000",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
@@ -48,8 +66,13 @@
     "configs": null
   },
   "visualize": {
-    "baseline": "runtime_ifuse",
-    "configs": [],
+    "baseline": "tt64_thresh_1000",
+    "configs": [
+      "tt64_thresh_10",
+      "tt64_thresh_100",
+      "tt64_thresh_1000",
+      "tt64_thresh_10000"
+    ],
     "counters": [
       "IPC",
       "IFUSE_FUSED_LOADS",
@@ -60,7 +83,10 @@
       "IFUSE_TRAINING_PAIRS_DISCOVERED",
       "TRAINING_TABLE_OBSERVATIONS",
       "TRAINING_TABLE_PROMOTIONS",
-      "TRAINING_TABLE_PROMOTION_REJECTS"
+      "TRAINING_TABLE_EVICTIONS",
+      "TRAINING_TABLE_PROMOTION_REJECTS",
+      "FCT_RUNTIME_INSERTS",
+      "FCT_RUNTIME_CONFLICTS"
     ],
     "average": false
   },
@@ -69,13 +95,14 @@
     "fallback_mb": 16384
   },
   "perf_analyze": {
-    "baseline": "runtime_ifuse",
+    "baseline": "tt64_thresh_1000",
     "counters": [
       "IPC",
       "IFUSE_FUSED_LOADS",
       "IFUSE_CORRECT_PREDICTIONS",
       "IFUSE_INCORRECT_PREDICTIONS",
-      "TRAINING_TABLE_PROMOTIONS"
+      "TRAINING_TABLE_PROMOTIONS",
+      "TRAINING_TABLE_EVICTIONS"
     ],
     "stat_groups": [
       "bp",

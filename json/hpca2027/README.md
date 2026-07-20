@@ -17,7 +17,9 @@ Traces under `/dev/shm/baseline/simpoint_traces`.
 | `ideal_fusion_unbounded_pass1.sh` | `simulations/ideal-fusion-unbounded-pass1/{app}/{sp}/` | `pass1` — unbounded distance; candidates → `/dev/shm/baseline/ideal_fusion_candidates_unbounded/` (needs Scarab `hpca2027-unbounded-distance-ideal-fusion`) |
 | `ideal_fusion_unbounded_pass2.sh` | `simulations/ideal-fusion-unbounded-pass2/{app}/{sp}/` | `pass2` — reads unbounded candidates from `/dev/shm/baseline/ideal_fusion_candidates_unbounded/` |
 | `runtime_ifuse.sh` | `simulations/runtime-ifuse/{app}/{sp}/` | `runtime_ifuse` only (threshold=1000) |
-| `runtime_ifuse_train_threshold_sweep.sh` | `simulations/runtime-ifuse-train-threshold-sweep/{config}/{app}/{sp}/` | `train_thresh_{10,100,1000,10000}` |
+| `runtime_ifuse_train_threshold_sweep.sh` | `simulations/runtime-ifuse-train-threshold-sweep/{config}/{app}/{sp}/` | `train_thresh_{10,100,1000,10000}` (TT 32×4) |
+| `runtime_ifuse_tt64_thresh_sweep.sh` | `simulations/runtime-ifuse-tt64-thresh-sweep/{config}/{app}/{sp}/` | `tt64_thresh_{10,100,1000,10000}` (TT 64×4 = 2×) |
+| `runtime_ifuse_ipc_close_sweep.sh` | `simulations/runtime-ifuse-ipc-close-sweep/{config}/...` | FCT/TT/thresh/confidence (graph+DB) |
 | `helios.sh` | `simulations/helios/{app}/{sp}/` | `helios` only (conf threshold=150, ±10) |
 | `rfp.sh` | `simulations/rfp/{config}/{app}/{sp}/` | `baseline` (`--rfp_on 0`) vs `rfp` (`--rfp_on 1`); needs Scarab `hpca2027-rfp` |
 
@@ -38,6 +40,13 @@ cd ~/scarab-infra
 # Training-threshold sweep: promote PC pairs to FCT after N=10/100/1000/10000 obs
 ./json/hpca2027/runtime_ifuse_train_threshold_sweep.sh
 
+# 2x training table (64x4) + same threshold sweep
+./json/hpca2027/runtime_ifuse_tt64_thresh_sweep.sh
+
+# Close runtime IPC toward PGO: larger FCT (hash_bits 22), TT, conf knobs
+# (excludes agentic + community/CC)
+./json/hpca2027/runtime_ifuse_ipc_close_sweep.sh
+
 # Register File Prefetch (requires Scarab on hpca2027-rfp):
 ./json/hpca2027/rfp.sh --build       # first time / after RFP source changes
 ./json/hpca2027/rfp.sh               # subsequent runs
@@ -51,6 +60,8 @@ cd ~/scarab-infra
 ./sci --sim hpca2027/runtime_ifuse
 ./sci --sim hpca2027/helios
 ./sci --sim hpca2027/runtime_ifuse_train_threshold_sweep
+./sci --sim hpca2027/runtime_ifuse_tt64_thresh_sweep
+./sci --sim hpca2027/runtime_ifuse_ipc_close_sweep
 ./sci --sim hpca2027/rfp
 ./json/hpca2027/baseline.sh --finalize
 ./json/hpca2027/ideal_fusion_pass1.sh --finalize
@@ -60,6 +71,8 @@ cd ~/scarab-infra
 ./json/hpca2027/runtime_ifuse.sh --finalize
 ./json/hpca2027/helios.sh --finalize
 ./json/hpca2027/runtime_ifuse_train_threshold_sweep.sh --finalize
+./json/hpca2027/runtime_ifuse_tt64_thresh_sweep.sh --finalize
+./json/hpca2027/runtime_ifuse_ipc_close_sweep.sh --finalize
 ./json/hpca2027/rfp.sh --finalize
 ```
 
@@ -95,6 +108,8 @@ Only rebuild when Scarab source or the workload Dockerfile changed:
 ./json/hpca2027/runtime_ifuse.sh --build
 ./json/hpca2027/helios.sh --build
 ./json/hpca2027/runtime_ifuse_train_threshold_sweep.sh --build
+./json/hpca2027/runtime_ifuse_tt64_thresh_sweep.sh --build
+./json/hpca2027/runtime_ifuse_ipc_close_sweep.sh --build
 ./json/hpca2027/rfp.sh --build
 # or:
 ./sci --build-scarab hpca2027/runtime_ifuse
