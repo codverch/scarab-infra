@@ -10,7 +10,7 @@ Traces under `/dev/shm/baseline/simpoint_traces`.
 | Scarab `full_warmup` | `20,000,000` |
 | Scarab `inst_limit` | `30,000,000` (20M warmup + 10M measured) |
 
-Each run simulates at most 30M fetched instructions: 20M warmup (stats reset at `full_warmup`), then up to 10M measured simulation.
+Each run simulates from instruction 1 of the simpoint zip (no leading segment skip), up to `inst_limit` or EOF.
 
 ## Register traces (once per tmpfs refresh)
 

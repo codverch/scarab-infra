@@ -150,59 +150,31 @@ else
     $SCARABPARAMS \
     &> sim.log"
   elif [ "$TRACE_TYPE" == "trace_then_cluster" ]; then
-    # simultion uses the specific trace file
-    # the roiStart is the second chunk, which is assumed to be segment size
-    #### if chunk zero chunk is part of the simulation, the roiStart is the first chunk
-    # the roiEnd is always the end of the trace -- (dynamorio uses 0)
-    # the warmup is the same
-
+    # Run from the first instruction in the simpoint zip; do not skip an initial
+    # segment/chunk. inst_limit is min(zip size, --inst_limit from descriptor).
     numChunk=$(unzip -l "$TRACEFILE" 2>/dev/null | grep -c "chunk\." || true)
-    # Multi-chunk zips embed a prior segment before the simpoint; skip SEGSIZE instrs.
-    # Single-chunk simpoint zips (e.g. some cluster_id != segment_id cases) start at 1
-    # and contain roughly one segment of instructions, not segment_idx+1 segments.
-    if [ "${numChunk:-0}" -le 1 ]; then
-      roiStart=1
-      # Only clamp to a single segment if a larger limit wasn't already requested
-      # above (no-warmup + big --inst_limit case keeps the full requested limit).
-      if [ "$instLimit" -le "$SEGSIZE" ]; then
-        instLimit=$SEGSIZE
-        if [ "${numChunk:-0}" -gt 0 ]; then
-          instLimit=$(( numChunk * SEGSIZE ))
-        fi
+    roiStart=1
+    instLimit=$SEGSIZE
+    if [ "${numChunk:-0}" -gt 0 ]; then
+      instLimit=$(( numChunk * SEGSIZE ))
+    fi
+    if [[ "$SCARABPARAMS" =~ --inst_limit[[:space:]]+([0-9]+) ]]; then
+      desired_limit="${BASH_REMATCH[1]}"
+      if [ "$desired_limit" -lt "$instLimit" ]; then
+        instLimit=$desired_limit
       fi
-      # Single-chunk zips hold ~one segment; 10M warmup would consume the whole trace
-      # and leave only *.csv.warmup (no bp.stat.0.csv). Measure the full zip instead.
-      WARMUP=0
     fi
 
-    # roiStart 1 means simulation starts with chunk 0
-    if [ "$roiStart" == "1" ]; then
-      #echo "ROISTART"
-      #echo "$TRACEFILE"
-      #echo "$segID"
-      scarabCmd="$SCARABHOME/src/$SCARAB_BIN \
-      --frontend memtrace \
-      --cbp_trace_r0=$TRACEFILE \
-      --memtrace_roi_begin=1 \
-      --memtrace_roi_end=$instLimit \
-      --inst_limit=$instLimit \
-      --full_warmup=$WARMUP \
-      --use_fetched_count=1 \
-      $SCARABPARAMS \
-      &> sim.log"
-    else
-      #echo "!ROISTART"
-      scarabCmd="$SCARABHOME/src/$SCARAB_BIN \
-      --frontend memtrace \
-      --cbp_trace_r0=$TRACEFILE \
-      --memtrace_roi_begin=$(( $SEGSIZE + 1)) \
-      --memtrace_roi_end=$(( $SEGSIZE + $instLimit )) \
-      --inst_limit=$instLimit \
-      --full_warmup=$WARMUP \
-      --use_fetched_count=1 \
-      $SCARABPARAMS \
-      &> sim.log"
-    fi
+    scarabCmd="$SCARABHOME/src/$SCARAB_BIN \
+    --frontend memtrace \
+    --cbp_trace_r0=$TRACEFILE \
+    --memtrace_roi_begin=1 \
+    --memtrace_roi_end=$instLimit \
+    --inst_limit=$instLimit \
+    --full_warmup=$WARMUP \
+    --use_fetched_count=1 \
+    $SCARABPARAMS \
+    &> sim.log"
   elif [ "$TRACE_TYPE" == "cluster_then_trace" ]; then
     if [ "$WARMUP" -lt "$TRACE_WARMUP" ]; then
       scarabCmd="$SCARABHOME/src/$SCARAB_BIN \
