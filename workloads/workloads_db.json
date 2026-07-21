@@ -2789,7 +2789,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -2945,7 +2945,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3081,7 +3081,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3184,7 +3184,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3450,7 +3450,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3479,7 +3479,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3503,7 +3503,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3527,7 +3527,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3556,7 +3556,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3585,7 +3585,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3614,7 +3614,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3830,61 +3830,16 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
         },
         "simpoints":[
           {
-            "cluster_id":24,
-            "segment_id":0,
-            "weight":0.3321957551
-          },
-          {
-            "cluster_id":19,
+            "cluster_id":17,
             "segment_id":1,
-            "weight":0.1669510612
-          },
-          {
-            "cluster_id":21,
-            "segment_id":2,
-            "weight":0.1669510612
-          },
-          {
-            "cluster_id":4,
-            "segment_id":3,
-            "weight":0.1669510612
-          },
-          {
-            "cluster_id":2,
-            "segment_id":4,
-            "weight":0.0417377653
-          },
-          {
-            "cluster_id":1,
-            "segment_id":5,
-            "weight":0.0417377653
-          },
-          {
-            "cluster_id":7,
-            "segment_id":6,
-            "weight":0.0417377653
-          },
-          {
-            "cluster_id":18,
-            "segment_id":7,
-            "weight":0.0417377653
-          },
-          {
-            "cluster_id":3,
-            "segment_id":8,
-            "weight":0.1
-          },
-          {
-            "cluster_id":5,
-            "segment_id":9,
-            "weight":0.1
+            "weight":1.0
           }
         ]
       },
@@ -3894,61 +3849,36 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
         },
         "simpoints":[
           {
-            "cluster_id":18,
+            "cluster_id":5,
             "segment_id":0,
-            "weight":0.610001
-          },
-          {
-            "cluster_id":4,
-            "segment_id":1,
-            "weight":0.216666
-          },
-          {
-            "cluster_id":3,
-            "segment_id":2,
-            "weight":0.173333
+            "weight":0.0869564565218
           },
           {
             "cluster_id":1,
-            "segment_id":3,
-            "weight":0.1
+            "segment_id":1,
+            "weight":0.130434934783
           },
           {
-            "cluster_id":2,
-            "segment_id":4,
-            "weight":0.1
-          },
-          {
-            "cluster_id":5,
-            "segment_id":5,
-            "weight":0.1
+            "cluster_id":18,
+            "segment_id":2,
+            "weight":0.608695695652
           },
           {
             "cluster_id":6,
-            "segment_id":6,
-            "weight":0.1
+            "segment_id":3,
+            "weight":0.0869564565218
           },
           {
-            "cluster_id":7,
-            "segment_id":7,
-            "weight":0.1
-          },
-          {
-            "cluster_id":8,
-            "segment_id":8,
-            "weight":0.1
-          },
-          {
-            "cluster_id":9,
-            "segment_id":9,
-            "weight":0.1
+            "cluster_id":11,
+            "segment_id":4,
+            "weight":0.0869564565218
           }
         ]
       },
@@ -4022,61 +3952,36 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":10000000,
-            "warmup":0,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
         },
         "simpoints":[
           {
-            "cluster_id":6,
+            "cluster_id":20,
             "segment_id":0,
-            "weight":0.35
-          },
-          {
-            "cluster_id":18,
-            "segment_id":1,
-            "weight":0.35
-          },
-          {
-            "cluster_id":5,
-            "segment_id":2,
-            "weight":0.3
-          },
-          {
-            "cluster_id":1,
-            "segment_id":3,
-            "weight":0.1
-          },
-          {
-            "cluster_id":2,
-            "segment_id":4,
-            "weight":0.1
-          },
-          {
-            "cluster_id":3,
-            "segment_id":5,
-            "weight":0.1
-          },
-          {
-            "cluster_id":4,
-            "segment_id":6,
-            "weight":0.1
-          },
-          {
-            "cluster_id":7,
-            "segment_id":7,
-            "weight":0.1
-          },
-          {
-            "cluster_id":8,
-            "segment_id":8,
-            "weight":0.1
+            "weight":0.181817981818
           },
           {
             "cluster_id":9,
-            "segment_id":9,
-            "weight":0.1
+            "segment_id":1,
+            "weight":0.227272977273
+          },
+          {
+            "cluster_id":2,
+            "segment_id":2,
+            "weight":0.318181968182
+          },
+          {
+            "cluster_id":17,
+            "segment_id":3,
+            "weight":0.181817981818
+          },
+          {
+            "cluster_id":10,
+            "segment_id":4,
+            "weight":0.0909090909091
           }
         ]
       },

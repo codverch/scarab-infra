@@ -10,39 +10,41 @@
   "traces_dir": "/dev/shm/baseline/simpoint_traces",
   "workload_db": "baseline.json",
   "top_simpoint": false,
-  "_comment": "Register File Prefetch (RFP) sweep: baseline (--rfp_on 0) vs rfp (--rfp_on 1). No Scarab warmup; each simpoint runs to EOF.",
+  "_comment": "20M warmup + 10M measured simulation (inst_limit=30,000,000, full_warmup=20,000,000, descriptor warmup=20,000,000).",
   "simulations": [
     {
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
         "appworld",
-        "bc",
         "bfs",
-        "core_bench",
         "dfs",
+        "pagerank",
+        "sssp_ego_fb",
+        "core_bench",
+        "mlgym_fmnist",
+        "terminal_bench",
         "duckdb",
         "leveldb",
-        "mlgym_fmnist",
-        "pagerank",
         "rocksdb",
-        "sssp_ego_fb",
-        "terminal_bench"
+        "clickhouse",
+        "masstree",
+        "silo"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
-      "warmup": 0
+      "warmup": 20000000
     }
   ],
   "configurations": {
     "baseline": {
-      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --rfp_on 0",
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --rfp_on 0",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
     },
     "rfp": {
-      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --rfp_on 1",
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --rfp_on 1",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0

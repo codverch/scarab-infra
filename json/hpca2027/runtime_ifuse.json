@@ -10,35 +10,35 @@
   "traces_dir": "/dev/shm/baseline/simpoint_traces",
   "workload_db": "baseline.json",
   "top_simpoint": false,
-  "_comment": "No Scarab warmup; inst_limit=91000000 (>= max SP 90000000). Each simpoint runs to EOF (full available instructions).",
+  "_comment": "20M warmup + 10M measured simulation (inst_limit=30,000,000, full_warmup=20,000,000, descriptor warmup=20,000,000).",
   "simulations": [
     {
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
         "appworld",
-        "bc",
         "bfs",
-        "community",
-        "connected_components",
-        "core_bench",
         "dfs",
+        "pagerank",
+        "sssp_ego_fb",
+        "core_bench",
+        "mlgym_fmnist",
+        "terminal_bench",
         "duckdb",
         "leveldb",
-        "mlgym_fmnist",
-        "pagerank",
         "rocksdb",
-        "sssp_ego_fb",
-        "terminal_bench"
+        "clickhouse",
+        "masstree",
+        "silo"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
-      "warmup": 0
+      "warmup": 20000000
     }
   ],
   "configurations": {
     "runtime_ifuse": {
-      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 9",
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 9",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0

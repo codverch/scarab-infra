@@ -2,128 +2,81 @@
 
 Traces under `/dev/shm/baseline/simpoint_traces`.
 
-## Window
+## Simulation window
 
-| | Value |
-|--|--|
-| `full_warmup` | `0` |
-| `inst_limit` | suite max SP + 1M (run each SP to EOF) |
+| Setting | Value |
+|---------|-------|
+| Descriptor `warmup` | `20,000,000` |
+| Scarab `full_warmup` | `20,000,000` |
+| Scarab `inst_limit` | `30,000,000` (20M warmup + 10M measured) |
 
-| Launcher | Experiment dir | Config |
-|----------|----------------|--------|
-| `baseline.sh` | `simulations/baseline/{app}/{sp}/` | `baseline` only |
-| `ideal_fusion_pass1.sh` | `simulations/ideal-fusion-pass1/{app}/{sp}/` | `pass1` — candidates → `/dev/shm/baseline/ideal_fusion_candidates/` |
-| `ideal_fusion_pass2.sh` | `simulations/ideal-fusion-pass2/{app}/{sp}/` | `pass2` — reads candidates from `/dev/shm/baseline/ideal_fusion_candidates/` |
-| `ideal_fusion_unbounded_pass1.sh` | `simulations/ideal-fusion-unbounded-pass1/{app}/{sp}/` | `pass1` — unbounded distance; candidates → `/dev/shm/baseline/ideal_fusion_candidates_unbounded/` (needs Scarab `hpca2027-unbounded-distance-ideal-fusion`) |
-| `ideal_fusion_unbounded_pass2.sh` | `simulations/ideal-fusion-unbounded-pass2/{app}/{sp}/` | `pass2` — reads unbounded candidates from `/dev/shm/baseline/ideal_fusion_candidates_unbounded/` |
-| `runtime_ifuse.sh` | `simulations/runtime-ifuse/{app}/{sp}/` | `runtime_ifuse` only (threshold=1000) |
-| `runtime_ifuse_train_threshold_sweep.sh` | `simulations/runtime-ifuse-train-threshold-sweep/{config}/{app}/{sp}/` | `train_thresh_{10,100,1000,10000}` (TT 32×4) |
-| `runtime_ifuse_tt64_thresh_sweep.sh` | `simulations/runtime-ifuse-tt64-thresh-sweep/{config}/{app}/{sp}/` | `tt64_thresh_{10,100,1000,10000}` (TT 64×4 = 2×) |
-| `runtime_ifuse_ipc_close_sweep.sh` | `simulations/runtime-ifuse-ipc-close-sweep/{config}/...` | FCT/TT/thresh/confidence (graph+DB) |
-| `helios.sh` | `simulations/helios/{app}/{sp}/` | `helios` only (conf threshold=150, ±10) |
-| `rfp.sh` | `simulations/rfp/{config}/{app}/{sp}/` | `baseline` (`--rfp_on 0`) vs `rfp` (`--rfp_on 1`); needs Scarab `hpca2027-rfp` |
+Each run simulates at most 30M fetched instructions: 20M warmup (stats reset at `full_warmup`), then up to 10M measured simulation.
 
-## Fast path (recommended)
-
-Do **not** rebuild Scarab/docker every time — that is what makes setup slow.
+## Register traces (once per tmpfs refresh)
 
 ```bash
 cd ~/scarab-infra
-./json/hpca2027/baseline.sh          # register + sim + finalize (reuses cache)
-./json/hpca2027/ideal_fusion_pass1.sh
-./json/hpca2027/ideal_fusion_pass2.sh   # requires pass-1 candidates
-./json/hpca2027/ideal_fusion_unbounded_pass1.sh --build   # Scarab unbounded-distance branch
-./json/hpca2027/ideal_fusion_unbounded_pass2.sh           # requires unbounded pass-1 candidates
-./json/hpca2027/runtime_ifuse.sh
-./json/hpca2027/helios.sh
+python3 -m scripts.register_local_traces \
+  --traces-dir /dev/shm/baseline/simpoint_traces \
+  --warmup 20000000 \
+  --workloads appworld bfs dfs pagerank sssp_ego_fb core_bench mlgym_fmnist \
+    terminal_bench duckdb leveldb rocksdb clickhouse masstree silo
+```
 
-# Training-threshold sweep: promote PC pairs to FCT after N=10/100/1000/10000 obs
-./json/hpca2027/runtime_ifuse_train_threshold_sweep.sh
+## Run simulations
 
-# 2x training table (64x4) + same threshold sweep
-./json/hpca2027/runtime_ifuse_tt64_thresh_sweep.sh
-
-# Close runtime IPC toward PGO: larger FCT (hash_bits 22), TT, conf knobs
-# (excludes agentic + community/CC)
-./json/hpca2027/runtime_ifuse_ipc_close_sweep.sh
-
-# Register File Prefetch (requires Scarab on hpca2027-rfp):
-./json/hpca2027/rfp.sh --build       # first time / after RFP source changes
-./json/hpca2027/rfp.sh               # subsequent runs
-
-# equivalent sci-only (after a one-time --dry-run if JSON is stale):
+```bash
+cd ~/scarab-infra
 ./sci --sim hpca2027/baseline
 ./sci --sim hpca2027/ideal_fusion_pass1
-./sci --sim hpca2027/ideal_fusion_pass2
-./sci --sim hpca2027/ideal_fusion_unbounded_pass1
+./sci --sim hpca2027/ideal_fusion_pass2          # requires pass-1 candidates
+./sci --sim hpca2027/ideal_fusion_unbounded_pass1 # Scarab hpca2027-unbounded-distance-ideal-fusion
 ./sci --sim hpca2027/ideal_fusion_unbounded_pass2
 ./sci --sim hpca2027/runtime_ifuse
 ./sci --sim hpca2027/helios
 ./sci --sim hpca2027/runtime_ifuse_train_threshold_sweep
 ./sci --sim hpca2027/runtime_ifuse_tt64_thresh_sweep
 ./sci --sim hpca2027/runtime_ifuse_ipc_close_sweep
-./sci --sim hpca2027/rfp
-./json/hpca2027/baseline.sh --finalize
-./json/hpca2027/ideal_fusion_pass1.sh --finalize
-./json/hpca2027/ideal_fusion_pass2.sh --finalize
-./json/hpca2027/ideal_fusion_unbounded_pass1.sh --finalize
-./json/hpca2027/ideal_fusion_unbounded_pass2.sh --finalize
-./json/hpca2027/runtime_ifuse.sh --finalize
-./json/hpca2027/helios.sh --finalize
-./json/hpca2027/runtime_ifuse_train_threshold_sweep.sh --finalize
-./json/hpca2027/runtime_ifuse_tt64_thresh_sweep.sh --finalize
-./json/hpca2027/runtime_ifuse_ipc_close_sweep.sh --finalize
-./json/hpca2027/rfp.sh --finalize
+./sci --sim hpca2027/rfp                          # Scarab hpca2027-rfp
+
+./sci --collect-stats hpca2027/baseline
+./sci --visualize hpca2027/baseline
 ```
 
-Ideal fusion workflow:
+Rebuild Scarab only when source or the workload Dockerfile changed:
 
 ```bash
-# Pass-1 writes candidates to tmpfs (not under simulations/)
-./json/hpca2027/ideal_fusion_pass1.sh
-./json/hpca2027/ideal_fusion_pass1.sh --check-candidates
-
-# Pass-2 consumes those candidates; results under simulations/ideal-fusion-pass2/
-./json/hpca2027/ideal_fusion_pass2.sh --check-candidates   # optional preflight
-./json/hpca2027/ideal_fusion_pass2.sh
-```
-
-Unbounded-distance ideal fusion (Scarab `hpca2027-unbounded-distance-ideal-fusion`):
-
-```bash
-# Separate candidate tree so bounded runs are not overwritten
-./json/hpca2027/ideal_fusion_unbounded_pass1.sh --build
-./json/hpca2027/ideal_fusion_unbounded_pass1.sh --check-candidates
-./json/hpca2027/ideal_fusion_unbounded_pass2.sh --check-candidates
-./json/hpca2027/ideal_fusion_unbounded_pass2.sh
-```
-
-Only rebuild when Scarab source or the workload Dockerfile changed:
-
-```bash
-./json/hpca2027/ideal_fusion_pass1.sh --build
-./json/hpca2027/ideal_fusion_pass2.sh --build
-./json/hpca2027/ideal_fusion_unbounded_pass1.sh --build
-./json/hpca2027/ideal_fusion_unbounded_pass2.sh --build
-./json/hpca2027/runtime_ifuse.sh --build
-./json/hpca2027/helios.sh --build
-./json/hpca2027/runtime_ifuse_train_threshold_sweep.sh --build
-./json/hpca2027/runtime_ifuse_tt64_thresh_sweep.sh --build
-./json/hpca2027/runtime_ifuse_ipc_close_sweep.sh --build
-./json/hpca2027/rfp.sh --build
-# or:
 ./sci --build-scarab hpca2027/runtime_ifuse
 ./sci --build-scarab hpca2027/helios
 ./sci --build-scarab hpca2027/rfp
 ```
 
-## Helios confidence defaults
+## Ideal fusion workflow
 
-From `scarab/src/general.param.def` (used by `helios.sh`):
+Pass-1 writes candidates to tmpfs (not under `simulations/`):
 
-| Knob | Value |
-|------|-------|
-| `helios_confidence_threshold` | `150` |
-| `helios_confidence_increment` | `10` |
-| `helios_confidence_decrement` | `10` |
-| `helios_fusion_window` | `64` |
+```text
+/dev/shm/baseline/ideal_fusion_candidates/{app}/{simpoint}.csv
+```
+
+Unbounded-distance pass-1 uses:
+
+```text
+/dev/shm/baseline/ideal_fusion_candidates_unbounded/{app}/{simpoint}.csv
+```
+
+## Descriptors
+
+| JSON | Experiment | Config(s) |
+|------|------------|-----------|
+| `baseline.json` | `baseline` | `baseline` |
+| `ideal_fusion_pass1.json` | `ideal-fusion-pass1` | `pass1` |
+| `ideal_fusion_pass2.json` | `ideal-fusion-pass2` | `pass2` |
+| `ideal_fusion_unbounded_pass1.json` | `ideal-fusion-unbounded-pass1` | `pass1` |
+| `ideal_fusion_unbounded_pass2.json` | `ideal-fusion-unbounded-pass2` | `pass2` |
+| `runtime_ifuse.json` | `runtime-ifuse` | `runtime_ifuse` |
+| `runtime_ifuse_train_threshold_sweep.json` | `runtime-ifuse-train-threshold-sweep` | `train_thresh_{10,100,1000,10000}` |
+| `runtime_ifuse_tt64_thresh_sweep.json` | `runtime-ifuse-tt64-thresh-sweep` | `tt64_thresh_{10,100,1000,10000}` |
+| `runtime_ifuse_ipc_close_sweep.json` | `runtime-ifuse-ipc-close-sweep` | FCT/TT/thresh/confidence sweep |
+| `helios.json` | `helios` | `helios` |
+| `rfp.json` | `rfp` | `baseline` (`--rfp_on 0`) vs `rfp` (`--rfp_on 1`) |

@@ -10,35 +10,35 @@
   "traces_dir": "/dev/shm/baseline/simpoint_traces",
   "workload_db": "baseline.json",
   "top_simpoint": false,
-  "_comment": "Unbounded-distance ideal fusion pass 2 (hpca2027-unbounded-distance-ideal-fusion). Reads candidates from ideal_fusion_candidates_unbounded/.",
+  "_comment": "20M warmup + 10M measured simulation (inst_limit=30,000,000, full_warmup=20,000,000, descriptor warmup=20,000,000).",
   "simulations": [
     {
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
         "appworld",
-        "bc",
         "bfs",
-        "community",
-        "connected_components",
-        "core_bench",
         "dfs",
+        "pagerank",
+        "sssp_ego_fb",
+        "core_bench",
+        "mlgym_fmnist",
+        "terminal_bench",
         "duckdb",
         "leveldb",
-        "mlgym_fmnist",
-        "pagerank",
         "rocksdb",
-        "sssp_ego_fb",
-        "terminal_bench"
+        "clickhouse",
+        "masstree",
+        "silo"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
-      "warmup": 0
+      "warmup": 20000000
     }
   ],
   "configurations": {
     "pass2": {
-      "params": "--icache_size 32768 --inst_limit 91000000 --full_warmup 0 --ifuse_fusion_distance 0 --ideal_fusion_pass 2 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates_unbounded/{workload}/{cluster_id}.csv",
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --ifuse_fusion_distance 0 --ideal_fusion_pass 2 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates_unbounded/{workload}/{cluster_id}.csv",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
