@@ -33,7 +33,10 @@ cd ~/scarab-infra
 ./sci --sim hpca2027/ideal_fusion_unbounded_pass1 # Scarab hpca2027-unbounded-distance-ideal-fusion
 ./sci --sim hpca2027/ideal_fusion_unbounded_pass2
 ./sci --sim hpca2027/runtime_ifuse
-./sci --sim hpca2027/helios
+# Helios: per-app knobs — use the launcher (not bare ./sci --sim hpca2027/helios)
+./json/hpca2027/helios.sh --dry-run   # print knobs + pin binary
+./json/hpca2027/helios.sh             # register + per-app sim (reuses cached Scarab)
+./json/hpca2027/helios.sh --build     # rebuild Scarab once, then run
 ./sci --sim hpca2027/runtime_ifuse_train_threshold_sweep
 ./sci --sim hpca2027/runtime_ifuse_tt64_thresh_sweep
 ./sci --sim hpca2027/runtime_ifuse_ipc_close_sweep
@@ -43,13 +46,36 @@ cd ~/scarab-infra
 ./sci --visualize hpca2027/baseline
 ```
 
+`helios.sh` pins a hash-named Scarab binary so each app’s `./sci --sim` does **not**
+rebuild (unlike `scarab_current`, which rebuilds when the scarab tree is dirty).
+Docker image tags are reused/retagged; full image rebuild is avoided.
+
 Rebuild Scarab only when source or the workload Dockerfile changed:
 
 ```bash
 ./sci --build-scarab hpca2027/runtime_ifuse
-./sci --build-scarab hpca2027/helios
+./json/hpca2027/helios.sh --build
 ./sci --build-scarab hpca2027/rfp
 ```
+
+### Helios per-app configs (stores-off)
+
+| App | Config |
+|-----|--------|
+| `terminal_bench` | `T100/W64/I1/D10/stores-off` |
+| `bfs` | `T300/W64/I1/D10/stores-off` |
+| `sssp_ego_fb` | `T3/W64/I1/D3/stores-off` |
+| `dfs` | `T300/W64/I1/D10/stores-off` |
+| `pagerank` | `T300/W64/I1/D10/stores-off` |
+| `core_bench` | `T1000/W64/I1/D10/stores-off` |
+| `leveldb` | `T100000/W64/I1/D10000/stores-off` |
+| `appworld` | `T10000/W64/I1/D10/stores-off` |
+| `rocksdb` | `T3/W64/I1/D3/stores-off` |
+| `mlgym_fmnist` | `T150/W64/I10/D10/stores-off` |
+| `duckdb` | `T150/W64/I10/D10/stores-off` |
+| `clickhouse` | `T150/W64/I10/D10/stores-off` |
+| `masstree` | `T150/W64/I10/D10/stores-off` |
+| `silo` | `T150/W64/I10/D10/stores-off` |
 
 ## Ideal fusion workflow
 
