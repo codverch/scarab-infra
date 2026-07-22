@@ -616,7 +616,7 @@ def plot_mpki_bars(
             label.set_weight("bold")
 
     ax.set_ylabel(
-        "Mispredictions\nper kilo instructions\n(" + "MPKI" + ")",
+        "Mispredictions\nPer Kilo Instructions\n(MPKI)",
         fontsize=IPC_AXIS_LABEL_FONT,
         fontfamily=FONT_FAMILY,
     )
