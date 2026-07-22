@@ -1,33 +1,44 @@
 #!/usr/bin/env python3
-"""Simpoint-weighted fraction of on-path memory loads fused by I-Fuse and ideal fusion.
+"""Simpoint-weighted fraction of on-path memory loads covered by each scheme.
 
-Each fusion pair involves two loads. FUSED_LOADS counters count pairs, so the load
-numerator is doubled (ideal fusion also exposes IDEAL_FUSION_LOADS_PARTICIPATED_count).
+Per workload (simpoint-weighted):
+  Helios:              100 * 2 * HELIOS_FUSIONS_COMMITTED / ONPATH_MEM_LOADS
+  Register file prefetching: 100 * RFP_RETIRE_COVERED / ONPATH_MEM_LOADS
+  I-Fuse:              100 * 2 * IFUSE_FUSED_LOADS / ONPATH_MEM_LOADS
+  Ideal fusion:        100 * IDEAL_FUSION_LOADS_PARTICIPATED / ONPATH_MEM_LOADS
 
-Per workload:
-  I-Fuse fraction  = 100 * sum(weight * 2 * IFUSE_FUSED_LOADS) / sum(weight * ONPATH_MEM_LOADS)
-  Ideal fraction   = 100 * sum(weight * IDEAL_FUSION_LOADS_PARTICIPATED)
-                     / sum(weight * ONPATH_MEM_LOADS)
-
-ONPATH_MEM_LOADS is read from ideal-fusion simpoints (same trace ROI). Numerators come from
-ifuse.stat.0.csv and ideal_fusion.stat.0.csv respectively.
+ONPATH_MEM_LOADS is read from ideal-fusion simpoints (10M measured window). Helios fusion
+counts are scaled to the ideal simpoint's Periodic_Instructions when Helios ran longer
+(e.g. periodic stats include warmup / re-fetches).
 
 Commands:
 
 /users/deepmish/miniconda3/envs/scarabinfra/bin/python \
   /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_fusion_fraction.py \
   --simulations-root /users/deepmish/scarab/src/simulations \
+  --helios-dir /users/deepmish/scarab/src/simulations/helios \
+  --rfp-dir /users/deepmish/scarab/src/simulations/rfp \
+  --ifuse-dir /users/deepmish/scarab/src/simulations/ifuse/tt256_thresh_1000 \
+  --ifuse-config datacenter \
+  --ideal-fusion-dir /users/deepmish/scarab/src/simulations/ideal-fusion \
   --output-dir /users/deepmish/scarab/src/hpca2027-main-graphs-results/fusion_fraction
+
+cd /users/deepmish/scarab-infra
+git add hpca2027-main-graphs/plot_fusion_fraction.py
+git commit -m "Add Helios and RFP bars to on-path load fusion fraction plot."
+git push
 
 cd /users/deepmish/scarab
 git add src/hpca2027-main-graphs-results/fusion_fraction/
 git commit -m "Update HPCA main-graph fusion fraction results."
+git push
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,39 +48,68 @@ if str(GRAPH_DIR) not in sys.path:
     sys.path.insert(0, str(GRAPH_DIR))
 
 from plot_ipc import (  # noqa: E402
+    AVERAGE_SEPARATOR_COLOR,
+    BAR_EDGE_WIDTH,
+    BAR_WIDTH,
     DEFAULT_FUSION_FRACTION_OUTPUT_DIR,
+    DEFAULT_HELIOS_CONFIG,
+    DEFAULT_HELIOS_DIR,
     DEFAULT_IDEAL_CONFIG,
     DEFAULT_IDEAL_DIR,
-    DEFAULT_IFUSE_CONFIG,
-    DEFAULT_IFUSE_DIR,
+    DEFAULT_IPC_IFUSE_CONFIG,
+    DEFAULT_IPC_IFUSE_DIR,
+    DEFAULT_RFP_CONFIG,
+    DEFAULT_RFP_DIR,
     DEFAULT_SIMULATIONS_ROOT,
     DEFAULT_SUBSUITE,
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
+    FONT_FAMILY,
+    HELIOS_COLOR,
     IDEAL_FUSION_COLOR,
     IFUSE_COLOR,
-    MAROON_COLOR,
+    IPC_AXIS_FONT,
+    IPC_AXIS_LABEL_FONT,
+    IPC_TICK_FONT,
+    RFP_COLOR,
     SIMPOINT_WORKLOADS,
     find_simpoint_dir,
     load_simpoint_trace_weights,
     rename_workload,
 )
 
+HELIOS_FUSED_STAT = "HELIOS_FUSIONS_COMMITTED_count"
+RFP_COVERED_STAT = "RFP_RETIRE_COVERED_count"
 IFUSE_FUSED_STAT = "IFUSE_FUSED_LOADS_count"
 IDEAL_LOADS_PARTICIPATED_STAT = "IDEAL_FUSION_LOADS_PARTICIPATED_count"
 ONPATH_MEM_LOADS_STAT = "ONPATH_MEM_LOADS_count"
+PERIODIC_INSTRUCTIONS_STAT = "Periodic_Instructions"
 LOADS_PER_FUSION_PAIR = 2
+MEASUREMENT_WINDOW_TOLERANCE = 0.05
+
+SERIES: tuple[tuple[str, str, str], ...] = (
+    ("helios", "Helios", HELIOS_COLOR),
+    ("rfp", "RFP", RFP_COLOR),
+    ("ifuse", "I-Fuse", IFUSE_COLOR),
+    ("ideal", "Ideal fusion", IDEAL_FUSION_COLOR),
+)
 
 
 @dataclass
 class FusionFractionResult:
     workload: str
+    helios_loads_participated: float
+    rfp_loads_covered: float
     ifuse_loads_participated: float
     ideal_loads_participated: float
     onpath_mem_loads: float
+    helios_fraction_pct: float | None
+    rfp_fraction_pct: float | None
     ifuse_fraction_pct: float
     ideal_fraction_pct: float
     trace_count: int
+    helios_trace_count: int
+    rfp_trace_count: int
 
 
 def stat_count_from_csv(stat_csv: Path, stat_name: str) -> float | None:
@@ -108,36 +148,108 @@ def simpoint_stat(
     return stat_count_from_csv(sim_dir / stat_file, stat_name)
 
 
+def periodic_instructions(sim_dir: Path | None) -> float | None:
+    if sim_dir is None:
+        return None
+    return stat_count_from_csv(sim_dir / "core.stat.0.csv", PERIODIC_INSTRUCTIONS_STAT)
+
+
+def scale_to_measurement_window(
+    count: float,
+    scheme_periodic: float | None,
+    reference_periodic: float | None,
+) -> float:
+    if (
+        scheme_periodic is None
+        or reference_periodic is None
+        or scheme_periodic <= 0
+        or reference_periodic <= 0
+    ):
+        return count
+    if abs(scheme_periodic - reference_periodic) / reference_periodic <= MEASUREMENT_WINDOW_TOLERANCE:
+        return count
+    return count * (reference_periodic / scheme_periodic)
+
+
+def helios_stats_available(
+    helios_dir: Path,
+    helios_config: str,
+    workloads: list[str],
+    sp_weights: dict[tuple[str, str], float],
+    *,
+    suite: str,
+    subsuite: str,
+) -> bool:
+    for workload in workloads:
+        for (wl, cluster_id), weight in sp_weights.items():
+            if wl != workload or weight <= 0:
+                continue
+            sim_dir = find_simpoint_dir(
+                helios_dir, helios_config, workload, cluster_id, suite=suite, subsuite=subsuite
+            )
+            if sim_dir is None:
+                continue
+            if stat_count_from_csv(sim_dir / "core.stat.0.csv", HELIOS_FUSED_STAT) is not None:
+                return True
+    return False
+
+
+def rfp_stats_available(
+    rfp_dir: Path,
+    rfp_config: str,
+    workloads: list[str],
+    sp_weights: dict[tuple[str, str], float],
+    *,
+    suite: str,
+    subsuite: str,
+) -> bool:
+    for workload in workloads:
+        for (wl, cluster_id), weight in sp_weights.items():
+            if wl != workload or weight <= 0:
+                continue
+            sim_dir = find_simpoint_dir(
+                rfp_dir, rfp_config, workload, cluster_id, suite=suite, subsuite=subsuite
+            )
+            if sim_dir is None:
+                continue
+            if stat_count_from_csv(sim_dir / "rfp.stat.0.csv", RFP_COVERED_STAT) is not None:
+                return True
+    return False
+
+
 def compute_workload_fraction(
     workload: str,
+    helios_dir: Path | None,
+    rfp_dir: Path | None,
     ifuse_dir: Path,
     ideal_dir: Path,
     sp_weights: dict[tuple[str, str], float],
     *,
+    helios_config: str,
+    rfp_config: str,
     ifuse_config: str,
     ideal_config: str,
+    include_helios: bool,
+    include_rfp: bool,
     suite: str,
     subsuite: str,
 ) -> FusionFractionResult | None:
+    weighted_helios = 0.0
+    weighted_rfp = 0.0
     weighted_ifuse = 0.0
     weighted_ideal = 0.0
     weighted_onpath = 0.0
     weight_sum = 0.0
     trace_count = 0
+    helios_trace_count = 0
+    rfp_trace_count = 0
 
     for (wl, cluster_id), weight in sp_weights.items():
         if wl != workload or weight <= 0:
             continue
 
-        ifuse_fused = simpoint_stat(
-            ifuse_dir,
-            ifuse_config,
-            workload,
-            cluster_id,
-            stat_file="ifuse.stat.0.csv",
-            stat_name=IFUSE_FUSED_STAT,
-            suite=suite,
-            subsuite=subsuite,
+        ideal_sim = find_simpoint_dir(
+            ideal_dir, ideal_config, workload, cluster_id, suite=suite, subsuite=subsuite
         )
         ideal_participated = simpoint_stat(
             ideal_dir,
@@ -159,16 +271,63 @@ def compute_workload_fraction(
             suite=suite,
             subsuite=subsuite,
         )
-        if (
-            ifuse_fused is None
-            or ideal_participated is None
-            or onpath_loads is None
-            or onpath_loads <= 0
-        ):
+        ifuse_fused = simpoint_stat(
+            ifuse_dir,
+            ifuse_config,
+            workload,
+            cluster_id,
+            stat_file="ifuse.stat.0.csv",
+            stat_name=IFUSE_FUSED_STAT,
+            suite=suite,
+            subsuite=subsuite,
+        )
+        if ideal_participated is None or onpath_loads is None or ifuse_fused is None or onpath_loads <= 0:
             continue
 
-        ifuse_participated = LOADS_PER_FUSION_PAIR * ifuse_fused
+        reference_periodic = periodic_instructions(ideal_sim)
 
+        helios_participated: float | None = None
+        if include_helios and helios_dir is not None:
+            helios_sim = find_simpoint_dir(
+                helios_dir, helios_config, workload, cluster_id, suite=suite, subsuite=subsuite
+            )
+            helios_fused = simpoint_stat(
+                helios_dir,
+                helios_config,
+                workload,
+                cluster_id,
+                stat_file="core.stat.0.csv",
+                stat_name=HELIOS_FUSED_STAT,
+                suite=suite,
+                subsuite=subsuite,
+            )
+            if helios_fused is not None:
+                helios_fused = scale_to_measurement_window(
+                    helios_fused,
+                    periodic_instructions(helios_sim),
+                    reference_periodic,
+                )
+                helios_participated = LOADS_PER_FUSION_PAIR * helios_fused
+                weighted_helios += weight * helios_participated
+                helios_trace_count += 1
+
+        rfp_covered: float | None = None
+        if include_rfp and rfp_dir is not None:
+            rfp_covered = simpoint_stat(
+                rfp_dir,
+                rfp_config,
+                workload,
+                cluster_id,
+                stat_file="rfp.stat.0.csv",
+                stat_name=RFP_COVERED_STAT,
+                suite=suite,
+                subsuite=subsuite,
+            )
+            if rfp_covered is not None:
+                weighted_rfp += weight * rfp_covered
+                rfp_trace_count += 1
+
+        ifuse_participated = LOADS_PER_FUSION_PAIR * ifuse_fused
         weighted_ifuse += weight * ifuse_participated
         weighted_ideal += weight * ideal_participated
         weighted_onpath += weight * onpath_loads
@@ -178,198 +337,358 @@ def compute_workload_fraction(
     if trace_count == 0 or weight_sum <= 0 or weighted_onpath <= 0:
         return None
 
+    helios_pct: float | None = None
+    if helios_trace_count > 0:
+        helios_pct = 100.0 * weighted_helios / weighted_onpath
+
+    rfp_pct: float | None = None
+    if rfp_trace_count > 0:
+        rfp_pct = 100.0 * weighted_rfp / weighted_onpath
+
     return FusionFractionResult(
         workload=workload,
+        helios_loads_participated=weighted_helios,
+        rfp_loads_covered=weighted_rfp,
         ifuse_loads_participated=weighted_ifuse,
         ideal_loads_participated=weighted_ideal,
         onpath_mem_loads=weighted_onpath,
+        helios_fraction_pct=helios_pct,
+        rfp_fraction_pct=rfp_pct,
         ifuse_fraction_pct=100.0 * weighted_ifuse / weighted_onpath,
         ideal_fraction_pct=100.0 * weighted_ideal / weighted_onpath,
         trace_count=trace_count,
+        helios_trace_count=helios_trace_count,
+        rfp_trace_count=rfp_trace_count,
     )
 
 
-def write_summary_csv(path: Path, results: list[FusionFractionResult]) -> None:
-    with path.open("w", newline="") as fh:
-        writer = csv.DictWriter(
-            fh,
-            fieldnames=[
-                "workload",
-                "display_name",
-                "trace_count",
-                "weighted_ifuse_loads_participated",
-                "weighted_ideal_loads_participated",
-                "weighted_onpath_mem_loads",
-                "ifuse_fraction_pct",
-                "ideal_fraction_pct",
-            ],
+def write_summary_csv(
+    path: Path,
+    results: list[FusionFractionResult],
+    *,
+    include_helios: bool,
+    include_rfp: bool,
+) -> None:
+    fieldnames = [
+        "workload",
+        "display_name",
+        "trace_count",
+        "weighted_onpath_mem_loads",
+    ]
+    if include_helios:
+        fieldnames.extend(
+            [
+                "helios_trace_count",
+                "weighted_helios_loads_participated",
+                "helios_fraction_pct",
+            ]
         )
+    if include_rfp:
+        fieldnames.extend(
+            [
+                "rfp_trace_count",
+                "weighted_rfp_loads_covered",
+                "rfp_fraction_pct",
+            ]
+        )
+    fieldnames.extend(
+        [
+            "weighted_ifuse_loads_participated",
+            "weighted_ideal_loads_participated",
+            "ifuse_fraction_pct",
+            "ideal_fraction_pct",
+        ]
+    )
+
+    with path.open("w", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
         writer.writeheader()
         for result in results:
-            writer.writerow(
-                {
-                    "workload": result.workload,
-                    "display_name": rename_workload(result.workload),
-                    "trace_count": result.trace_count,
-                    "weighted_ifuse_loads_participated": f"{result.ifuse_loads_participated:.1f}",
-                    "weighted_ideal_loads_participated": f"{result.ideal_loads_participated:.1f}",
-                    "weighted_onpath_mem_loads": f"{result.onpath_mem_loads:.1f}",
-                    "ifuse_fraction_pct": f"{result.ifuse_fraction_pct:.2f}",
-                    "ideal_fraction_pct": f"{result.ideal_fraction_pct:.2f}",
-                }
-            )
+            row: dict[str, object] = {
+                "workload": result.workload,
+                "display_name": rename_workload(result.workload),
+                "trace_count": result.trace_count,
+                "weighted_onpath_mem_loads": f"{result.onpath_mem_loads:.1f}",
+                "weighted_ifuse_loads_participated": f"{result.ifuse_loads_participated:.1f}",
+                "weighted_ideal_loads_participated": f"{result.ideal_loads_participated:.1f}",
+                "ifuse_fraction_pct": f"{result.ifuse_fraction_pct:.2f}",
+                "ideal_fraction_pct": f"{result.ideal_fraction_pct:.2f}",
+            }
+            if include_helios:
+                row.update(
+                    {
+                        "helios_trace_count": result.helios_trace_count,
+                        "weighted_helios_loads_participated": f"{result.helios_loads_participated:.1f}",
+                        "helios_fraction_pct": (
+                            f"{result.helios_fraction_pct:.2f}"
+                            if result.helios_fraction_pct is not None
+                            else ""
+                        ),
+                    }
+                )
+            if include_rfp:
+                row.update(
+                    {
+                        "rfp_trace_count": result.rfp_trace_count,
+                        "weighted_rfp_loads_covered": f"{result.rfp_loads_covered:.1f}",
+                        "rfp_fraction_pct": (
+                            f"{result.rfp_fraction_pct:.2f}"
+                            if result.rfp_fraction_pct is not None
+                            else ""
+                        ),
+                    }
+                )
+            writer.writerow(row)
 
 
-def write_computation_log(path: Path, results: list[FusionFractionResult]) -> None:
+def write_computation_log(
+    path: Path,
+    results: list[FusionFractionResult],
+    *,
+    include_helios: bool,
+    include_rfp: bool,
+) -> None:
     with path.open("w") as fh:
-        fh.write("Fraction of on-path memory loads fused\n")
+        fh.write("Fraction of on-path memory loads covered\n")
         fh.write("=" * 80 + "\n")
         fh.write(
-            "fraction_pct = 100 * weighted(loads participating in fusion) "
-            "/ weighted(ONPATH_MEM_LOADS_count)\n"
+            "fraction_pct = 100 * weighted(loads covered or participating in fusion) "
+            "/ weighted(ONPATH_MEM_LOADS_count)\n\n"
         )
+        if include_helios:
+            fh.write(
+                f"Helios loads participating = 2 * {HELIOS_FUSED_STAT} "
+                "(scaled to ideal Periodic_Instructions when windows differ)\n"
+            )
+        if include_rfp:
+            fh.write(f"RFP loads covered = {RFP_COVERED_STAT}\n")
         fh.write(
             "I-Fuse loads participating = 2 * IFUSE_FUSED_LOADS_count; "
             "ideal loads participating = IDEAL_FUSION_LOADS_PARTICIPATED_count.\n"
         )
         fh.write("ONPATH_MEM_LOADS read from ideal-fusion simpoints.\n\n")
+
         for result in results:
             fh.write(f"{result.workload} ({rename_workload(result.workload)})\n")
             fh.write(f"  simpoints: {result.trace_count}\n")
-            fh.write(f"  weighted on-path mem loads:      {result.onpath_mem_loads:.1f}\n")
+            fh.write(f"  weighted on-path mem loads: {result.onpath_mem_loads:.1f}\n")
+            if include_helios and result.helios_fraction_pct is not None:
+                fh.write(
+                    f"  helios: {result.helios_loads_participated:.1f}  "
+                    f"({result.helios_fraction_pct:.2f}%, {result.helios_trace_count} simpoints)\n"
+                )
+            if include_rfp and result.rfp_fraction_pct is not None:
+                fh.write(
+                    f"  rfp:    {result.rfp_loads_covered:.1f}  "
+                    f"({result.rfp_fraction_pct:.2f}%, {result.rfp_trace_count} simpoints)\n"
+                )
             fh.write(
-                f"  weighted ifuse loads fused:      {result.ifuse_loads_participated:.1f}  "
+                f"  ifuse:  {result.ifuse_loads_participated:.1f}  "
                 f"({result.ifuse_fraction_pct:.2f}%)\n"
             )
             fh.write(
-                f"  weighted ideal loads fused:    {result.ideal_loads_participated:.1f}  "
+                f"  ideal:  {result.ideal_loads_participated:.1f}  "
                 f"({result.ideal_fraction_pct:.2f}%)\n\n"
             )
 
-        if results:
-            ifuse_avg = sum(r.ifuse_fraction_pct for r in results) / len(results)
-            ideal_avg = sum(r.ideal_fraction_pct for r in results) / len(results)
-            fh.write(f"Arithmetic mean I-Fuse fraction:  {ifuse_avg:.2f}%\n")
-            fh.write(f"Arithmetic mean Ideal fraction:   {ideal_avg:.2f}%\n")
+
+def _bar_offsets(n: int) -> list[float]:
+    return [(i - (n - 1) / 2.0) * BAR_WIDTH for i in range(n)]
 
 
-def plot_fusion_fraction_bars(results: list[FusionFractionResult], output_dir: Path) -> None:
+def _tight_x_limits(ax, x_min: float, x_max: float, n_bars: int) -> None:
+    half_span = (n_bars * BAR_WIDTH) / 2.0
+    ax.set_xlim(x_min - half_span - 0.12, x_max + half_span + 0.10)
+    ax.margins(x=0)
+
+
+def _legend_handles(
+    *,
+    include_helios: bool,
+    include_rfp: bool,
+) -> list:
+    from matplotlib.patches import Patch
+
+    handles = []
+    for key, label, color in SERIES:
+        if key == "helios" and not include_helios:
+            continue
+        if key == "rfp" and not include_rfp:
+            continue
+        handles.append(
+            Patch(
+                facecolor=color,
+                edgecolor="black",
+                linewidth=BAR_EDGE_WIDTH,
+                label=label,
+            )
+        )
+    return handles
+
+
+def plot_fusion_fraction_bars(
+    results: list[FusionFractionResult],
+    output_dir: Path,
+    *,
+    include_helios: bool,
+    include_rfp: bool,
+) -> None:
     import matplotlib.pyplot as plt
 
-    ifuse_pct = [r.ifuse_fraction_pct for r in results]
-    ideal_pct = [r.ideal_fraction_pct for r in results]
-
-    ifuse_mean = sum(ifuse_pct) / len(ifuse_pct)
-    ideal_mean = sum(ideal_pct) / len(ideal_pct)
-    ifuse_pct.append(ifuse_mean)
-    ideal_pct.append(ideal_mean)
+    active_series: list[tuple[str, list[float], str]] = []
+    for key, _label, color in SERIES:
+        if key == "helios" and not include_helios:
+            continue
+        if key == "rfp" and not include_rfp:
+            continue
+        attr = {
+            "helios": "helios_fraction_pct",
+            "rfp": "rfp_fraction_pct",
+            "ifuse": "ifuse_fraction_pct",
+            "ideal": "ideal_fraction_pct",
+        }[key]
+        values = [getattr(r, attr) if getattr(r, attr) is not None else float("nan") for r in results]
+        finite = [v for v in values if not math.isnan(v)]
+        avg = sum(finite) / len(finite) if finite else float("nan")
+        values.append(avg)
+        active_series.append((key, values, color))
 
     display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
     x = list(range(len(display_apps)))
-    width = 0.18
+    offsets = _bar_offsets(len(active_series))
 
-    plt.rcParams.update({"font.size": 14, "font.family": "serif"})
-    fig, ax = plt.subplots(figsize=(18, 8))
+    plt.rcParams.update(
+        {
+            "font.family": FONT_FAMILY,
+            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
+            "font.size": IPC_AXIS_FONT,
+            "axes.labelsize": IPC_AXIS_LABEL_FONT,
+            "xtick.labelsize": IPC_TICK_FONT,
+            "ytick.labelsize": IPC_TICK_FONT,
+            "legend.fontsize": IPC_AXIS_FONT,
+        }
+    )
+    fig, ax = plt.subplots(figsize=(22, 8))
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
-    ax.bar(
-        [i - 0.5 * width for i in x],
-        ifuse_pct,
-        width,
-        label="I-Fuse",
-        color=IFUSE_COLOR,
-        edgecolor="black",
-        linewidth=1.0,
-        zorder=3,
-    )
-    ax.bar(
-        [i + 0.5 * width for i in x],
-        ideal_pct,
-        width,
-        label="Ideal fusion",
-        color=IDEAL_FUSION_COLOR,
-        edgecolor="black",
-        linewidth=1.0,
-        zorder=3,
-    )
+    for offset, (_name, values, color) in zip(offsets, active_series):
+        ax.bar(
+            [i + offset for i in x],
+            [0.0 if math.isnan(val) else val for val in values],
+            BAR_WIDTH,
+            color=color,
+            edgecolor="black",
+            linewidth=BAR_EDGE_WIDTH,
+            zorder=3,
+        )
 
     if len(display_apps) > 1:
-        separator_x = len(display_apps) - 1.5
         ax.axvline(
-            x=separator_x,
-            color=MAROON_COLOR,
+            x=len(display_apps) - 1.5,
+            color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
-            alpha=0.8,
+            alpha=0.9,
             linewidth=2.5,
             zorder=2,
         )
 
     ax.set_xticks(x)
-    ax.set_xticklabels(display_apps, rotation=45, ha="right", fontsize=26, fontfamily="serif")
+    ax.set_xticklabels(
+        display_apps,
+        rotation=45,
+        ha="right",
+        fontsize=IPC_TICK_FONT,
+        fontfamily=FONT_FAMILY,
+    )
     for i, label in enumerate(ax.get_xticklabels()):
         if i == len(display_apps) - 1:
             label.set_weight("bold")
 
+    _tight_x_limits(ax, x[0], x[-1], n_bars=len(active_series))
+
     ax.set_ylabel(
         "Coverage of total on-path\n memory loads (%)",
-        fontsize=26,
-        fontfamily="serif",
+        fontsize=IPC_AXIS_LABEL_FONT,
+        fontfamily=FONT_FAMILY,
     )
-    ymax = max(ifuse_pct + ideal_pct)
-    ax.set_ylim(0.0, min(100.0, ymax * 1.12 + 2.0))
+    ax.set_ylim(0.0, 100.0)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="y", labelsize=20)
+    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
+    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for label in ax.get_yticklabels():
-        label.set_fontfamily("serif")
+        label.set_fontfamily(FONT_FAMILY)
+
+    plt.subplots_adjust(top=0.80, bottom=0.28, left=0.06, right=0.99)
 
     legend = ax.legend(
-        frameon=True, fancybox=False, shadow=False, loc="upper left", fontsize=26, edgecolor="black"
+        handles=_legend_handles(include_helios=include_helios, include_rfp=include_rfp),
+        frameon=True,
+        fancybox=False,
+        shadow=False,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.02),
+        bbox_transform=ax.transAxes,
+        borderaxespad=0.0,
+        fontsize=IPC_AXIS_FONT,
+        edgecolor="black",
+        ncol=len(active_series),
+        handlelength=1.4,
+        handleheight=1.1,
+        columnspacing=1.2,
+        framealpha=1.0,
     )
-    legend.get_frame().set_linewidth(2.0)
+    legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
     legend.get_frame().set_facecolor("white")
-    legend.get_frame().set_alpha(0.95)
+    legend.get_frame().set_alpha(1.0)
 
     for spine in ax.spines.values():
         spine.set_visible(True)
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
-    plt.tight_layout()
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("fusion_fraction",):
         out = output_dir / stem
-        fig.savefig(f"{out}.png", bbox_inches="tight", dpi=300)
-        fig.savefig(f"{out}.pdf", bbox_inches="tight", dpi=300)
-        fig.savefig(f"{out}.eps", bbox_inches="tight", dpi=300)
+        fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.05, dpi=300)
+        fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.05, dpi=300)
+        fig.savefig(f"{out}.eps", bbox_inches="tight", pad_inches=0.05, dpi=300)
     plt.close(fig)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Plot fraction of on-path memory loads fused by I-Fuse and ideal fusion."
+        description="Plot fraction of on-path memory loads covered by Helios, RFP, I-Fuse, and ideal fusion."
     )
+    parser.add_argument("--simulations-root", type=Path, default=DEFAULT_SIMULATIONS_ROOT)
+    parser.add_argument("--helios-dir", type=Path, default=None)
+    parser.add_argument("--helios-config", default=DEFAULT_HELIOS_CONFIG)
     parser.add_argument(
-        "--simulations-root",
-        type=Path,
-        default=DEFAULT_SIMULATIONS_ROOT,
-        help="Root simulations directory (default: %(default)s)",
+        "--include-helios",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Plot Helios bars (default: on)",
+    )
+    parser.add_argument("--rfp-dir", type=Path, default=None)
+    parser.add_argument("--rfp-config", default=DEFAULT_RFP_CONFIG)
+    parser.add_argument(
+        "--include-rfp",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Plot register-file prefetching bars (default: on)",
     )
     parser.add_argument("--ifuse-dir", type=Path, default=None)
     parser.add_argument("--ideal-fusion-dir", type=Path, default=None)
     parser.add_argument("--trace-root", type=Path, default=DEFAULT_TRACE_ROOT)
-    parser.add_argument("--ifuse-config", default=DEFAULT_IFUSE_CONFIG)
+    parser.add_argument("--ifuse-config", default=DEFAULT_IPC_IFUSE_CONFIG)
     parser.add_argument("--ideal-fusion-config", default=DEFAULT_IDEAL_CONFIG)
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=None,
-        help="Plot output directory (default: scarab/src/hpca2027-main-graphs-results/fusion_fraction)",
-    )
+    parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--exclude-workloads", nargs="*", default=["feedsim", "langchain_web"])
     args = parser.parse_args()
 
     sim_root = args.simulations_root
-    ifuse_dir = args.ifuse_dir or (sim_root / "ifuse")
+    helios_dir = args.helios_dir or DEFAULT_HELIOS_DIR
+    rfp_dir = args.rfp_dir or DEFAULT_RFP_DIR
+    ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
     ideal_dir = args.ideal_fusion_dir or (sim_root / "ideal-fusion")
     workloads = [wl for wl in SIMPOINT_WORKLOADS if wl not in set(args.exclude_workloads)]
     output_dir = args.output_dir or DEFAULT_FUSION_FRACTION_OUTPUT_DIR
@@ -377,7 +696,37 @@ def main() -> None:
 
     sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
 
-    print("Computing fused on-path memory load fractions...")
+    plot_helios = False
+    if args.include_helios:
+        plot_helios = helios_stats_available(
+            helios_dir,
+            args.helios_config,
+            workloads,
+            sp_weights,
+            suite=DEFAULT_SUITE,
+            subsuite=DEFAULT_SUBSUITE,
+        )
+        if not plot_helios:
+            print(f"Helios skipped: missing {HELIOS_FUSED_STAT} in {helios_dir}")
+
+    plot_rfp = False
+    if args.include_rfp:
+        plot_rfp = rfp_stats_available(
+            rfp_dir,
+            args.rfp_config,
+            workloads,
+            sp_weights,
+            suite=DEFAULT_SUITE,
+            subsuite=DEFAULT_SUBSUITE,
+        )
+        if not plot_rfp:
+            print(f"RFP skipped: missing {RFP_COVERED_STAT} in {rfp_dir}")
+
+    print("Computing on-path memory load coverage fractions...")
+    if plot_helios:
+        print(f"  helios:       {helios_dir} (config={args.helios_config})")
+    if plot_rfp:
+        print(f"  rfp:          {rfp_dir} (config={args.rfp_config})")
     print(f"  ifuse:        {ifuse_dir} (config={args.ifuse_config})")
     print(f"  ideal fusion: {ideal_dir} (config={args.ideal_fusion_config})")
     print(f"  output:       {output_dir}")
@@ -386,37 +735,74 @@ def main() -> None:
     for workload in workloads:
         result = compute_workload_fraction(
             workload,
+            helios_dir if plot_helios else None,
+            rfp_dir if plot_rfp else None,
             ifuse_dir,
             ideal_dir,
             sp_weights,
+            helios_config=args.helios_config,
+            rfp_config=args.rfp_config,
             ifuse_config=args.ifuse_config,
             ideal_config=args.ideal_fusion_config,
+            include_helios=plot_helios,
+            include_rfp=plot_rfp,
             suite=DEFAULT_SUITE,
             subsuite=DEFAULT_SUBSUITE,
         )
         if result is None:
-            print(f"  skip {workload}: missing stats")
+            print(f"  skip {workload}: missing ifuse/ideal-fusion stats")
             continue
         results.append(result)
+        helios_str = (
+            f"{result.helios_fraction_pct:5.2f}%"
+            if result.helios_fraction_pct is not None
+            else "  n/a"
+        )
+        rfp_str = (
+            f"{result.rfp_fraction_pct:5.2f}%"
+            if result.rfp_fraction_pct is not None
+            else "  n/a"
+        )
         print(
-            f"  {workload:14s}  ifuse={result.ifuse_fraction_pct:5.2f}%  "
-            f"ideal={result.ideal_fraction_pct:5.2f}%  "
+            f"  {workload:14s}  helios={helios_str}  rfp={rfp_str}  "
+            f"ifuse={result.ifuse_fraction_pct:5.2f}%  ideal={result.ideal_fraction_pct:5.2f}%  "
             f"(simpoints={result.trace_count})"
         )
 
     if not results:
-        raise SystemExit("No workloads with complete fusion-fraction data.")
+        raise SystemExit("No workloads with complete I-Fuse and ideal-fusion data.")
 
-    write_summary_csv(output_dir / "fusion_fraction_summary.csv", results)
-    write_computation_log(output_dir / "fusion_fraction_computation_log.txt", results)
-    plot_fusion_fraction_bars(results, output_dir)
+    write_summary_csv(
+        output_dir / "fusion_fraction_summary.csv",
+        results,
+        include_helios=plot_helios,
+        include_rfp=plot_rfp,
+    )
+    write_computation_log(
+        output_dir / "fusion_fraction_computation_log.txt",
+        results,
+        include_helios=plot_helios,
+        include_rfp=plot_rfp,
+    )
+    plot_fusion_fraction_bars(
+        results,
+        output_dir,
+        include_helios=plot_helios,
+        include_rfp=plot_rfp,
+    )
 
-    ifuse_avg = sum(r.ifuse_fraction_pct for r in results) / len(results)
-    ideal_avg = sum(r.ideal_fraction_pct for r in results) / len(results)
     print("\nSummary:")
     print(f"  workloads plotted: {len(results)}")
-    print(f"  I-Fuse mean:       {ifuse_avg:.2f}%")
-    print(f"  Ideal fusion mean: {ideal_avg:.2f}%")
+    if plot_helios:
+        helios_vals = [r.helios_fraction_pct for r in results if r.helios_fraction_pct is not None]
+        if helios_vals:
+            print(f"  Helios mean:       {sum(helios_vals) / len(helios_vals):.2f}%")
+    if plot_rfp:
+        rfp_vals = [r.rfp_fraction_pct for r in results if r.rfp_fraction_pct is not None]
+        if rfp_vals:
+            print(f"  RFP mean:          {sum(rfp_vals) / len(rfp_vals):.2f}%")
+    print(f"  I-Fuse mean:       {sum(r.ifuse_fraction_pct for r in results) / len(results):.2f}%")
+    print(f"  Ideal fusion mean: {sum(r.ideal_fraction_pct for r in results) / len(results):.2f}%")
     print("\nOutputs:")
     print(f"  - {output_dir / 'fusion_fraction.png'}")
     print(f"  - {output_dir / 'fusion_fraction.pdf'}")
