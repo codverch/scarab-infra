@@ -58,24 +58,22 @@ Rebuild Scarab only when source or the workload Dockerfile changed:
 ./sci --build-scarab hpca2027/rfp
 ```
 
-### Helios per-app configs (stores-off)
+### Helios per-app configs (stores-off, `architecture: in` → `PARAMS.in`)
 
 | App | Config |
 |-----|--------|
 | `terminal_bench` | `T100/W64/I1/D10/stores-off` |
 | `bfs` | `T300/W64/I1/D10/stores-off` |
-| `sssp_ego_fb` | `T3/W64/I1/D3/stores-off` |
+| `sssp_ego_fb` | `T100/W64/I1/D3/stores-off` |
 | `dfs` | `T300/W64/I1/D10/stores-off` |
 | `pagerank` | `T300/W64/I1/D10/stores-off` |
 | `core_bench` | `T1000/W64/I1/D10/stores-off` |
 | `leveldb` | `T100000/W64/I1/D10000/stores-off` |
 | `appworld` | `T10000/W64/I1/D10/stores-off` |
-| `rocksdb` | `T3/W64/I1/D3/stores-off` |
-| `mlgym_fmnist` | `T150/W64/I10/D10/stores-off` |
-| `duckdb` | `T150/W64/I10/D10/stores-off` |
-| `clickhouse` | `T150/W64/I10/D10/stores-off` |
-| `masstree` | `T150/W64/I10/D10/stores-off` |
-| `silo` | `T150/W64/I10/D10/stores-off` |
+| `rocksdb` | `T4800/W64/I1/D10/stores-off` |
+| `duckdb` | `T30000/W64/I1/D10/stores-off` |
+| `clickhouse` | `T300/W64/I10/D10/stores-off` |
+| `masstree` | `T60000/W64/I1/D10/stores-off` |
 
 ## Ideal fusion workflow
 
