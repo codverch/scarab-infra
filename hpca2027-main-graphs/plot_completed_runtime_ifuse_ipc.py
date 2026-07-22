@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-"""Plot IPC speedup for completed baseline vs runtime I-Fuse (optional ideal fusion)."""
+"""Plot IPC speedup for completed baseline vs runtime I-Fuse (optional ideal fusion).
+
+Commands:
+
+/users/deepmish/miniconda3/envs/scarabinfra/bin/python \
+  /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_completed_runtime_ifuse_ipc.py \
+  --output-dir /users/deepmish/scarab/src/hpca2027-main-graphs-results/completed_runtime_ifuse_ipc
+
+cd /users/deepmish/scarab
+git add src/hpca2027-main-graphs-results/completed_runtime_ifuse_ipc/
+git commit -m "Update HPCA main-graph completed runtime I-Fuse IPC results."
+"""
 
 from __future__ import annotations
 
@@ -14,7 +25,10 @@ INFRA_DIR = GRAPH_DIR.parent
 SCRIPTS_DIR = INFRA_DIR / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
+if str(GRAPH_DIR) not in sys.path:
+    sys.path.insert(0, str(GRAPH_DIR))
 
+from plot_ipc import DEFAULT_COMPLETED_RUNTIME_IFUSE_IPC_OUTPUT_DIR  # noqa: E402
 from plot_pgo_ifuse_results import (  # noqa: E402
     _ylim_speedup_pct_auto,
     _ylim_with_bar_label_headroom,
@@ -415,7 +429,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    output_dir = args.output_dir or (args.runtime_dir / "hpca2027-plots")
+    output_dir = args.output_dir or DEFAULT_COMPLETED_RUNTIME_IFUSE_IPC_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with args.workloads_db.open() as fh:

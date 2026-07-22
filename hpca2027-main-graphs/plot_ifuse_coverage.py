@@ -13,7 +13,11 @@ Commands:
 /users/deepmish/miniconda3/envs/scarabinfra/bin/python \
   /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_ifuse_coverage.py \
   --simulations-root /users/deepmish/scarab/src/simulations \
-  --output-dir /users/deepmish/scarab-infra/hpca2027-main-graphs/output
+  --output-dir /users/deepmish/scarab/src/hpca2027-main-graphs-results/ifuse_coverage
+
+cd /users/deepmish/scarab
+git add src/hpca2027-main-graphs-results/ifuse_coverage/
+git commit -m "Update HPCA main-graph I-Fuse coverage results."
 """
 
 from __future__ import annotations
@@ -30,6 +34,7 @@ if str(GRAPH_DIR) not in sys.path:
     sys.path.insert(0, str(GRAPH_DIR))
 
 from plot_ipc import (  # noqa: E402
+    DEFAULT_IFUSE_COVERAGE_OUTPUT_DIR,
     DEFAULT_IDEAL_CONFIG,
     DEFAULT_IDEAL_DIR,
     DEFAULT_IFUSE_CONFIG,
@@ -290,7 +295,7 @@ def main() -> None:
         "--output-dir",
         type=Path,
         default=None,
-        help="Plot output directory (default: hpca2027-main-graphs/output)",
+        help="Plot output directory (default: scarab/src/hpca2027-main-graphs-results/ifuse_coverage)",
     )
     parser.add_argument("--exclude-workloads", nargs="*", default=["feedsim", "langchain_web"])
     args = parser.parse_args()
@@ -299,7 +304,7 @@ def main() -> None:
     ifuse_dir = args.ifuse_dir or (sim_root / "ifuse")
     ideal_dir = args.ideal_fusion_dir or (sim_root / "ideal-fusion")
     workloads = [wl for wl in SIMPOINT_WORKLOADS if wl not in set(args.exclude_workloads)]
-    output_dir = args.output_dir or (GRAPH_DIR / "output")
+    output_dir = args.output_dir or DEFAULT_IFUSE_COVERAGE_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
     sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)

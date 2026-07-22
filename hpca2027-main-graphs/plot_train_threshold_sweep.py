@@ -4,9 +4,15 @@
 Reads completed simpoints only (skips missing core.stat.0.out).
 Speedups are vs simulations/baseline (hpca2027/baseline), not vs another threshold.
 
-Example:
-  ~/miniconda3/envs/scarabinfra/bin/python \\
-    ~/scarab-infra/hpca2027-main-graphs/plot_train_threshold_sweep.py
+Commands:
+
+/users/deepmish/miniconda3/envs/scarabinfra/bin/python \
+  /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_train_threshold_sweep.py \
+  --output-dir /users/deepmish/scarab/src/hpca2027-main-graphs-results/train_threshold_sweep
+
+cd /users/deepmish/scarab
+git add src/hpca2027-main-graphs-results/train_threshold_sweep/
+git commit -m "Update HPCA main-graph train-threshold sweep results."
 """
 
 from __future__ import annotations
@@ -14,7 +20,14 @@ from __future__ import annotations
 import argparse
 import csv
 import re
+import sys
 from pathlib import Path
+
+GRAPH_DIR = Path(__file__).resolve().parent
+if str(GRAPH_DIR) not in sys.path:
+    sys.path.insert(0, str(GRAPH_DIR))
+
+from plot_ipc import DEFAULT_TRAIN_THRESHOLD_SWEEP_OUTPUT_DIR  # noqa: E402
 
 import matplotlib
 
@@ -549,7 +562,7 @@ def main() -> None:
     if not configs:
         raise SystemExit(f"No threshold config dirs under {args.root}")
 
-    out_dir = args.output_dir or (args.root / "hpca2027-plots")
+    out_dir = args.output_dir or DEFAULT_TRAIN_THRESHOLD_SWEEP_OUTPUT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
 
     sweep, baseline, apps = collect_all(
