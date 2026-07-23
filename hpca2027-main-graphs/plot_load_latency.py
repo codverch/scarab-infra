@@ -330,7 +330,7 @@ def plot_load_latency_reduction_bars(results: list[LoadLatencyResult], output_di
             label.set_weight("bold")
 
     ax.set_ylabel(
-        "I-Fuse load latency reduction\ndue to speculation (exec-fetch)\n"
+        "I-Fuse load latency reduction\ndue to speculation\n"
         "(normalized to no-fusion) (%)",
         fontsize=YLABEL_FONT,
         fontfamily=FONT_FAMILY,
