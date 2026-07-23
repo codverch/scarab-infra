@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Simpoint-weighted total load exec-fetch latency reduction for I-Fuse vs no-fusion.
 
-Measures average fetch-to-execute latency (exec − fetch) across all on-path loads:
+Measures average fetch-to-execute latency across all on-path loads:
 
   no-fusion baseline (per simpoint):
     baseline_LD_EXEC_MINUS_FETCH_LATENCY / IFUSE_ALL_LOADS
@@ -59,7 +59,7 @@ from plot_ipc import (  # noqa: E402
     rename_workload,
 )
 
-LOAD_EXEC_STAT = "LD_EXEC_MINUS_FETCH_LATENCY_count"
+LOAD_LATENCY_STAT = "LD_EXEC_MINUS_FETCH_LATENCY_count"
 IFUSE_ALL_LOADS_STAT = "IFUSE_ALL_LOADS_count"
 
 CORE_STAT_FILE = "core.stat.0.csv"
@@ -69,8 +69,8 @@ IFUSE_STAT_FILE = "ifuse.stat.0.csv"
 @dataclass
 class LoadLatencyResult:
     workload: str
-    baseline_exec_fetch: float
-    ifuse_exec_fetch: float
+    baseline_load_latency: float
+    ifuse_load_latency: float
     ifuse_reduction_pct: float
     trace_count: int
 
@@ -92,7 +92,7 @@ def stat_count_from_csv(stat_csv: Path, stat_name: str) -> float | None:
     return None
 
 
-def simpoint_load_exec_fetch_avgs(
+def simpoint_load_latency_avgs(
     baseline_dir: Path,
     ifuse_dir: Path,
     workload: str,
@@ -112,21 +112,21 @@ def simpoint_load_exec_fetch_avgs(
     if baseline_sim is None or ifuse_sim is None:
         return None
 
-    baseline_exec = stat_count_from_csv(baseline_sim / CORE_STAT_FILE, LOAD_EXEC_STAT)
-    ifuse_exec = stat_count_from_csv(ifuse_sim / CORE_STAT_FILE, LOAD_EXEC_STAT)
+    baseline_latency = stat_count_from_csv(baseline_sim / CORE_STAT_FILE, LOAD_LATENCY_STAT)
+    ifuse_latency = stat_count_from_csv(ifuse_sim / CORE_STAT_FILE, LOAD_LATENCY_STAT)
     onpath_loads = stat_count_from_csv(ifuse_sim / IFUSE_STAT_FILE, IFUSE_ALL_LOADS_STAT)
 
     if (
-        baseline_exec is None
-        or ifuse_exec is None
+        baseline_latency is None
+        or ifuse_latency is None
         or onpath_loads is None
-        or baseline_exec <= 0
-        or ifuse_exec <= 0
+        or baseline_latency <= 0
+        or ifuse_latency <= 0
         or onpath_loads <= 0
     ):
         return None
 
-    return baseline_exec / onpath_loads, ifuse_exec / onpath_loads
+    return baseline_latency / onpath_loads, ifuse_latency / onpath_loads
 
 
 def _reduction_pct(baseline_avg: float, config_avg: float) -> float:
@@ -154,7 +154,7 @@ def compute_workload_load_latency(
         if wl != workload or weight <= 0 or cluster_id not in reference_traces:
             continue
 
-        avgs = simpoint_load_exec_fetch_avgs(
+        avgs = simpoint_load_latency_avgs(
             baseline_dir,
             ifuse_dir,
             workload,
@@ -176,14 +176,14 @@ def compute_workload_load_latency(
     if trace_count == 0 or weight_sum <= 0 or weighted_baseline <= 0:
         return None
 
-    baseline_exec_fetch = weighted_baseline / weight_sum
-    ifuse_exec_fetch = weighted_ifuse / weight_sum
+    baseline_load_latency = weighted_baseline / weight_sum
+    ifuse_load_latency = weighted_ifuse / weight_sum
 
     return LoadLatencyResult(
         workload=workload,
-        baseline_exec_fetch=baseline_exec_fetch,
-        ifuse_exec_fetch=ifuse_exec_fetch,
-        ifuse_reduction_pct=_reduction_pct(baseline_exec_fetch, ifuse_exec_fetch),
+        baseline_load_latency=baseline_load_latency,
+        ifuse_load_latency=ifuse_load_latency,
+        ifuse_reduction_pct=_reduction_pct(baseline_load_latency, ifuse_load_latency),
         trace_count=trace_count,
     )
 
@@ -193,8 +193,8 @@ def write_summary_csv(path: Path, results: list[LoadLatencyResult]) -> None:
         "workload",
         "display_name",
         "trace_count",
-        "weighted_baseline_exec_fetch",
-        "weighted_ifuse_exec_fetch",
+        "weighted_baseline_load_latency",
+        "weighted_ifuse_load_latency",
         "ifuse_reduction_pct",
     ]
     with path.open("w", newline="") as fh:
@@ -206,8 +206,8 @@ def write_summary_csv(path: Path, results: list[LoadLatencyResult]) -> None:
                     "workload": result.workload,
                     "display_name": rename_workload(result.workload),
                     "trace_count": result.trace_count,
-                    "weighted_baseline_exec_fetch": f"{result.baseline_exec_fetch:.2f}",
-                    "weighted_ifuse_exec_fetch": f"{result.ifuse_exec_fetch:.2f}",
+                    "weighted_baseline_load_latency": f"{result.baseline_load_latency:.2f}",
+                    "weighted_ifuse_load_latency": f"{result.ifuse_load_latency:.2f}",
                     "ifuse_reduction_pct": f"{result.ifuse_reduction_pct:.2f}",
                 }
             )
@@ -215,23 +215,23 @@ def write_summary_csv(path: Path, results: list[LoadLatencyResult]) -> None:
 
 def write_computation_log(path: Path, results: list[LoadLatencyResult]) -> None:
     with path.open("w") as fh:
-        fh.write("Total load exec-fetch latency reduction (I-Fuse vs no-fusion)\n")
+        fh.write("Total load latency reduction (I-Fuse vs no-fusion)\n")
         fh.write("=" * 80 + "\n")
         fh.write(
             "Per simpoint:\n"
             "  baseline: LD_EXEC_MINUS_FETCH_LATENCY / IFUSE_ALL_LOADS (core + ifuse stat)\n"
             "  ifuse:    LD_EXEC_MINUS_FETCH_LATENCY / IFUSE_ALL_LOADS (core + ifuse stat)\n"
-            "reduction_pct = 100 * (weighted_baseline_exec_fetch - weighted_ifuse_exec_fetch) "
-            "/ weighted_baseline_exec_fetch\n\n"
+            "reduction_pct = 100 * (weighted_baseline_load_latency - weighted_ifuse_load_latency) "
+            "/ weighted_baseline_load_latency\n\n"
         )
         for result in results:
             fh.write(f"{result.workload} ({rename_workload(result.workload)})\n")
             fh.write(f"  simpoints: {result.trace_count}\n")
             fh.write(
-                f"  weighted no-fusion exec-fetch: {result.baseline_exec_fetch:.2f} cycles\n"
+                f"  weighted no-fusion load latency: {result.baseline_load_latency:.2f} cycles\n"
             )
             fh.write(
-                f"  weighted I-Fuse exec-fetch:    {result.ifuse_exec_fetch:.2f} cycles  "
+                f"  weighted I-Fuse load latency:    {result.ifuse_load_latency:.2f} cycles  "
                 f"({result.ifuse_reduction_pct:.2f}% reduction)\n\n"
             )
 
