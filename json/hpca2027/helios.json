@@ -36,7 +36,7 @@
   ],
   "configurations": {
     "helios": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --helios_do_fusion 1 --helios_enable_flushes 1 --helios_confidence_threshold 100 --helios_confidence_increment 1 --helios_confidence_decrement 10 --helios_fusion_window 64 --helios_fuse_stores 0 --helios_fused_wait_tail_srcs 1 --helios_extended_commit_group 1",
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --helios_do_fusion 1 --helios_enable_flushes 1 --helios_confidence_threshold 100 --helios_confidence_increment 1 --helios_confidence_decrement 10 --helios_fusion_window 64 --helios_fuse_stores 0 --helios_fused_wait_tail_srcs 1 --helios_extended_commit_group 1",
       "binary": "scarab_37ef46a05_0",
       "slurm_options": "",
       "memory_overhead_mb": 0

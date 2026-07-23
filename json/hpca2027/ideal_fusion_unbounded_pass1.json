@@ -38,7 +38,7 @@
   ],
   "configurations": {
     "pass1": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --ifuse_fusion_distance 0 --ideal_fusion_pass 1 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates_unbounded/{workload}/{cluster_id}.csv",
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --ifuse_fusion_distance 0 --ideal_fusion_pass 1 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates_unbounded/{workload}/{cluster_id}.csv",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0

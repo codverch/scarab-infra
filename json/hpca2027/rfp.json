@@ -38,13 +38,13 @@
   ],
   "configurations": {
     "baseline": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --rfp_on 0",
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --rfp_on 0",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
     },
     "rfp": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --rfp_on 1",
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --rfp_on 1",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0

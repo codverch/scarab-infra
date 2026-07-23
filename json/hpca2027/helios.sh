@@ -191,7 +191,7 @@ desc = json.loads(desc_path.read_text())
 desc["architecture"] = "in"
 common = (
     f"--icache_size 32768 --inst_limit {inst_limit} "
-    f"--full_warmup {warmup}"
+    f"--full_warmup {warmup} --power_intf_on 1"
 )
 desc["_comment"] = comment
 desc["helios_per_app"] = PER_APP
