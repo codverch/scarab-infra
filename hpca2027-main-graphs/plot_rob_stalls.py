@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simpoint-weighted ROB stall reduction for I-Fuse and ideal fusion vs baseline.
+"""Simpoint-weighted ROB stall reduction for Helios, RFP, I-Fuse, and ideal fusion.
 
 Total ROB stalls per simpoint are the sum of all INST_LOST_ROB_STALL_* categories
 from fetch.stat.0.csv:
@@ -11,6 +11,8 @@ from fetch.stat.0.csv:
   INST_LOST_ROB_STALL_WAIT_FOR_MEMORY_count
   INST_LOST_ROB_STALL_WAIT_FOR_DC_MISS_count
 
+All configurations read fetch.stat.0.csv. Baseline denominator uses rfp-baseline/.
+
 Per workload:
   reduction_pct = 100 * (weighted_baseline_stalls - weighted_config_stalls)
                   / weighted_baseline_stalls
@@ -20,17 +22,20 @@ Commands:
 /users/deepmish/miniconda3/envs/scarabinfra/bin/python \
   /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_rob_stalls.py \
   --simulations-root /users/deepmish/scarab/src/simulations \
+  --baseline-dir /users/deepmish/scarab/src/simulations/rfp-baseline \
+  --helios-dir /users/deepmish/scarab/src/simulations/helios \
+  --rfp-dir /users/deepmish/scarab/src/simulations/rfp \
+  --ifuse-dir /users/deepmish/scarab/src/simulations/ifuse \
+  --ifuse-config datacenter \
+  --ideal-fusion-dir /users/deepmish/scarab/src/simulations/ideal-fusion \
   --output-dir /users/deepmish/scarab/src/hpca2027-main-graphs-results/rob_stalls
-
-cd /users/deepmish/scarab
-git add src/hpca2027-main-graphs-results/rob_stalls/
-git commit -m "Update HPCA main-graph ROB stall results."
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -41,18 +46,33 @@ if str(GRAPH_DIR) not in sys.path:
 
 from plot_ipc import (  # noqa: E402
     ARROW_THRESHOLD,
-    DEFAULT_ROB_STALLS_OUTPUT_DIR,
-    DEFAULT_BASELINE_CONFIG,
+    AVERAGE_SEPARATOR_COLOR,
+    BAR_EDGE_WIDTH,
+    BAR_WIDTH,
+    DEFAULT_HELIOS_CONFIG,
+    DEFAULT_HELIOS_DIR,
     DEFAULT_IDEAL_CONFIG,
-    DEFAULT_IFUSE_CONFIG,
+    DEFAULT_IDEAL_DIR,
+    DEFAULT_IPC_IFUSE_CONFIG,
+    DEFAULT_IPC_IFUSE_DIR,
+    DEFAULT_ROB_STALLS_OUTPUT_DIR,
+    DEFAULT_RFP_BASELINE_DIR,
+    DEFAULT_RFP_CONFIG,
+    DEFAULT_RFP_DIR,
     DEFAULT_SIMULATIONS_ROOT,
     DEFAULT_SUBSUITE,
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
+    FONT_FAMILY,
+    HELIOS_COLOR,
     IDEAL_FUSION_COLOR,
     IFUSE_COLOR,
-    MAROON_COLOR,
+    IPC_AXIS_LABEL_FONT,
+    IPC_LEGEND_FONT,
+    IPC_TICK_FONT,
+    RFP_COLOR,
     SIMPOINT_WORKLOADS,
+    _bar_offsets,
     check_simpoint_coverage,
     find_simpoint_dir,
     load_simpoint_trace_weights,
@@ -70,16 +90,29 @@ ROB_STALL_STATS = (
     "INST_LOST_ROB_STALL_WAIT_FOR_DC_MISS_count",
 )
 
+SERIES: tuple[tuple[str, str, str], ...] = (
+    ("helios", "Helios", HELIOS_COLOR),
+    ("rfp", "RFP", RFP_COLOR),
+    ("ifuse", "I-Fuse", IFUSE_COLOR),
+    ("ideal", "Ideal fusion", IDEAL_FUSION_COLOR),
+)
+
 
 @dataclass
 class RobStallResult:
     workload: str
     baseline_stalls: float
+    helios_stalls: float | None
+    rfp_stalls: float
     ifuse_stalls: float
     ideal_stalls: float
+    helios_reduction_pct: float | None
+    rfp_reduction_pct: float
     ifuse_reduction_pct: float
     ideal_reduction_pct: float
     trace_count: int
+    helios_trace_count: int
+    rfp_trace_count: int
 
 
 def stat_count_from_csv(stat_csv: Path, stat_name: str) -> float | None:
@@ -129,25 +162,67 @@ def simpoint_rob_stalls(
     return total_rob_stalls_from_csv(sim_dir / FETCH_STAT_FILE)
 
 
+def helios_rob_stats_available(
+    helios_dir: Path,
+    helios_config: str,
+    workloads: list[str],
+    sp_weights: dict[tuple[str, str], float],
+    *,
+    suite: str,
+    subsuite: str,
+) -> bool:
+    for workload in workloads:
+        for (wl, cluster_id), weight in sp_weights.items():
+            if wl != workload or weight <= 0:
+                continue
+            sim_dir = find_simpoint_dir(
+                helios_dir, helios_config, workload, cluster_id, suite=suite, subsuite=subsuite
+            )
+            if sim_dir is None:
+                continue
+            if (
+                stat_count_from_csv(
+                    sim_dir / FETCH_STAT_FILE, ROB_STALL_STATS[0]
+                )
+                is not None
+            ):
+                return True
+    return False
+
+
+def _reduction_pct(weighted_baseline: float, weighted_config: float) -> float:
+    return 100.0 * (weighted_baseline - weighted_config) / weighted_baseline
+
+
 def compute_workload_stalls(
     workload: str,
     baseline_dir: Path,
+    helios_dir: Path | None,
+    rfp_dir: Path,
     ifuse_dir: Path,
     ideal_dir: Path,
     reference_traces: set[str],
     sp_weights: dict[tuple[str, str], float],
     *,
     baseline_config: str,
+    helios_config: str,
+    rfp_config: str,
     ifuse_config: str,
     ideal_config: str,
+    include_helios: bool,
     suite: str,
     subsuite: str,
 ) -> RobStallResult | None:
     weighted_baseline = 0.0
+    weighted_helios = 0.0
+    weighted_helios_baseline = 0.0
+    weighted_rfp = 0.0
     weighted_ifuse = 0.0
     weighted_ideal = 0.0
     weight_sum = 0.0
     trace_count = 0
+    helios_trace_count = 0
+    rfp_trace_count = 0
 
     for (wl, cluster_id), weight in sp_weights.items():
         if wl != workload or weight <= 0 or cluster_id not in reference_traces:
@@ -156,6 +231,14 @@ def compute_workload_stalls(
         baseline_val = simpoint_rob_stalls(
             baseline_dir,
             baseline_config,
+            workload,
+            cluster_id,
+            suite=suite,
+            subsuite=subsuite,
+        )
+        rfp_val = simpoint_rob_stalls(
+            rfp_dir,
+            rfp_config,
             workload,
             cluster_id,
             suite=suite,
@@ -177,210 +260,350 @@ def compute_workload_stalls(
             suite=suite,
             subsuite=subsuite,
         )
-        if baseline_val is None or ifuse_val is None or ideal_val is None:
+        if baseline_val is None or rfp_val is None or ifuse_val is None or ideal_val is None:
             continue
 
+        helios_val: float | None = None
+        if include_helios and helios_dir is not None:
+            helios_val = simpoint_rob_stalls(
+                helios_dir,
+                helios_config,
+                workload,
+                cluster_id,
+                suite=suite,
+                subsuite=subsuite,
+            )
+
         weighted_baseline += weight * baseline_val
+        weighted_rfp += weight * rfp_val
         weighted_ifuse += weight * ifuse_val
         weighted_ideal += weight * ideal_val
+        if helios_val is not None:
+            weighted_helios += weight * helios_val
+            weighted_helios_baseline += weight * baseline_val
+            helios_trace_count += 1
         weight_sum += weight
         trace_count += 1
+        rfp_trace_count += 1
 
     if trace_count == 0 or weight_sum <= 0 or weighted_baseline <= 0:
         return None
 
+    helios_reduction: float | None = None
+    if helios_trace_count > 0 and weighted_helios_baseline > 0:
+        helios_reduction = _reduction_pct(weighted_helios_baseline, weighted_helios)
+
     return RobStallResult(
         workload=workload,
         baseline_stalls=weighted_baseline,
+        helios_stalls=weighted_helios if helios_trace_count > 0 else None,
+        rfp_stalls=weighted_rfp,
         ifuse_stalls=weighted_ifuse,
         ideal_stalls=weighted_ideal,
-        ifuse_reduction_pct=100.0 * (weighted_baseline - weighted_ifuse) / weighted_baseline,
-        ideal_reduction_pct=100.0 * (weighted_baseline - weighted_ideal) / weighted_baseline,
+        helios_reduction_pct=helios_reduction,
+        rfp_reduction_pct=_reduction_pct(weighted_baseline, weighted_rfp),
+        ifuse_reduction_pct=_reduction_pct(weighted_baseline, weighted_ifuse),
+        ideal_reduction_pct=_reduction_pct(weighted_baseline, weighted_ideal),
         trace_count=trace_count,
+        helios_trace_count=helios_trace_count,
+        rfp_trace_count=rfp_trace_count,
     )
 
 
-def write_summary_csv(path: Path, results: list[RobStallResult]) -> None:
-    with path.open("w", newline="") as fh:
-        writer = csv.DictWriter(
-            fh,
-            fieldnames=[
-                "workload",
-                "display_name",
-                "trace_count",
-                "weighted_baseline_stalls",
-                "weighted_ifuse_stalls",
-                "weighted_ideal_stalls",
-                "ifuse_reduction_pct",
-                "ideal_reduction_pct",
-            ],
+def write_summary_csv(
+    path: Path,
+    results: list[RobStallResult],
+    *,
+    include_helios: bool,
+) -> None:
+    fieldnames = [
+        "workload",
+        "display_name",
+        "trace_count",
+        "weighted_baseline_stalls",
+    ]
+    if include_helios:
+        fieldnames.extend(
+            ["helios_trace_count", "weighted_helios_stalls", "helios_reduction_pct"]
         )
+    fieldnames.extend(
+        [
+            "rfp_trace_count",
+            "weighted_rfp_stalls",
+            "rfp_reduction_pct",
+            "weighted_ifuse_stalls",
+            "ifuse_reduction_pct",
+            "weighted_ideal_stalls",
+            "ideal_reduction_pct",
+        ]
+    )
+
+    with path.open("w", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
         writer.writeheader()
         for result in results:
-            writer.writerow(
-                {
-                    "workload": result.workload,
-                    "display_name": rename_workload(result.workload),
-                    "trace_count": result.trace_count,
-                    "weighted_baseline_stalls": f"{result.baseline_stalls:.1f}",
-                    "weighted_ifuse_stalls": f"{result.ifuse_stalls:.1f}",
-                    "weighted_ideal_stalls": f"{result.ideal_stalls:.1f}",
-                    "ifuse_reduction_pct": f"{result.ifuse_reduction_pct:.2f}",
-                    "ideal_reduction_pct": f"{result.ideal_reduction_pct:.2f}",
-                }
-            )
+            row: dict[str, object] = {
+                "workload": result.workload,
+                "display_name": rename_workload(result.workload),
+                "trace_count": result.trace_count,
+                "weighted_baseline_stalls": f"{result.baseline_stalls:.1f}",
+                "rfp_trace_count": result.rfp_trace_count,
+                "weighted_rfp_stalls": f"{result.rfp_stalls:.1f}",
+                "rfp_reduction_pct": f"{result.rfp_reduction_pct:.2f}",
+                "weighted_ifuse_stalls": f"{result.ifuse_stalls:.1f}",
+                "ifuse_reduction_pct": f"{result.ifuse_reduction_pct:.2f}",
+                "weighted_ideal_stalls": f"{result.ideal_stalls:.1f}",
+                "ideal_reduction_pct": f"{result.ideal_reduction_pct:.2f}",
+            }
+            if include_helios:
+                row.update(
+                    {
+                        "helios_trace_count": result.helios_trace_count,
+                        "weighted_helios_stalls": (
+                            f"{result.helios_stalls:.1f}"
+                            if result.helios_stalls is not None
+                            else ""
+                        ),
+                        "helios_reduction_pct": (
+                            f"{result.helios_reduction_pct:.2f}"
+                            if result.helios_reduction_pct is not None
+                            else ""
+                        ),
+                    }
+                )
+            writer.writerow(row)
 
 
-def write_computation_log(path: Path, results: list[RobStallResult]) -> None:
+def write_computation_log(
+    path: Path,
+    results: list[RobStallResult],
+    *,
+    include_helios: bool,
+) -> None:
     with path.open("w") as fh:
-        fh.write("ROB stall reduction (sum of INST_LOST_ROB_STALL_* from fetch.stat.0.csv)\n")
+        fh.write(
+            "ROB stall reduction (sum of INST_LOST_ROB_STALL_* from fetch.stat.0.csv)\n"
+        )
         fh.write("=" * 80 + "\n")
         for stat_name in ROB_STALL_STATS:
             fh.write(f"  + {stat_name}\n")
+        fh.write("\n")
         fh.write(
-            "\nreduction_pct = 100 * (weighted_baseline - weighted_config) / weighted_baseline\n"
+            "reduction_pct = 100 * (weighted_baseline_stalls - weighted_config_stalls) "
+            "/ weighted_baseline_stalls\n"
         )
         fh.write("All configurations read fetch.stat.0.csv.\n\n")
         for result in results:
             fh.write(f"{result.workload} ({rename_workload(result.workload)})\n")
             fh.write(f"  simpoints: {result.trace_count}\n")
             fh.write(f"  weighted baseline stalls: {result.baseline_stalls:.1f}\n")
+            if include_helios and result.helios_reduction_pct is not None:
+                fh.write(
+                    f"  weighted helios stalls:    {result.helios_stalls:.1f}  "
+                    f"({result.helios_reduction_pct:.2f}% reduction, "
+                    f"{result.helios_trace_count} simpoints)\n"
+                )
+            elif include_helios:
+                fh.write("  helios: n/a\n")
             fh.write(
-                f"  weighted ifuse stalls:    {result.ifuse_stalls:.1f}  "
+                f"  weighted rfp stalls:       {result.rfp_stalls:.1f}  "
+                f"({result.rfp_reduction_pct:.2f}% reduction, "
+                f"{result.rfp_trace_count} simpoints)\n"
+            )
+            fh.write(
+                f"  weighted ifuse stalls:     {result.ifuse_stalls:.1f}  "
                 f"({result.ifuse_reduction_pct:.2f}% reduction)\n"
             )
             fh.write(
-                f"  weighted ideal stalls:    {result.ideal_stalls:.1f}  "
+                f"  weighted ideal stalls:     {result.ideal_stalls:.1f}  "
                 f"({result.ideal_reduction_pct:.2f}% reduction)\n\n"
             )
 
         if results:
             ifuse_avg = sum(r.ifuse_reduction_pct for r in results) / len(results)
             ideal_avg = sum(r.ideal_reduction_pct for r in results) / len(results)
+            rfp_avg = sum(r.rfp_reduction_pct for r in results) / len(results)
             fh.write(f"Arithmetic mean I-Fuse reduction:  {ifuse_avg:.2f}%\n")
             fh.write(f"Arithmetic mean Ideal reduction:   {ideal_avg:.2f}%\n")
+            fh.write(f"Arithmetic mean RFP reduction:     {rfp_avg:.2f}%\n")
+            if include_helios:
+                helios_vals = [
+                    r.helios_reduction_pct
+                    for r in results
+                    if r.helios_reduction_pct is not None
+                ]
+                if helios_vals:
+                    fh.write(
+                        f"Arithmetic mean Helios reduction:  "
+                        f"{sum(helios_vals) / len(helios_vals):.2f}%\n"
+                    )
 
 
-def plot_rob_stall_bars(results: list[RobStallResult], output_dir: Path) -> None:
+def _legend_handles(*, include_helios: bool) -> list:
+    from matplotlib.patches import Patch
+
+    handles = []
+    for key, label, color in SERIES:
+        if key == "helios" and not include_helios:
+            continue
+        handles.append(
+            Patch(
+                facecolor=color,
+                edgecolor="black",
+                linewidth=BAR_EDGE_WIDTH,
+                label=label,
+            )
+        )
+    return handles
+
+
+def plot_rob_stall_bars(
+    results: list[RobStallResult],
+    output_dir: Path,
+    *,
+    include_helios: bool,
+) -> None:
     import matplotlib.pyplot as plt
+    import matplotlib.ticker as mticker
 
-    ifuse_pct = [r.ifuse_reduction_pct for r in results]
-    ideal_pct = [r.ideal_reduction_pct for r in results]
-
-    ifuse_mean = sum(ifuse_pct) / len(ifuse_pct)
-    ideal_mean = sum(ideal_pct) / len(ideal_pct)
-    ifuse_pct.append(ifuse_mean)
-    ideal_pct.append(ideal_mean)
+    active_series = []
+    for key, _label, color in SERIES:
+        if key == "helios" and not include_helios:
+            continue
+        attr = {
+            "helios": "helios_reduction_pct",
+            "rfp": "rfp_reduction_pct",
+            "ifuse": "ifuse_reduction_pct",
+            "ideal": "ideal_reduction_pct",
+        }[key]
+        values: list[float] = []
+        for result in results:
+            val = getattr(result, attr)
+            values.append(float("nan") if val is None else val)
+        finite = [v for v in values if not math.isnan(v)]
+        avg = sum(finite) / len(finite) if finite else float("nan")
+        values.append(avg)
+        active_series.append((key, values, color))
 
     display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
     x = list(range(len(display_apps)))
-    width = 0.18
+    offsets = _bar_offsets(len(active_series))
 
-    plt.rcParams.update({"font.size": 14, "font.family": "serif"})
-    fig, ax = plt.subplots(figsize=(18, 8))
+    plt.rcParams.update(
+        {
+            "font.family": FONT_FAMILY,
+            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
+            "axes.labelsize": IPC_AXIS_LABEL_FONT,
+            "xtick.labelsize": IPC_TICK_FONT,
+            "ytick.labelsize": IPC_TICK_FONT,
+            "legend.fontsize": IPC_LEGEND_FONT,
+        }
+    )
+    fig, ax = plt.subplots(figsize=(24, 6.5))
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
-    ifuse_edge_colors = ["red" if val < 0 else "black" for val in ifuse_pct]
-    ifuse_edge_widths = [2.5 if val < 0 else 1.0 for val in ifuse_pct]
-    ideal_edge_colors = ["red" if val < 0 else "black" for val in ideal_pct]
-    ideal_edge_widths = [2.5 if val < 0 else 1.0 for val in ideal_pct]
+    for offset, (key, values, color) in zip(offsets, active_series):
+        edge_colors = [
+            "red" if (not math.isnan(val) and val < 0) else "black" for val in values
+        ]
+        edge_widths = [
+            2.5 if (not math.isnan(val) and val < 0) else BAR_EDGE_WIDTH for val in values
+        ]
+        ax.bar(
+            [i + offset for i in x],
+            [0.0 if math.isnan(val) else max(0.0, val) for val in values],
+            BAR_WIDTH,
+            color=color,
+            edgecolor=edge_colors,
+            linewidth=edge_widths,
+            zorder=3,
+        )
 
-    ax.bar(
-        [i - 0.5 * width for i in x],
-        ifuse_pct,
-        width,
-        label="I-Fuse",
-        color=IFUSE_COLOR,
-        edgecolor=ifuse_edge_colors,
-        linewidth=ifuse_edge_widths,
-        zorder=3,
-    )
-    ax.bar(
-        [i + 0.5 * width for i in x],
-        ideal_pct,
-        width,
-        label="Ideal fusion",
-        color=IDEAL_FUSION_COLOR,
-        edgecolor=ideal_edge_colors,
-        linewidth=ideal_edge_widths,
-        zorder=3,
-    )
-
-    offsets = [-0.5 * width, 0.5 * width]
-    colors = [IFUSE_COLOR, IDEAL_FUSION_COLOR]
-    pct_sets = [ifuse_pct, ideal_pct]
-    for i in range(len(display_apps)):
-        for bar_offset, color, pct_list in zip(offsets, colors, pct_sets):
-            val = pct_list[i]
-            if 0 <= val < ARROW_THRESHOLD:
-                ax.annotate(
-                    "",
-                    xy=(i + bar_offset, 0),
-                    xytext=(i + bar_offset, 5.5),
-                    arrowprops=dict(
-                        arrowstyle="->", color=color, lw=1.5, mutation_scale=12
-                    ),
-                    zorder=10,
-                )
-                ax.text(
-                    i + bar_offset - 0.12,
-                    5.5,
-                    f"{val:.1f}",
-                    ha="center",
-                    va="bottom",
-                    fontsize=24,
-                    fontfamily="serif",
-                    color=color,
-                    zorder=10,
-                )
+    for offset, (key, values, color) in zip(offsets, active_series):
+        if key == "rfp":
+            continue
+        for i, val in enumerate(values):
+            if math.isnan(val) or not (0 <= val < ARROW_THRESHOLD):
+                continue
+            ax.annotate(
+                "",
+                xy=(i + offset, 0),
+                xytext=(i + offset, 5.5),
+                arrowprops=dict(arrowstyle="->", color=color, lw=1.5, mutation_scale=12),
+                zorder=10,
+            )
+            ax.text(
+                i + offset - 0.12,
+                5.5,
+                f"{val:.1f}",
+                ha="center",
+                va="bottom",
+                fontsize=IPC_TICK_FONT,
+                fontfamily=FONT_FAMILY,
+                color=color,
+                zorder=10,
+            )
 
     if len(display_apps) > 1:
-        separator_x = len(display_apps) - 1.5
         ax.axvline(
-            x=separator_x,
-            color=MAROON_COLOR,
+            x=len(display_apps) - 1.5,
+            color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
-            alpha=0.8,
+            alpha=0.9,
             linewidth=2.5,
             zorder=2,
         )
 
     ax.set_xticks(x)
-    ax.set_xticklabels(display_apps, rotation=45, ha="right", fontsize=26, fontfamily="serif")
+    ax.set_xticklabels(
+        display_apps,
+        rotation=45,
+        ha="right",
+        fontfamily=FONT_FAMILY,
+    )
     for i, label in enumerate(ax.get_xticklabels()):
         if i == len(display_apps) - 1:
             label.set_weight("bold")
 
     ax.set_ylabel(
-        "ROB stalls reduction (%)\n(normalized to no-fusion baseline)",
-        fontsize=26,
-        fontfamily="serif",
+        "ROB stalls reduction (%)\n(normalized to no-fusion)",
+        fontsize=IPC_AXIS_LABEL_FONT,
+        fontfamily=FONT_FAMILY,
     )
-    ymin = min(0.0, min(ifuse_pct + ideal_pct))
-    ax.set_ylim(ymin, 100.0)
+
+    all_values = [v for _k, values, _c in active_series for v in values if not math.isnan(v)]
+    ymax = max(all_values) if all_values else 100.0
+    ax.set_ylim(0.0, ymax * 1.12 + 2.0)
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="y", labelsize=20)
     for label in ax.get_yticklabels():
-        label.set_fontfamily("serif")
+        label.set_fontfamily(FONT_FAMILY)
+
+    plt.subplots_adjust(top=0.88, bottom=0.28, left=0.08, right=0.99)
 
     legend = ax.legend(
+        handles=_legend_handles(include_helios=include_helios),
         frameon=True,
         fancybox=False,
         shadow=False,
-        loc="upper left",
-        fontsize=26,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.96),
+        bbox_transform=ax.transAxes,
+        borderaxespad=0.0,
+        fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
+        ncol=len(active_series),
+        handlelength=1.4,
     )
     legend.get_frame().set_linewidth(2.0)
     legend.get_frame().set_facecolor("white")
-    legend.get_frame().set_alpha(0.95)
+    legend.get_frame().set_alpha(1.0)
 
     for spine in ax.spines.values():
         spine.set_visible(True)
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
-    plt.tight_layout()
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("rob_stalls",):
         out = output_dir / stem
@@ -393,8 +616,8 @@ def plot_rob_stall_bars(results: list[RobStallResult], output_dir: Path) -> None
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Plot simpoint-weighted ROB stall reduction for I-Fuse and "
-            "ideal fusion vs baseline."
+            "Plot simpoint-weighted ROB stall reduction for Helios, RFP, "
+            "I-Fuse, and ideal fusion vs baseline."
         )
     )
     parser.add_argument(
@@ -403,12 +626,27 @@ def main() -> None:
         default=DEFAULT_SIMULATIONS_ROOT,
         help="Root simulations directory (default: %(default)s)",
     )
-    parser.add_argument("--baseline-dir", type=Path, default=None)
+    parser.add_argument(
+        "--baseline-dir",
+        type=Path,
+        default=None,
+        help="No-fusion baseline directory (default: rfp-baseline)",
+    )
+    parser.add_argument("--helios-dir", type=Path, default=None)
+    parser.add_argument("--helios-config", default=DEFAULT_HELIOS_CONFIG)
+    parser.add_argument(
+        "--include-helios",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Plot Helios bars (default: on)",
+    )
+    parser.add_argument("--rfp-dir", type=Path, default=None)
+    parser.add_argument("--rfp-config", default=DEFAULT_RFP_CONFIG)
     parser.add_argument("--ifuse-dir", type=Path, default=None)
     parser.add_argument("--ideal-fusion-dir", type=Path, default=None)
     parser.add_argument("--trace-root", type=Path, default=DEFAULT_TRACE_ROOT)
-    parser.add_argument("--baseline-config", default=DEFAULT_BASELINE_CONFIG)
-    parser.add_argument("--ifuse-config", default=DEFAULT_IFUSE_CONFIG)
+    parser.add_argument("--baseline-config", default="baseline")
+    parser.add_argument("--ifuse-config", default=DEFAULT_IPC_IFUSE_CONFIG)
     parser.add_argument("--ideal-fusion-config", default=DEFAULT_IDEAL_CONFIG)
     parser.add_argument(
         "--output-dir",
@@ -419,18 +657,35 @@ def main() -> None:
     parser.add_argument("--exclude-workloads", nargs="*", default=["feedsim", "langchain_web"])
     args = parser.parse_args()
 
-    sim_root = args.simulations_root
-    baseline_dir = args.baseline_dir or (sim_root / "baseline")
-    ifuse_dir = args.ifuse_dir or (sim_root / "ifuse")
-    ideal_dir = args.ideal_fusion_dir or (sim_root / "ideal-fusion")
+    baseline_dir = args.baseline_dir or DEFAULT_RFP_BASELINE_DIR
+    helios_dir = args.helios_dir or DEFAULT_HELIOS_DIR
+    rfp_dir = args.rfp_dir or DEFAULT_RFP_DIR
+    ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
+    ideal_dir = args.ideal_fusion_dir or DEFAULT_IDEAL_DIR
     workloads = [wl for wl in SIMPOINT_WORKLOADS if wl not in set(args.exclude_workloads)]
     output_dir = args.output_dir or DEFAULT_ROB_STALLS_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
     sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
 
+    plot_helios = False
+    if args.include_helios:
+        plot_helios = helios_rob_stats_available(
+            helios_dir,
+            args.helios_config,
+            workloads,
+            sp_weights,
+            suite=DEFAULT_SUITE,
+            subsuite=DEFAULT_SUBSUITE,
+        )
+        if not plot_helios:
+            print(f"Helios skipped: missing ROB stall stats in {helios_dir}")
+
     print("Computing ROB stall reductions (INST_LOST_ROB_STALL_* from fetch.stat.0.csv)...")
     print(f"  baseline:     {baseline_dir} (config={args.baseline_config})")
+    if plot_helios:
+        print(f"  helios:       {helios_dir} (config={args.helios_config})")
+    print(f"  rfp:          {rfp_dir} (config={args.rfp_config})")
     print(f"  ifuse:        {ifuse_dir} (config={args.ifuse_config})")
     print(f"  ideal fusion: {ideal_dir} (config={args.ideal_fusion_config})")
     print(f"  output:       {output_dir}")
@@ -439,6 +694,7 @@ def main() -> None:
         "baseline": (baseline_dir, args.baseline_config),
         "ifuse": (ifuse_dir, args.ifuse_config),
         "ideal_fusion": (ideal_dir, args.ideal_fusion_config),
+        "rfp": (rfp_dir, args.rfp_config),
     }
     complete_apps, reference_by_workload = check_simpoint_coverage(
         directories,
@@ -447,10 +703,11 @@ def main() -> None:
         suite=DEFAULT_SUITE,
         subsuite=DEFAULT_SUBSUITE,
         report_path=output_dir / "rob_stalls_simpoint_coverage_report.txt",
+        optional_configs={"helios"},
     )
     if not complete_apps:
         raise SystemExit(
-            "No apps have complete simpoint files across baseline, ifuse, and ideal fusion."
+            "No apps have complete simpoint files across baseline, ifuse, ideal fusion, and rfp."
         )
 
     results: list[RobStallResult] = []
@@ -461,13 +718,18 @@ def main() -> None:
         result = compute_workload_stalls(
             workload,
             baseline_dir,
+            helios_dir if plot_helios else None,
+            rfp_dir,
             ifuse_dir,
             ideal_dir,
             reference_by_workload[workload],
             sp_weights,
             baseline_config=args.baseline_config,
+            helios_config=args.helios_config,
+            rfp_config=args.rfp_config,
             ifuse_config=args.ifuse_config,
             ideal_config=args.ideal_fusion_config,
+            include_helios=plot_helios,
             suite=DEFAULT_SUITE,
             subsuite=DEFAULT_SUBSUITE,
         )
@@ -475,24 +737,45 @@ def main() -> None:
             print(f"  skip {workload}: missing ROB stall stats in fetch.stat.0.csv")
             continue
         results.append(result)
+        parts = [
+            f"ifuse={result.ifuse_reduction_pct:5.2f}%",
+            f"ideal={result.ideal_reduction_pct:5.2f}%",
+        ]
+        if result.helios_reduction_pct is not None:
+            parts.insert(0, f"helios={result.helios_reduction_pct:5.2f}%")
+        parts.insert(
+            1 if result.helios_reduction_pct is not None else 0,
+            f"rfp={result.rfp_reduction_pct:5.2f}%",
+        )
         print(
-            f"  {workload:14s}  baseline={result.baseline_stalls:,.0f}  "
-            f"ifuse={result.ifuse_reduction_pct:5.2f}%  "
-            f"ideal={result.ideal_reduction_pct:5.2f}%  "
-            f"(simpoints={result.trace_count})"
+            f"  {workload:14s}  {'  '.join(parts)}  (simpoints={result.trace_count})"
         )
 
     if not results:
         raise SystemExit("No workloads with complete ROB stall data.")
 
-    write_summary_csv(output_dir / "rob_stalls_summary.csv", results)
-    write_computation_log(output_dir / "rob_stalls_computation_log.txt", results)
-    plot_rob_stall_bars(results, output_dir)
+    write_summary_csv(
+        output_dir / "rob_stalls_summary.csv",
+        results,
+        include_helios=plot_helios,
+    )
+    write_computation_log(
+        output_dir / "rob_stalls_computation_log.txt",
+        results,
+        include_helios=plot_helios,
+    )
+    plot_rob_stall_bars(results, output_dir, include_helios=plot_helios)
 
     ifuse_avg = sum(r.ifuse_reduction_pct for r in results) / len(results)
     ideal_avg = sum(r.ideal_reduction_pct for r in results) / len(results)
+    rfp_avg = sum(r.rfp_reduction_pct for r in results) / len(results)
     print("\nSummary:")
     print(f"  workloads plotted: {len(results)}")
+    if plot_helios:
+        helios_vals = [r.helios_reduction_pct for r in results if r.helios_reduction_pct is not None]
+        if helios_vals:
+            print(f"  Helios mean reduction:       {sum(helios_vals) / len(helios_vals):.2f}%")
+    print(f"  RFP mean reduction:          {rfp_avg:.2f}%")
     print(f"  I-Fuse mean reduction:       {ifuse_avg:.2f}%")
     print(f"  Ideal fusion mean reduction: {ideal_avg:.2f}%")
     print("\nOutputs:")
