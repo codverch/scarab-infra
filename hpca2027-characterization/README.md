@@ -29,3 +29,19 @@ python3 hpca2027-characterization/plot_helios_ideal_ipc.py \
 ```
 
 Outputs: `ipc-helios-ideal.png` / `.pdf`, `ipc_helios_ideal.csv`.
+
+### Helios + RFP + Ideal fusion (subset)
+
+```bash
+cd /users/deepmish/scarab-infra
+python3 hpca2027-characterization/plot_helios_ideal_ipc.py \
+  --simulations-root /users/deepmish/scarab/src/simulations \
+  --schemes helios rfp ideal_fusion \
+  --ideal-fusion-dir /users/deepmish/scarab/src/simulations/ideal-fusion \
+  --ideal-fusion-config ideal-fusion \
+  --allow-partial \
+  --output-dir hpca2027-characterization \
+  --output-stem ipc-helios-rfp-ideal
+```
+
+Outputs: `ipc-helios-rfp-ideal.png` / `.pdf`, `ipc-helios-rfp-ideal.csv`.
