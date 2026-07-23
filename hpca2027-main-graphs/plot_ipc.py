@@ -5,7 +5,7 @@ Expects scarab-infra simulation results under:
   {simulations-root}/baseline/<workload>/<cluster_id>/                         (flat)
   {simulations-root}/helios/<workload>/<cluster_id>/                           (flat)
   {simulations-root}/rfp/<workload>/<cluster_id>/                              (flat)
-  {simulations-root}/ifuse/tt256_thresh_1000/datacenter/datacenter/<workload>/<cluster_id>/
+  {simulations-root}/ifuse/<workload>/<cluster_id>/
   {simulations-root}/ideal-fusion/<workload>/<cluster_id>/                     (flat)
 
 Commands:
@@ -54,9 +54,9 @@ except ImportError:
         return text
 
 
-GAP_WORKLOADS = ["bfs", "dfs", "pagerank", "sssp_ego_fb"]
+GAP_WORKLOADS = ["bfs", "dfs", "pagerank"]
 AGENTIC_WORKLOADS = ["appworld", "core_bench", "terminal_bench"]
-DATABASE_WORKLOADS = ["leveldb", "clickhouse", "rocksdb", "duckdb", "masstree"]
+DATABASE_WORKLOADS = ["leveldb", "clickhouse"]
 
 WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("GAP", tuple(GAP_WORKLOADS)),
@@ -68,15 +68,17 @@ SIMPOINT_WORKLOADS = GAP_WORKLOADS + AGENTIC_WORKLOADS + DATABASE_WORKLOADS
 HELIOS_COLOR = "#009900"
 RFP_COLOR = "#720072"
 IFUSE_COLOR = "#FFE600"
+BASELINE_COLOR = "#808080"
 IDEAL_FUSION_COLOR = "#000000"
 AVERAGE_SEPARATOR_COLOR = "#4A4A4A"
 SMALL_BAR_THRESHOLD = 0.5
 BAR_WIDTH = 0.18
-BAR_EDGE_WIDTH = 1.6
+BAR_EDGE_WIDTH = 2.5
 FONT_FAMILY = "Noto Serif"
-IPC_AXIS_FONT = 26
-IPC_AXIS_LABEL_FONT = 30
-IPC_TICK_FONT = 30
+IPC_AXIS_FONT = 32
+IPC_AXIS_LABEL_FONT = 36
+IPC_TICK_FONT = 36
+IPC_LEGEND_FONT = 32
 
 # Backward-compatible aliases used by other hpca2027-main-graphs scripts.
 MAROON_COLOR = AVERAGE_SEPARATOR_COLOR
@@ -105,16 +107,20 @@ DEFAULT_LOAD_LATENCY_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "load_latency"
 DEFAULT_READ_PORT_STALLS_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "read_port_stalls"
 DEFAULT_ROB_STALLS_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "rob_stalls"
 DEFAULT_DCACHE_ACCESSES_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "dcache_accesses"
+DEFAULT_REGISTER_FILE_UTILIZATION_OUTPUT_DIR = (
+    DEFAULT_RESULTS_ROOT / "register_file_utilization"
+)
 DEFAULT_TRAIN_THRESHOLD_SWEEP_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "train_threshold_sweep"
 DEFAULT_COMPLETED_RUNTIME_IFUSE_IPC_OUTPUT_DIR = (
     DEFAULT_RESULTS_ROOT / "completed_runtime_ifuse_ipc"
 )
 
 DEFAULT_BASELINE_DIR = DEFAULT_SIMULATIONS_ROOT / "baseline"
+DEFAULT_BASELINE_IFUSE_DIR = DEFAULT_SIMULATIONS_ROOT / "baseline-ifuse"
 DEFAULT_HELIOS_DIR = DEFAULT_SIMULATIONS_ROOT / "helios"
 DEFAULT_RFP_DIR = DEFAULT_SIMULATIONS_ROOT / "rfp"
 DEFAULT_IFUSE_DIR = DEFAULT_SIMULATIONS_ROOT / "ifuse"
-DEFAULT_IPC_IFUSE_DIR = DEFAULT_SIMULATIONS_ROOT / "ifuse" / "tt256_thresh_1000"
+DEFAULT_IPC_IFUSE_DIR = DEFAULT_IFUSE_DIR
 DEFAULT_IDEAL_DIR = DEFAULT_SIMULATIONS_ROOT / "ideal-fusion"
 
 DEFAULT_BASELINE_CONFIG = "baseline"
@@ -557,7 +563,7 @@ def _apply_ipc_plot_style() -> None:
             "axes.labelsize": IPC_AXIS_LABEL_FONT,
             "xtick.labelsize": IPC_TICK_FONT,
             "ytick.labelsize": IPC_TICK_FONT,
-            "legend.fontsize": IPC_AXIS_FONT,
+            "legend.fontsize": IPC_LEGEND_FONT,
         }
     )
 
@@ -723,7 +729,7 @@ def plot_speedup_bars(
         _tight_x_limits(ax, x[0], x[-1], n_bars=len(series))
 
         ax.set_ylabel(
-            "Speedup (%) \n(normalized to no-fusion baseline)",
+            "Speedup (%)\n(normalized to no-fusion)",
             fontsize=IPC_AXIS_LABEL_FONT,
             fontfamily=FONT_FAMILY,
         )
@@ -740,7 +746,7 @@ def plot_speedup_bars(
             fancybox=False,
             shadow=False,
             loc="upper left",
-            fontsize=IPC_AXIS_FONT,
+            fontsize=IPC_LEGEND_FONT,
             edgecolor="black",
             ncol=2,
             handlelength=1.1,
