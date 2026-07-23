@@ -80,18 +80,12 @@ Y_AXIS_LABEL = (
     "load pairs (%)"
 )
 
-# Palette inspired by Atre et al., SIGCOMM'20 Figure 2 (true hit / delayed hit / miss)
-# and Figure 17 line colors (e.g., MAD blue).
-ATRE_TRUE_HIT = "#4DAF4A"
-ATRE_DELAYED_HIT = "#FFD92F"
-ATRE_MISS = "#E41A1C"
-
 # (field, color) — bottom-to-top stack order.
 BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
-    ("committed_frac", ATRE_TRUE_HIT),
-    ("head_evicted_frac", ATRE_DELAYED_HIT),
-    ("deadlock_frac", ATRE_MISS),
-    ("addr_mismatch_frac", "#B2182B"),
+    ("committed_frac", "#075c56"),
+    ("head_evicted_frac", "#8C1515"),
+    ("deadlock_frac", "#D5D5D4"),
+    ("addr_mismatch_frac", "#FFD700"),
     ("distance_invalid_frac", "#984EA3"),
     ("serializing_frac", "#1B9E77"),
     ("store_hazard_frac", "#A65628"),
@@ -402,7 +396,7 @@ def _style_legend(ax, active_segments: list[tuple[str, str]]) -> None:
         fancybox=False,
         shadow=False,
         loc="lower center",
-        bbox_to_anchor=(0.5, 0.96),
+        bbox_to_anchor=(0.5, 1.06),
         bbox_transform=ax.transAxes,
         borderaxespad=0.0,
         fontsize=IPC_LEGEND_FONT,
@@ -493,7 +487,7 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
 
-    plt.subplots_adjust(top=0.82, bottom=0.28, left=0.08, right=0.99)
+    plt.subplots_adjust(top=0.66, bottom=0.28, left=0.08, right=0.99)
     _style_legend(ax, active_segments)
 
     for spine in ax.spines.values():
