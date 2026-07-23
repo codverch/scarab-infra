@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Stacked breakdown of how RFP handles on-path load pairs.
+"""Stacked breakdown of how RFP handles on-path loads.
 
 Each bar stacks outcomes as a fraction of RFP_ALL_LOADS_count
 (simpoint-weighted):
   - Covered: prefetch helped the load (full or partial mitigation)
-  - Not covered: no prefetch was sent
+  - Not covered: low predictor confidence
   - Not covered: prefetch sent but not useful (load too early or wrong address)
 
 Example:
@@ -61,31 +61,33 @@ DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "rfp_coverage_causes"
 RFP_STAT = "rfp.stat.0.csv"
 
 BAR_WIDTH = 0.40
+BAR_OUTLINE_WIDTH = 2.5
+LOAD_BEAT_PLOT_THRESHOLD = 0.005  # hide negligible load-beat slices (<0.5%)
 FIGSIZE = (28.0, 10.0)
 END_PAD = 0.45
 OUTPUT_DPI = 300
 Y_AXIS_LABEL = (
     "Breakdown of how RFP\n"
-    "handles on-path\n"
-    "load pairs (%)"
+    "handles memory\n"
+    "loads (%)"
 )
 
-RFP_CLR_COVERED = "#7E57C2"
-RFP_CLR_NO_PREFETCH = "#B0BEC5"
-RFP_CLR_PREFETCH_NOT_USEFUL = "#FB8C00"
-RFP_CLR_WRONG_ADDRESS = "#E53935"
+RFP_CLR_COVERED = "#4B0082"
+RFP_CLR_LOW_CONFIDENCE = "#D5D5D4"
+RFP_CLR_PREFETCH_NOT_USEFUL = "#B83A4B"
+RFP_CLR_WRONG_ADDRESS = "#FFD92F"
 
 # (field, color) — bottom-to-top stack order.
 BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
     ("covered_frac", RFP_CLR_COVERED),
-    ("no_prefetch_frac", RFP_CLR_NO_PREFETCH),
     ("prefetch_not_useful_frac", RFP_CLR_PREFETCH_NOT_USEFUL),
     ("wrong_address_frac", RFP_CLR_WRONG_ADDRESS),
+    ("low_confidence_frac", RFP_CLR_LOW_CONFIDENCE),
 )
 
 BREAKDOWN_CATEGORIES: dict[str, str] = {
     "covered_frac": "Covered",
-    "no_prefetch_frac": "Not covered: no prefetch sent",
+    "low_confidence_frac": "Not covered: low predictor confidence",
     "prefetch_not_useful_frac": "Not covered: prefetch not useful (load too early)",
     "wrong_address_frac": "Not covered: prefetch not useful (wrong address)",
 }
@@ -98,9 +100,9 @@ def legend_label(field: str) -> str:
 @dataclass
 class RfpBreakdownMetrics:
     covered_frac: float
-    no_prefetch_frac: float
     prefetch_not_useful_frac: float
     wrong_address_frac: float
+    low_confidence_frac: float
 
     @property
     def not_covered_frac(self) -> float:
@@ -160,15 +162,15 @@ def breakdown_from_counts(
         covered = max(covered, useful)
     covered = min(covered, all_loads)
 
-    no_prefetch = max(0.0, (all_loads - predicted) + not_issued)
+    low_confidence = max(0.0, (all_loads - predicted) + not_issued)
     wrong_frac = max(0.0, wrong) / all_loads
     prefetch_not_useful = max(0.0, load_beat) / all_loads
 
     return RfpBreakdownMetrics(
         covered_frac=covered / all_loads,
-        no_prefetch_frac=no_prefetch / all_loads,
         prefetch_not_useful_frac=prefetch_not_useful,
         wrong_address_frac=wrong_frac,
+        low_confidence_frac=low_confidence / all_loads,
     )
 
 
@@ -275,9 +277,9 @@ def average_breakdown(results: list[WorkloadBreakdown]) -> WorkloadBreakdown:
         trace_count=sum(r.trace_count for r in results),
         breakdown=RfpBreakdownMetrics(
             covered_frac=mean(lambda m: m.covered_frac),
-            no_prefetch_frac=mean(lambda m: m.no_prefetch_frac),
             prefetch_not_useful_frac=mean(lambda m: m.prefetch_not_useful_frac),
             wrong_address_frac=mean(lambda m: m.wrong_address_frac),
+            low_confidence_frac=mean(lambda m: m.low_confidence_frac),
         ),
     )
 
@@ -289,7 +291,7 @@ def write_summary_csv(path: Path, results: list[WorkloadBreakdown]) -> None:
         "trace_count",
         "covered_pct",
         "not_covered_pct",
-        "no_prefetch_pct",
+        "low_confidence_pct",
         "prefetch_not_useful_pct",
         "wrong_address_pct",
         "prefetch_useful_of_issued_pct",
@@ -322,7 +324,7 @@ def write_summary_csv(path: Path, results: list[WorkloadBreakdown]) -> None:
                     "trace_count": row.trace_count,
                     "covered_pct": f"{b.covered_frac * 100.0:.2f}",
                     "not_covered_pct": f"{b.not_covered_frac * 100.0:.2f}",
-                    "no_prefetch_pct": f"{b.no_prefetch_frac * 100.0:.2f}",
+                    "low_confidence_pct": f"{b.low_confidence_frac * 100.0:.2f}",
                     "prefetch_not_useful_pct": f"{b.prefetch_not_useful_frac * 100.0:.2f}",
                     "wrong_address_pct": f"{b.wrong_address_frac * 100.0:.2f}",
                     "prefetch_useful_of_issued_pct": f"{useful_of_issued:.2f}",
@@ -337,14 +339,14 @@ def write_summary_csv(path: Path, results: list[WorkloadBreakdown]) -> None:
 
 def write_computation_log(path: Path, results: list[WorkloadBreakdown]) -> None:
     with path.open("w") as fh:
-        fh.write("RFP on-path load pair breakdown\n")
+        fh.write("RFP on-path load breakdown\n")
         fh.write("=" * 80 + "\n")
         fh.write(
             "Each segment is simpoint-weighted as a fraction of RFP_ALL_LOADS.\n"
         )
         fh.write(
-            "Covered = useful prefetch (full or partial mitigation). "
-            "Among issued prefetches, useful vs not-useful fractions are also reported.\n\n"
+            "Low-confidence bucket includes loads with no PT prediction and loads "
+            "where a prefetch was eligible but not injected (e.g., queue/resource limits).\n\n"
         )
         for row in results:
             b = row.breakdown
@@ -365,7 +367,7 @@ def write_computation_log(path: Path, results: list[WorkloadBreakdown]) -> None:
             fh.write(f"{row.workload} ({name})\n")
             fh.write(f"  simpoints: {row.trace_count}\n")
             fh.write(f"  covered:                 {b.covered_frac * 100.0:6.2f}%\n")
-            fh.write(f"  no prefetch sent:        {b.no_prefetch_frac * 100.0:6.2f}%\n")
+            fh.write(f"  low confidence / not sent: {b.low_confidence_frac * 100.0:6.2f}%\n")
             fh.write(
                 f"  prefetch not useful:     {b.prefetch_not_useful_total_frac * 100.0:6.2f}%\n"
             )
@@ -379,6 +381,19 @@ def write_computation_log(path: Path, results: list[WorkloadBreakdown]) -> None:
             fh.write(
                 f"  issued prefetches not useful: {not_useful_of_issued:6.2f}%\n\n"
             )
+
+
+def breakdown_for_plot(breakdown: RfpBreakdownMetrics) -> RfpBreakdownMetrics:
+    """Fold negligible load-beat slices into low-confidence for readability."""
+    load_beat = breakdown.prefetch_not_useful_frac
+    if load_beat >= LOAD_BEAT_PLOT_THRESHOLD:
+        return breakdown
+    return RfpBreakdownMetrics(
+        covered_frac=breakdown.covered_frac,
+        prefetch_not_useful_frac=0.0,
+        wrong_address_frac=breakdown.wrong_address_frac,
+        low_confidence_frac=breakdown.low_confidence_frac + load_beat,
+    )
 
 
 def _visible_segments(rows: list[WorkloadBreakdown]) -> list[tuple[str, str]]:
@@ -404,16 +419,17 @@ def _legend_handles(active_segments: list[tuple[str, str]]) -> list:
     ]
 
 
-def _style_legend(fig, active_segments: list[tuple[str, str]]) -> None:
+def _style_legend(ax, active_segments: list[tuple[str, str]]) -> None:
     ncol = 2 if len(active_segments) <= 4 else 3
-    legend = fig.legend(
+    legend = ax.legend(
         handles=_legend_handles(active_segments),
         frameon=True,
         fancybox=False,
         shadow=False,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 0.88),
-        borderaxespad=0.0,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.06),
+        bbox_transform=ax.transAxes,
+        borderaxespad=0.4,
         fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
         ncol=ncol,
@@ -432,7 +448,6 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
     rows = results + [avg]
     display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
     x = np.arange(len(display_apps))
-    active_segments = _visible_segments(rows)
 
     plt.rcParams.update(
         {
@@ -447,23 +462,50 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=FIGSIZE)
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
-    bottoms = np.zeros(len(rows))
+    from matplotlib.patches import Rectangle
+
+    plot_rows = [
+        WorkloadBreakdown(
+            workload=row.workload,
+            trace_count=row.trace_count,
+            breakdown=breakdown_for_plot(row.breakdown),
+        )
+        for row in rows
+    ]
+    active_segments = _visible_segments(plot_rows)
+
+    bottoms = np.zeros(len(plot_rows))
     for field, color in active_segments:
-        values = np.array([getattr(r.breakdown, field) * 100.0 for r in rows])
-        hatch = "///" if field == "prefetch_not_useful_frac" else None
+        values = np.array([getattr(r.breakdown, field) * 100.0 for r in plot_rows])
         ax.bar(
             x,
             values,
             BAR_WIDTH,
             bottom=bottoms,
             color=color,
-            edgecolor="black",
-            linewidth=0.8,
-            hatch=hatch,
+            edgecolor="none",
+            linewidth=0,
             label=legend_label(field),
             zorder=3,
         )
         bottoms += values
+
+    half_span = BAR_WIDTH / 2.0
+    for xi, total_height in zip(x, bottoms):
+        if total_height <= 0:
+            continue
+        ax.add_patch(
+            Rectangle(
+                (xi - half_span, 0.0),
+                BAR_WIDTH,
+                total_height,
+                fill=False,
+                edgecolor="black",
+                linewidth=BAR_OUTLINE_WIDTH,
+                clip_on=False,
+                zorder=4,
+            )
+        )
 
     if len(display_apps) > 1:
         ax.axvline(
@@ -504,8 +546,8 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
 
-    plt.subplots_adjust(top=0.84, bottom=0.28, left=0.08, right=0.99)
-    _style_legend(fig, active_segments)
+    plt.subplots_adjust(top=0.66, bottom=0.28, left=0.08, right=0.99)
+    _style_legend(ax, active_segments)
 
     for spine in ax.spines.values():
         spine.set_visible(True)
@@ -531,7 +573,7 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Plot how RFP handles on-path load pairs by workload."
+        description="Plot how RFP handles on-path loads by workload."
     )
     parser.add_argument("--simulations-root", type=Path, default=DEFAULT_SIMULATIONS_ROOT)
     parser.add_argument("--rfp-dir", type=Path, default=None)
@@ -574,8 +616,9 @@ def main() -> None:
         )
         print(
             f"  {workload:14s}  covered={b.covered_frac * 100:5.1f}%  "
-            f"no_prefetch={b.no_prefetch_frac * 100:5.1f}%  "
-            f"pref_not_useful={b.prefetch_not_useful_total_frac * 100:5.1f}%  "
+            f"low_conf={b.low_confidence_frac * 100:5.1f}%  "
+            f"load_beat={b.prefetch_not_useful_frac * 100:5.1f}%  "
+            f"wrong_addr={b.wrong_address_frac * 100:5.1f}%  "
             f"useful_of_issued={useful_of_issued:5.1f}%  "
             f"(simpoints={row.trace_count})"
         )
@@ -596,7 +639,7 @@ def main() -> None:
     print("\nSummary:")
     print(f"  workloads plotted: {len(results)}")
     print(f"  mean covered:              {avg.breakdown.covered_frac * 100:.2f}%")
-    print(f"  mean no prefetch:          {avg.breakdown.no_prefetch_frac * 100:.2f}%")
+    print(f"  mean low confidence:       {avg.breakdown.low_confidence_frac * 100:.2f}%")
     print(f"  mean prefetch not useful:  {avg.breakdown.prefetch_not_useful_total_frac * 100:.2f}%")
     print(f"  mean useful of issued:     {useful_of_issued:.2f}%")
     print("\nOutputs:")
