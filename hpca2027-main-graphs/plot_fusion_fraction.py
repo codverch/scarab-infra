@@ -3,13 +3,12 @@
 
 Per workload (simpoint-weighted):
   Helios:              100 * 2 * HELIOS_FUSIONS_COMMITTED / ONPATH_MEM_LOADS
-  Register file prefetching: 100 * RFP_RETIRE_COVERED / ONPATH_MEM_LOADS
+  Register file prefetching: 100 * RFP_PREFETCH_USEFUL / ONPATH_MEM_LOADS
   I-Fuse:              100 * 2 * IFUSE_FUSED_LOADS / ONPATH_MEM_LOADS
   Ideal fusion:        100 * IDEAL_FUSION_LOADS_PARTICIPATED / ONPATH_MEM_LOADS
 
-ONPATH_MEM_LOADS is read from ideal-fusion simpoints (10M measured window). Helios fusion
-counts are scaled to the ideal simpoint's Periodic_Instructions when Helios ran longer
-(e.g. periodic stats include warmup / re-fetches).
+ONPATH_MEM_LOADS is read from ideal-fusion simpoints and used as the shared
+denominator for every technique.
 
 Commands:
 
@@ -18,20 +17,10 @@ Commands:
   --simulations-root /users/deepmish/scarab/src/simulations \
   --helios-dir /users/deepmish/scarab/src/simulations/helios \
   --rfp-dir /users/deepmish/scarab/src/simulations/rfp \
-  --ifuse-dir /users/deepmish/scarab/src/simulations/ifuse/tt256_thresh_1000 \
+  --ifuse-dir /users/deepmish/scarab/src/simulations/ifuse \
   --ifuse-config datacenter \
   --ideal-fusion-dir /users/deepmish/scarab/src/simulations/ideal-fusion \
   --output-dir /users/deepmish/scarab/src/hpca2027-main-graphs-results/fusion_fraction
-
-cd /users/deepmish/scarab-infra
-git add hpca2027-main-graphs/plot_fusion_fraction.py
-git commit -m "Add Helios and RFP bars to on-path load fusion fraction plot."
-git push
-
-cd /users/deepmish/scarab
-git add src/hpca2027-main-graphs-results/fusion_fraction/
-git commit -m "Update HPCA main-graph fusion fraction results."
-git push
 """
 
 from __future__ import annotations
@@ -68,8 +57,8 @@ from plot_ipc import (  # noqa: E402
     HELIOS_COLOR,
     IDEAL_FUSION_COLOR,
     IFUSE_COLOR,
-    IPC_AXIS_FONT,
     IPC_AXIS_LABEL_FONT,
+    IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     RFP_COLOR,
     SIMPOINT_WORKLOADS,
@@ -79,7 +68,7 @@ from plot_ipc import (  # noqa: E402
 )
 
 HELIOS_FUSED_STAT = "HELIOS_FUSIONS_COMMITTED_count"
-RFP_COVERED_STAT = "RFP_RETIRE_COVERED_count"
+RFP_USEFUL_STAT = "RFP_PREFETCH_USEFUL_count"
 IFUSE_FUSED_STAT = "IFUSE_FUSED_LOADS_count"
 IDEAL_LOADS_PARTICIPATED_STAT = "IDEAL_FUSION_LOADS_PARTICIPATED_count"
 ONPATH_MEM_LOADS_STAT = "ONPATH_MEM_LOADS_count"
@@ -99,7 +88,7 @@ SERIES: tuple[tuple[str, str, str], ...] = (
 class FusionFractionResult:
     workload: str
     helios_loads_participated: float
-    rfp_loads_covered: float
+    rfp_useful_prefetches: float
     ifuse_loads_participated: float
     ideal_loads_participated: float
     onpath_mem_loads: float
@@ -212,7 +201,7 @@ def rfp_stats_available(
             )
             if sim_dir is None:
                 continue
-            if stat_count_from_csv(sim_dir / "rfp.stat.0.csv", RFP_COVERED_STAT) is not None:
+            if stat_count_from_csv(sim_dir / "rfp.stat.0.csv", RFP_USEFUL_STAT) is not None:
                 return True
     return False
 
@@ -311,20 +300,20 @@ def compute_workload_fraction(
                 weighted_helios += weight * helios_participated
                 helios_trace_count += 1
 
-        rfp_covered: float | None = None
+        rfp_useful: float | None = None
         if include_rfp and rfp_dir is not None:
-            rfp_covered = simpoint_stat(
+            rfp_useful = simpoint_stat(
                 rfp_dir,
                 rfp_config,
                 workload,
                 cluster_id,
                 stat_file="rfp.stat.0.csv",
-                stat_name=RFP_COVERED_STAT,
+                stat_name=RFP_USEFUL_STAT,
                 suite=suite,
                 subsuite=subsuite,
             )
-            if rfp_covered is not None:
-                weighted_rfp += weight * rfp_covered
+            if rfp_useful is not None:
+                weighted_rfp += weight * rfp_useful
                 rfp_trace_count += 1
 
         ifuse_participated = LOADS_PER_FUSION_PAIR * ifuse_fused
@@ -348,7 +337,7 @@ def compute_workload_fraction(
     return FusionFractionResult(
         workload=workload,
         helios_loads_participated=weighted_helios,
-        rfp_loads_covered=weighted_rfp,
+        rfp_useful_prefetches=weighted_rfp,
         ifuse_loads_participated=weighted_ifuse,
         ideal_loads_participated=weighted_ideal,
         onpath_mem_loads=weighted_onpath,
@@ -387,7 +376,7 @@ def write_summary_csv(
         fieldnames.extend(
             [
                 "rfp_trace_count",
-                "weighted_rfp_loads_covered",
+                "weighted_rfp_useful_prefetches",
                 "rfp_fraction_pct",
             ]
         )
@@ -430,7 +419,7 @@ def write_summary_csv(
                 row.update(
                     {
                         "rfp_trace_count": result.rfp_trace_count,
-                        "weighted_rfp_loads_covered": f"{result.rfp_loads_covered:.1f}",
+                        "weighted_rfp_useful_prefetches": f"{result.rfp_useful_prefetches:.1f}",
                         "rfp_fraction_pct": (
                             f"{result.rfp_fraction_pct:.2f}"
                             if result.rfp_fraction_pct is not None
@@ -461,12 +450,12 @@ def write_computation_log(
                 "(scaled to ideal Periodic_Instructions when windows differ)\n"
             )
         if include_rfp:
-            fh.write(f"RFP loads covered = {RFP_COVERED_STAT}\n")
+            fh.write(f"RFP useful prefetches = {RFP_USEFUL_STAT}\n")
         fh.write(
             "I-Fuse loads participating = 2 * IFUSE_FUSED_LOADS_count; "
             "ideal loads participating = IDEAL_FUSION_LOADS_PARTICIPATED_count.\n"
         )
-        fh.write("ONPATH_MEM_LOADS read from ideal-fusion simpoints.\n\n")
+        fh.write("ONPATH_MEM_LOADS_count is read from ideal-fusion simpoints.\n\n")
 
         for result in results:
             fh.write(f"{result.workload} ({rename_workload(result.workload)})\n")
@@ -479,7 +468,7 @@ def write_computation_log(
                 )
             if include_rfp and result.rfp_fraction_pct is not None:
                 fh.write(
-                    f"  rfp:    {result.rfp_loads_covered:.1f}  "
+                    f"  rfp:    {result.rfp_useful_prefetches:.1f}  "
                     f"({result.rfp_fraction_pct:.2f}%, {result.rfp_trace_count} simpoints)\n"
                 )
             fh.write(
@@ -561,14 +550,13 @@ def plot_fusion_fraction_bars(
         {
             "font.family": FONT_FAMILY,
             "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "font.size": IPC_AXIS_FONT,
             "axes.labelsize": IPC_AXIS_LABEL_FONT,
             "xtick.labelsize": IPC_TICK_FONT,
             "ytick.labelsize": IPC_TICK_FONT,
-            "legend.fontsize": IPC_AXIS_FONT,
+            "legend.fontsize": IPC_LEGEND_FONT,
         }
     )
-    fig, ax = plt.subplots(figsize=(22, 8))
+    fig, ax = plt.subplots(figsize=(24, 6.5))
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
     for offset, (_name, values, color) in zip(offsets, active_series):
@@ -607,18 +595,21 @@ def plot_fusion_fraction_bars(
     _tight_x_limits(ax, x[0], x[-1], n_bars=len(active_series))
 
     ax.set_ylabel(
-        "Coverage of total on-path\n memory loads (%)",
+        "Fraction of total on-path\nmemory loads\ncovered (%)",
         fontsize=IPC_AXIS_LABEL_FONT,
         fontfamily=FONT_FAMILY,
     )
     ax.set_ylim(0.0, 100.0)
+    import matplotlib.ticker as mticker
+
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
     ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
     ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
 
-    plt.subplots_adjust(top=0.80, bottom=0.28, left=0.06, right=0.99)
+    plt.subplots_adjust(top=0.88, bottom=0.28, left=0.08, right=0.99)
 
     legend = ax.legend(
         handles=_legend_handles(include_helios=include_helios, include_rfp=include_rfp),
@@ -626,10 +617,10 @@ def plot_fusion_fraction_bars(
         fancybox=False,
         shadow=False,
         loc="lower center",
-        bbox_to_anchor=(0.5, 1.02),
+        bbox_to_anchor=(0.5, 0.96),
         bbox_transform=ax.transAxes,
         borderaxespad=0.0,
-        fontsize=IPC_AXIS_FONT,
+        fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
         ncol=len(active_series),
         handlelength=1.4,
@@ -720,7 +711,7 @@ def main() -> None:
             subsuite=DEFAULT_SUBSUITE,
         )
         if not plot_rfp:
-            print(f"RFP skipped: missing {RFP_COVERED_STAT} in {rfp_dir}")
+            print(f"RFP skipped: missing {RFP_USEFUL_STAT} in {rfp_dir}")
 
     print("Computing on-path memory load coverage fractions...")
     if plot_helios:
