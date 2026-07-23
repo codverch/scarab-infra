@@ -19,7 +19,24 @@ git add src/hpca2027-characterization-results/backend_stalls/
 git commit -m "Update HPCA characterization backend stall results."
 ```
 
-## Helios + Ideal Fusion IPC (normalized to baseline)
+## Helios coverage causes (fusion candidate breakdown)
+
+Stacked breakdown of `HELIOS_REJECT_*` counters vs committed fusions (% of fusion candidates).
+
+```bash
+/users/deepmish/miniconda3/envs/scarabinfra/bin/python \
+  /users/deepmish/scarab-infra/hpca2027-characterization/plot_helios_coverage_causes.py \
+  --simulations-root /users/deepmish/scarab/src/simulations
+```
+
+Outputs: `scarab/src/hpca2027-characterization-results/helios_coverage_causes/`.
+
+```bash
+cd /users/deepmish/scarab
+git add src/hpca2027-characterization-results/helios_coverage_causes/
+git commit -m "Update HPCA Helios coverage-cause breakdown results."
+```
+
 
 Requires results under:
 - `scarab/src/simulations/baseline/...`
