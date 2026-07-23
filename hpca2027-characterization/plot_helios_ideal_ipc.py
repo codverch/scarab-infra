@@ -10,9 +10,20 @@ Expects:
   {simulations}/ideal-fusion-pass2/pass2/datacenter/datacenter/<app>/<chunk>/
 
 Example:
-  python3 hpca2027-characterization/plot_helios_ideal_ipc.py \\
+  /users/deepmish/miniconda3/envs/scarabinfra/bin/python \\
+    /users/deepmish/scarab-infra/hpca2027-characterization/plot_helios_ideal_ipc.py \\
     --simulations-root /users/deepmish/scarab/src/simulations \\
-    --output-dir hpca2027-characterization
+    --schemes helios rfp ideal_fusion \\
+    --ideal-fusion-dir /users/deepmish/scarab/src/simulations/ideal-fusion \\
+    --ideal-fusion-config ideal-fusion \\
+    --allow-partial \\
+    --output-stem ipc-helios-rfp-ideal
+
+Default results: scarab/src/hpca2027-characterization-results/<output_stem>/
+
+cd /users/deepmish/scarab
+git add src/hpca2027-characterization-results/ipc_helios_rfp_ideal/
+git commit -m "Update HPCA characterization IPC results."
 """
 
 from __future__ import annotations
@@ -108,10 +119,17 @@ SUMMARY_XTICK = "Average"
 CHAR_BAR_WIDTH = 0.24
 CHAR_END_PAD = 0.45
 
-DEFAULT_SIM_ROOT = Path("/users/deepmish/scarab/src/simulations")
+DEFAULT_SCARAB_ROOT = Path("/users/deepmish/scarab")
+DEFAULT_SIM_ROOT = DEFAULT_SCARAB_ROOT / "src" / "simulations"
+DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
+DEFAULT_RESULTS_GIT_PATH = "src/hpca2027-characterization-results"
 DEFAULT_TRACE_ROOT = Path("/dev/shm/baseline/simpoint_traces")
 SUITE = "datacenter"
 SUBSUITE = "datacenter"
+
+
+def results_dir_for_stem(output_stem: str) -> Path:
+    return DEFAULT_RESULTS_ROOT / output_stem.replace("-", "_")
 
 
 def find_simpoint_dir(
@@ -436,7 +454,15 @@ def main() -> None:
         action="store_true",
         help="Plot workloads with complete coverage for the selected schemes",
     )
-    parser.add_argument("--output-dir", type=Path, default=GRAPH_DIR)
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Plot output directory "
+            f"(default: {DEFAULT_RESULTS_GIT_PATH}/<output_stem with dashes→underscores>)"
+        ),
+    )
     parser.add_argument(
         "--output-stem",
         default=None,
@@ -458,7 +484,7 @@ def main() -> None:
     )
     pgo_dir = args.pgo_ifuse_dir or (sim_root / "pgo-ifuse")
     ideal_dir = args.ideal_fusion_dir or (sim_root / "ideal-fusion-pass2")
-    output_dir = args.output_dir
+    output_dir = args.output_dir or results_dir_for_stem(output_stem)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     workloads = list(SIMPOINT_WORKLOADS)

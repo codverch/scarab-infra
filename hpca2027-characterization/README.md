@@ -1,18 +1,23 @@
 # HPCA 2027 characterization plots
 
+Plot scripts live in `scarab-infra/hpca2027-characterization/`.
+Results are written under `scarab/src/hpca2027-characterization-results/<plot>/`.
+
 ## Backend-bound stalls (baseline)
 
 ```bash
-cd /users/deepmish/scarab-infra
-python3 hpca2027-characterization/plot_topdown_backend_stalls.py \
-  --root /users/deepmish/scarab/src/simulations/baseline \
-  --out-dir hpca2027-characterization \
-  --weights-db workloads/workloads_db.json \
-  --traces-dir /dev/shm/baseline/simpoint_traces \
+/users/deepmish/miniconda3/envs/scarabinfra/bin/python \
+  /users/deepmish/scarab-infra/hpca2027-characterization/plot_topdown_backend_stalls.py \
   --eval-backend-threshold -1
 ```
 
-Outputs: `backend-stalls.png` / `.pdf`, CSVs.
+Outputs: `scarab/src/hpca2027-characterization-results/backend_stalls/` (`backend-stalls.png`, `.pdf`, CSVs).
+
+```bash
+cd /users/deepmish/scarab
+git add src/hpca2027-characterization-results/backend_stalls/
+git commit -m "Update HPCA characterization backend stall results."
+```
 
 ## Helios + Ideal Fusion IPC (normalized to baseline)
 
@@ -22,26 +27,30 @@ Requires results under:
 - `scarab/src/simulations/ideal-fusion-pass2/pass2/...`
 
 ```bash
-cd /users/deepmish/scarab-infra
-python3 hpca2027-characterization/plot_helios_ideal_ipc.py \
-  --simulations-root /users/deepmish/scarab/src/simulations \
-  --output-dir hpca2027-characterization
+/users/deepmish/miniconda3/envs/scarabinfra/bin/python \
+  /users/deepmish/scarab-infra/hpca2027-characterization/plot_helios_ideal_ipc.py \
+  --simulations-root /users/deepmish/scarab/src/simulations
 ```
 
-Outputs: `ipc-helios-ideal.png` / `.pdf`, `ipc_helios_ideal.csv`.
+Outputs: `scarab/src/hpca2027-characterization-results/ipc_helios_runtime_pgo_ideal/`.
 
-### Helios + RFP + Ideal fusion (subset)
+## Helios + RFP + Ideal fusion
 
 ```bash
-cd /users/deepmish/scarab-infra
-python3 hpca2027-characterization/plot_helios_ideal_ipc.py \
+/users/deepmish/miniconda3/envs/scarabinfra/bin/python \
+  /users/deepmish/scarab-infra/hpca2027-characterization/plot_helios_ideal_ipc.py \
   --simulations-root /users/deepmish/scarab/src/simulations \
   --schemes helios rfp ideal_fusion \
   --ideal-fusion-dir /users/deepmish/scarab/src/simulations/ideal-fusion \
   --ideal-fusion-config ideal-fusion \
   --allow-partial \
-  --output-dir hpca2027-characterization \
   --output-stem ipc-helios-rfp-ideal
 ```
 
-Outputs: `ipc-helios-rfp-ideal.png` / `.pdf`, `ipc-helios-rfp-ideal.csv`.
+Outputs: `scarab/src/hpca2027-characterization-results/ipc_helios_rfp_ideal/`.
+
+```bash
+cd /users/deepmish/scarab
+git add src/hpca2027-characterization-results/ipc_helios_rfp_ideal/
+git commit -m "Update HPCA characterization IPC results."
+```

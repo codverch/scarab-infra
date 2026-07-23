@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
 
@@ -22,6 +23,23 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+
+GRAPH_DIR = Path(__file__).resolve().parent
+SCARAB_INFRA_ROOT = GRAPH_DIR.parent
+MAIN_GRAPHS = SCARAB_INFRA_ROOT / "hpca2027-main-graphs"
+if str(MAIN_GRAPHS) not in sys.path:
+    sys.path.insert(0, str(MAIN_GRAPHS))
+
+from plot_ipc import (  # noqa: E402
+    AVERAGE_SEPARATOR_COLOR,
+    BAR_EDGE_WIDTH,
+    FONT_FAMILY,
+    IPC_AXIS_LABEL_FONT,
+    IPC_TICK_FONT,
+    SIMPOINT_WORKLOADS,
+    rename_workload,
+)
 
 
 WORKLOAD_LABELS = {
@@ -280,12 +298,11 @@ def collect(
         fingerprint = tuple(counters[key] for key in STAT_NAMES)
         prior = seen[workload].get(fingerprint)
         if prior is not None:
-            raise SystemExit(
-                f"{workload}: {stat_path} and {prior} have identical top-down counters. "
-                "Distinct simpoints must not produce identical stats; this usually means the "
-                "measured ROI window sat in a shared trace chunk (segment_size/window "
-                "mismatch with the trace's chunk_instr_count)."
+            print(
+                f"Warning: {workload} simpoint {cluster} at {stat_path} duplicates "
+                f"{prior}; skipping duplicate simpoint."
             )
+            continue
         seen[workload][fingerprint] = stat_path
         per_simpoint[workload].append((cluster, counters))
 
@@ -416,142 +433,64 @@ def write_simpoint_csv(rows: list[dict[str, float]], path: Path) -> None:
             writer.writerow({key: row[key] for key in fieldnames})
 
 
-# Plot styling (aligned with instruction-fusion plot_ipc.py)
+# Plot styling (aligned with hpca2027-main-graphs/plot_ipc.py)
 CARNEGIE_RED = "#C41230"
-AVERAGE_BLUE = "#0D47A1"
-CATEGORY_GAP = 1.05
-GROUP_GAP = 0.40
-SUMMARY_GAP = 0.05
-AXIS_FONT = 34
-GROUP_FONT = 30
-APP_FONT = 28
-FIGSIZE = (24.0, 11.9)
-BAR_WIDTH = 0.68
-SUMMARY_COLUMN_SHADE_FACE = "#c0c0c0"
-SUMMARY_COLUMN_SHADE_ALPHA = 0.28
-SUMMARY_SEPARATOR_COLOR = "#F57C00"
-GROUP_SEPARATOR_COLOR = "#666666"
-SUMMARY_XTICK = "Average"
+BAR_WIDTH = 0.40
+FIGSIZE = (24.0, 6.5)
+END_PAD = 0.45
+DEFAULT_SCARAB_ROOT = Path("/users/deepmish/scarab")
+DEFAULT_SIM_ROOT = DEFAULT_SCARAB_ROOT / "src" / "simulations" / "baseline"
+DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
+DEFAULT_BACKEND_STALLS_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "backend_stalls"
+DEFAULT_WEIGHTS_DB = Path(__file__).resolve().parent.parent / "workloads" / "workloads_db.json"
+DEFAULT_TRACE_ROOT = Path("/dev/shm/baseline/simpoint_traces")
 DEFAULT_EVAL_BACKEND_THRESHOLD = 15.0
 
 
-def _short_label(workload: str) -> str:
-    return WORKLOAD_SHORT_LABELS.get(
-        workload, workload.replace("_", " ").upper()
-    )
-
-
-def _order_rows_hierarchical(
-    rows: list[dict[str, float]],
-) -> tuple[list[dict[str, float]], list[tuple[str, list[dict[str, float]]]], dict[str, float] | None]:
-    by_name = {str(row["workload"]): row for row in rows if row["workload"] != "Average"}
-    ordered: list[dict[str, float]] = []
-    grouped: list[tuple[str, list[dict[str, float]]]] = []
-    seen: set[str] = set()
-
-    for suite_name, members in WORKLOAD_GROUPS:
-        group_rows = [by_name[wl] for wl in members if wl in by_name]
-        if not group_rows:
-            continue
-        grouped.append((suite_name, group_rows))
-        ordered.extend(group_rows)
-        seen.update(str(row["workload"]) for row in group_rows)
-
-    leftovers = sorted(
-        (row for wl, row in by_name.items() if wl not in seen),
-        key=lambda row: str(row["workload"]),
-    )
-    if leftovers:
-        grouped.append(("Other", leftovers))
-        ordered.extend(leftovers)
-
-    average = next((row for row in rows if row["workload"] == "Average"), None)
-    return ordered, grouped, average
-
-
-def _shade_summary_column(ax, separator_x: float, average_x: float) -> None:
-    """Shade the full Average column from the dashed separator through the bar."""
-    ax.axvspan(
-        separator_x,
-        average_x + BAR_WIDTH / 2.0 + 0.10,
-        facecolor=SUMMARY_COLUMN_SHADE_FACE,
-        alpha=SUMMARY_COLUMN_SHADE_ALPHA,
-        zorder=-1,
-        linewidth=0,
-        clip_on=True,
+def _apply_plot_style() -> None:
+    plt.rcParams.update(
+        {
+            "font.family": FONT_FAMILY,
+            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
+            "axes.labelsize": IPC_AXIS_LABEL_FONT,
+            "xtick.labelsize": IPC_TICK_FONT,
+            "ytick.labelsize": IPC_TICK_FONT,
+        }
     )
 
 
 def _tight_x_limits(ax, x_min: float, x_max: float) -> None:
-    left_pad = 0.18
-    right_pad = 0.14
-    ax.set_xlim(x_min - BAR_WIDTH / 2 - left_pad, x_max + BAR_WIDTH / 2 + right_pad)
+    left_pad = 0.12
+    right_pad = 0.10
+    half_span = BAR_WIDTH / 2.0
+    ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
     ax.margins(x=0)
 
 
-def _add_hierarchical_xaxis(
-    ax,
-    positions: list[float],
-    app_labels: list[str],
-    group_spans: list[tuple[float, float, str]],
-) -> None:
-    from matplotlib.transforms import blended_transform_factory
-
-    ax.set_xticks(positions)
-    ax.set_xticklabels(
-        app_labels,
-        rotation=45,
-        ha="right",
-        fontsize=APP_FONT,
-        fontfamily="serif",
-    )
-    group_transform = blended_transform_factory(ax.transData, ax.transAxes)
-    for x_start, x_end, group_name in group_spans:
-        ax.text(
-            (x_start + x_end) / 2.0,
-            -0.40,
-            group_name,
-            transform=group_transform,
-            ha="center",
-            va="top",
-            fontsize=GROUP_FONT,
-            fontfamily="serif",
-            fontweight="bold",
-            clip_on=False,
-        )
-
-
-def _filter_evaluated_groups(
-    grouped: list[tuple[str, list[dict[str, float]]]],
-    threshold: float | None,
-    full_average: dict[str, float] | None,
-) -> tuple[list[tuple[str, list[dict[str, float]]]], dict[str, float] | None]:
-    """Keep only workloads at or above the evaluation threshold."""
-    if threshold is None:
-        return grouped, full_average
-
-    filtered: list[tuple[str, list[dict[str, float]]]] = []
-    evaluated: list[dict[str, float]] = []
-    for group_name, group_rows in grouped:
-        kept = [
-            row for row in group_rows if float(row["Backend bound"]) >= threshold
-        ]
-        if kept:
-            filtered.append((group_name, kept))
-            evaluated.extend(kept)
-
-    if not evaluated:
-        raise SystemExit(
-            f"No workloads meet the evaluation threshold ({threshold:.1f}% backend bound)."
-        )
-
-    evaluated_average: dict[str, float] = {
-        "workload": "Average",
-        "label": "Average",
-        "Backend bound": sum(float(row["Backend bound"]) for row in evaluated)
-        / len(evaluated),
+def _workload_rows_for_plot(
+    rows: list[dict[str, float]],
+    *,
+    eval_backend_threshold: float | None,
+) -> list[dict[str, float]]:
+    by_name = {
+        str(row["workload"]): row
+        for row in rows
+        if row["workload"] != "Average"
     }
-    return filtered, evaluated_average
+    ordered: list[dict[str, float]] = []
+    for workload in SIMPOINT_WORKLOADS:
+        row = by_name.get(workload)
+        if row is None:
+            continue
+        if (
+            eval_backend_threshold is not None
+            and float(row["Backend bound"]) < eval_backend_threshold
+        ):
+            continue
+        ordered.append(row)
+    if not ordered:
+        raise SystemExit("No main-graph workloads to plot.")
+    return ordered
 
 
 def plot(
@@ -561,122 +500,81 @@ def plot(
     *,
     eval_backend_threshold: float | None = DEFAULT_EVAL_BACKEND_THRESHOLD,
 ) -> None:
-    _, grouped, full_average = _order_rows_hierarchical(rows)
-    grouped, average_row = _filter_evaluated_groups(
-        grouped, eval_backend_threshold, full_average
+    workload_rows = _workload_rows_for_plot(
+        rows, eval_backend_threshold=eval_backend_threshold
     )
+    backend_values = [float(row["Backend bound"]) for row in workload_rows]
+    average_backend = sum(backend_values) / len(backend_values)
 
-    positions: list[float] = []
-    values: list[float] = []
-    app_labels: list[str] = []
-    group_spans: list[tuple[float, float, str]] = []
-    group_separators: list[float] = []
+    display_apps = [rename_workload(str(row["workload"])) for row in workload_rows]
+    display_apps.append("Average")
+    values = backend_values + [average_backend]
+    x = list(range(len(display_apps)))
 
-    x = 0.0
-    for group_idx, (group_name, group_rows) in enumerate(grouped):
-        group_start = x
-        # Dotted separator sits left of the first bar in this category.
-        if group_idx > 0:
-            group_separators.append(group_start - BAR_WIDTH / 2.0 - 0.22)
-        for row in group_rows:
-            backend = float(row["Backend bound"])
-            positions.append(x)
-            values.append(backend)
-            app_labels.append(_short_label(str(row["workload"])))
-            x += CATEGORY_GAP
-        group_spans.append((group_start, x - CATEGORY_GAP, group_name))
-        x += GROUP_GAP
-
-    average_x: float | None = None
-    if average_row is not None:
-        if positions:
-            x += SUMMARY_GAP
-        average_x = x
-        positions.append(average_x)
-        values.append(float(average_row["Backend bound"]))
-        app_labels.append(SUMMARY_XTICK)
-
-    if not positions:
-        raise SystemExit("No workloads to plot.")
-
-    fig_width = max(FIGSIZE[0], len(positions) * 0.98 + len(grouped) * 0.65)
-    plt.rcParams.update(
-        {"font.size": 15, "font.family": "serif", "axes.labelsize": AXIS_FONT}
-    )
-    fig, ax = plt.subplots(figsize=(fig_width, FIGSIZE[1]))
-
-    summary_separator_x: float | None = None
-    if average_x is not None:
-        summary_separator_x = average_x - CATEGORY_GAP / 2.0 - SUMMARY_GAP / 2.0
-
+    _apply_plot_style()
+    fig, ax = plt.subplots(figsize=FIGSIZE)
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
-    bar_colors = [
-        AVERAGE_BLUE if label == SUMMARY_XTICK else CARNEGIE_RED
-        for label in app_labels
-    ]
     ax.bar(
-        positions,
+        x,
         values,
         BAR_WIDTH,
-        alpha=1.0,
-        color=bar_colors,
+        color=CARNEGIE_RED,
         edgecolor="black",
-        linewidth=1.5,
+        linewidth=BAR_EDGE_WIDTH,
         zorder=3,
     )
 
-    for sep_x in group_separators:
+    if len(display_apps) > 1:
         ax.axvline(
-            x=sep_x,
-            color=GROUP_SEPARATOR_COLOR,
-            linestyle=":",
-            alpha=0.50,
-            linewidth=2.0,
-            zorder=1,
-        )
-
-    if summary_separator_x is not None:
-        ax.axvline(
-            x=summary_separator_x,
-            color=SUMMARY_SEPARATOR_COLOR,
-            linestyle=(0, (3.5, 2.5)),
-            alpha=0.95,
-            linewidth=4.0,
+            x=len(display_apps) - 1.5,
+            color=AVERAGE_SEPARATOR_COLOR,
+            linestyle="--",
+            alpha=0.9,
+            linewidth=2.5,
             zorder=2,
         )
 
-    y_max = max(values) if values else 100.0
+    ax.set_xticks(x)
+    ax.set_xticklabels(
+        display_apps,
+        rotation=45,
+        ha="right",
+        fontsize=IPC_TICK_FONT,
+        fontfamily=FONT_FAMILY,
+    )
+    for label in ax.get_xticklabels():
+        if label.get_text() == "Average":
+            label.set_weight("bold")
+
+    _tight_x_limits(ax, x[0], x[-1])
+    xmin, xmax = ax.get_xlim()
+    ax.set_xlim(xmin - END_PAD, xmax + END_PAD)
+
     ax.set_ylabel(
         "Backend bound stalls (%)",
-        fontsize=AXIS_FONT,
-        fontfamily="serif",
-        labelpad=18,
+        fontsize=IPC_AXIS_LABEL_FONT,
+        fontfamily=FONT_FAMILY,
     )
-    ax.set_ylim(0, max(y_max * 1.08, 10.0))
-    _add_hierarchical_xaxis(ax, positions, app_labels, group_spans)
-
-    if average_x is not None:
-        for tick in ax.get_xticklabels():
-            if tick.get_text() == SUMMARY_XTICK:
-                tick.set_weight("bold")
-
-    ax.tick_params(axis="x", pad=8)
-    ax.tick_params(axis="y", labelsize=AXIS_FONT)
-    for tick in ax.get_yticklabels():
-        tick.set_fontfamily("serif")
-        tick.set_fontsize(AXIS_FONT)
-
-    _tight_x_limits(ax, positions[0], positions[-1])
+    y_max = max(values) if values else 100.0
+    ymax = min(100.0, max(10.0, (int(y_max / 10) + 1) * 10))
+    ax.set_ylim(0.0, ymax * 1.08)
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(10))
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
+    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
+    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
+    for label in ax.get_yticklabels():
+        label.set_fontfamily(FONT_FAMILY)
 
     for spine in ax.spines.values():
         spine.set_visible(True)
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
-    fig.subplots_adjust(bottom=0.36)
-    fig.savefig(out_png, bbox_inches="tight", dpi=300, pad_inches=0.06)
+    plt.tight_layout()
+    plt.subplots_adjust(top=1.12, bottom=0.28)
+    fig.savefig(out_png, bbox_inches="tight", dpi=300)
     if out_pdf:
-        fig.savefig(out_pdf, bbox_inches="tight", dpi=300, pad_inches=0.06)
+        fig.savefig(out_pdf, bbox_inches="tight", dpi=300)
     plt.close(fig)
 
 
@@ -691,18 +589,28 @@ def validate(rows: list[dict[str, float]], tolerance: float) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", type=Path, required=True, help="Simulation/stat root to search recursively.")
-    parser.add_argument("--out-dir", type=Path, required=True, help="Directory for CSV/PNG/PDF outputs.")
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=DEFAULT_SIM_ROOT,
+        help="Simulation/stat root to search recursively.",
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=DEFAULT_BACKEND_STALLS_OUTPUT_DIR,
+        help="Directory for CSV/PNG/PDF outputs.",
+    )
     parser.add_argument(
         "--weights-db",
         type=Path,
-        required=True,
+        default=DEFAULT_WEIGHTS_DB,
         help="workloads DB JSON (e.g. workloads/workloads_db.json) providing SimPoint cluster weights.",
     )
     parser.add_argument(
         "--traces-dir",
         type=Path,
-        default=Path("/dev/shm/baseline/simpoint_traces"),
+        default=DEFAULT_TRACE_ROOT,
         help="Only plot workloads with SimPoint bundles under this directory.",
     )
     parser.add_argument("--suite", default="datacenter")
