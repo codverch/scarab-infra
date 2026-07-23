@@ -51,6 +51,24 @@ Requires results under:
 
 Outputs: `scarab/src/hpca2027-characterization-results/ipc_helios_runtime_pgo_ideal/`.
 
+## RFP coverage causes (on-path load breakdown)
+
+Stacked breakdown of RFP on-path loads: covered (full/partial mitigation) vs not-covered causes.
+
+```bash
+/users/deepmish/miniconda3/envs/scarabinfra/bin/python \
+  /users/deepmish/scarab-infra/hpca2027-characterization/plot_rfp_coverage_causes.py \
+  --simulations-root /users/deepmish/scarab/src/simulations
+```
+
+Outputs: `scarab/src/hpca2027-characterization-results/rfp_coverage_causes/`.
+
+```bash
+cd /users/deepmish/scarab
+git add src/hpca2027-characterization-results/rfp_coverage_causes/
+git commit -m "Update HPCA RFP coverage-cause breakdown results."
+```
+
 ## Helios + RFP + Ideal fusion
 
 ```bash
