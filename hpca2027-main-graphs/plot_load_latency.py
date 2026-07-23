@@ -19,7 +19,7 @@ Commands:
   --simulations-root /users/deepmish/scarab/src/simulations \
   --helios-dir /users/deepmish/scarab/src/simulations/helios \
   --rfp-dir /users/deepmish/scarab/src/simulations/rfp \
-  --ifuse-dir /users/deepmish/scarab/src/simulations/ifuse/tt256_thresh_1000 \
+  --ifuse-dir /users/deepmish/scarab/src/simulations/ifuse \
   --ifuse-config datacenter \
   --output-dir /users/deepmish/scarab/src/hpca2027-main-graphs-results/load_latency
 """
