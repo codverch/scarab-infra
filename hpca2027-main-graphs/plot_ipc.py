@@ -75,10 +75,10 @@ SMALL_BAR_THRESHOLD = 0.5
 BAR_WIDTH = 0.18
 BAR_EDGE_WIDTH = 2.5
 FONT_FAMILY = "Noto Serif"
+IPC_TICK_FONT = 42
+IPC_AXIS_LABEL_FONT = IPC_TICK_FONT
+IPC_LEGEND_FONT = 36
 IPC_AXIS_FONT = 32
-IPC_AXIS_LABEL_FONT = 36
-IPC_TICK_FONT = 36
-IPC_LEGEND_FONT = 32
 
 # Backward-compatible aliases used by other hpca2027-main-graphs scripts.
 MAROON_COLOR = AVERAGE_SEPARATOR_COLOR
@@ -647,6 +647,21 @@ def _tight_x_limits(ax, x_min: float, x_max: float, n_bars: int) -> None:
     ax.margins(x=0)
 
 
+def _ylim_snap_to_tens(ylim: tuple[float, float]) -> tuple[float, float]:
+    ymin, ymax = ylim
+    ymin_snapped = 0.0 if ymin >= 0 else math.floor(ymin / 10.0) * 10.0
+    ymax_snapped = math.ceil(ymax / 10.0) * 10.0
+    if ymax_snapped <= ymin_snapped:
+        ymax_snapped = ymin_snapped + 10.0
+    return (ymin_snapped, ymax_snapped)
+
+
+def _apply_speedup_y_ticks(ax) -> None:
+    import matplotlib.ticker as mticker
+
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(10))
+
+
 def plot_speedup_bars(
     workloads: list[str],
     series_normalized: dict[str, list[float]],
@@ -685,7 +700,7 @@ def plot_speedup_bars(
 
     for stem, show_bar_labels, ylim in variants:
         _apply_ipc_plot_style()
-        fig, ax = plt.subplots(figsize=(24, 8))
+        fig, ax = plt.subplots(figsize=(24, 6.5))
 
         ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
@@ -734,6 +749,8 @@ def plot_speedup_bars(
             fontfamily=FONT_FAMILY,
         )
         ax.set_ylim(ylim[0], ylim[1])
+        ax.set_ylim(_ylim_snap_to_tens(ax.get_ylim()))
+        _apply_speedup_y_ticks(ax)
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
         ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
         ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
