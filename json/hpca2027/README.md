@@ -99,4 +99,4 @@ Unbounded-distance pass-1 uses:
 | `runtime_ifuse_tt64_thresh_sweep.json` | `runtime-ifuse-tt64-thresh-sweep` | `tt64_thresh_{10,100,1000,10000}` |
 | `runtime_ifuse_ipc_close_sweep.json` | `runtime-ifuse-ipc-close-sweep` | FCT/TT/thresh/confidence sweep |
 | `helios.json` | `helios` | `helios` |
-| `rfp.json` | `rfp` | `baseline` (`--rfp_on 0`) vs `rfp` (`--rfp_on 1`) |
+| `rfp.json` | `rfp-storage-sweep` | `baseline` vs `rfp_{6,12,18,24}kb` (Table 1 PT/PAT storage sweep) |

@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "rfp",
+  "experiment": "rfp-storage-sweep",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -10,7 +10,7 @@
   "traces_dir": "/dev/shm/baseline/simpoint_traces",
   "workload_db": "baseline.json",
   "top_simpoint": false,
-  "_comment": "20M warmup + 10M measured simulation (inst_limit=30,000,000, full_warmup=20,000,000, descriptor warmup=20,000,000).",
+  "_comment": "20M warmup + 10M measured simulation (inst_limit=30,000,000, full_warmup=20,000,000, descriptor warmup=20,000,000). RFP PT/PAT sizing targets ISCA'22 Table 1 storage budgets (~6/12/18/24 KB) via --rfp_pt_num_* and --rfp_pat_num_*.",
   "simulations": [
     {
       "suite": "datacenter",
@@ -38,8 +38,26 @@
       "slurm_options": "",
       "memory_overhead_mb": 0
     },
-    "rfp": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --rfp_on 1",
+    "rfp_6kb": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --rfp_on 1 --rfp_pt_num_sets 128 --rfp_pt_num_ways 8 --rfp_pat_num_sets 16 --rfp_pat_num_ways 4",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "rfp_12kb": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --rfp_on 1 --rfp_pt_num_sets 256 --rfp_pt_num_ways 8 --rfp_pat_num_sets 32 --rfp_pat_num_ways 4",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "rfp_18kb": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --rfp_on 1 --rfp_pt_num_sets 512 --rfp_pt_num_ways 6 --rfp_pat_num_sets 32 --rfp_pat_num_ways 6",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "rfp_24kb": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --rfp_on 1 --rfp_pt_num_sets 512 --rfp_pt_num_ways 8 --rfp_pat_num_sets 64 --rfp_pat_num_ways 4",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
@@ -51,7 +69,10 @@
   "visualize": {
     "baseline": "baseline",
     "configs": [
-      "rfp"
+      "rfp_6kb",
+      "rfp_12kb",
+      "rfp_18kb",
+      "rfp_24kb"
     ],
     "counters": [
       "IPC",
@@ -88,7 +109,11 @@
       "RFP_LD_EXEC_TO_DONE",
       "RFP_LD_EXEC_TO_DONE_SERVED",
       "RFP_LD_EXEC_TO_DONE_DEMAND",
-      "RFP_RETIRE_COVERED"
+      "RFP_RETIRE_COVERED",
+      "RFP_PT_ALLOC",
+      "RFP_PT_HIT",
+      "RFP_PAT_ALLOC",
+      "RFP_PAT_EVICT"
     ],
     "average": false
   },
@@ -117,7 +142,9 @@
       "RFP_REMAINING_LAT_SERVED",
       "RFP_LD_EXEC_TO_DONE",
       "RFP_LD_EXEC_TO_DONE_SERVED",
-      "RFP_LD_EXEC_TO_DONE_DEMAND"
+      "RFP_LD_EXEC_TO_DONE_DEMAND",
+      "RFP_PT_ALLOC",
+      "RFP_PAT_EVICT"
     ],
     "stat_groups": [
       "bp",
