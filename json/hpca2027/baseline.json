@@ -11,6 +11,7 @@
   "workload_db": "baseline.json",
   "top_simpoint": false,
   "_comment": "20M warmup + 10M measured simulation (inst_limit=30,000,000, full_warmup=20,000,000, descriptor warmup=20,000,000).",
+  "_register_file_utilization": "Scarab does NOT emit a single 'average RF utilization' counter. Every cycle it samples integer/vector physical RF occupancy and accumulates running totals. After simulation, read core.stat.0.csv (3rd column = cumulative total) and compute: int_rf_util_pct = 100 * REG_FILE_INT_OCCUPIED_SUM / REG_FILE_INT_PHYS_REGS_SUM; vec_rf_util_pct = 100 * REG_FILE_VEC_OCCUPIED_SUM / REG_FILE_VEC_PHYS_REGS_SUM. Requires Scarab built with hpca2027-characterization commit 7185dea5d (cherry-picked onto hpca2027-baseline). PARAMS.in already sets --reg_renaming_scheme 1 and --reg_table_integer_physical_size 280; no extra params needed in configurations.params. Workflow: ./sci --sim hpca2027/baseline → open core.stat.0.csv → divide the two INT sums (example: 24687935911 / 32597510400 ≈ 75.7%). For simpoint-weighted workload averages: ./sci --collect-stats hpca2027/baseline then apply the same ratio per row in collected_stats.csv.",
   "simulations": [
     {
       "suite": "datacenter",
@@ -51,7 +52,12 @@
     "baseline": "baseline",
     "configs": [],
     "counters": [
-      "IPC"
+      "IPC",
+      "REG_FILE_UTIL_SAMPLES",
+      "REG_FILE_INT_PHYS_REGS_SUM",
+      "REG_FILE_VEC_PHYS_REGS_SUM",
+      "REG_FILE_INT_OCCUPIED_SUM",
+      "REG_FILE_VEC_OCCUPIED_SUM"
     ],
     "average": false
   },
@@ -62,7 +68,11 @@
   "perf_analyze": {
     "baseline": "baseline",
     "counters": [
-      "IPC"
+      "IPC",
+      "REG_FILE_INT_OCCUPIED_SUM",
+      "REG_FILE_INT_PHYS_REGS_SUM",
+      "REG_FILE_VEC_OCCUPIED_SUM",
+      "REG_FILE_VEC_PHYS_REGS_SUM"
     ],
     "stat_groups": [
       "bp",
