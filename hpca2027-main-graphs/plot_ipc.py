@@ -65,13 +65,15 @@ WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 SIMPOINT_WORKLOADS = GAP_WORKLOADS + AGENTIC_WORKLOADS + DATABASE_WORKLOADS
 
-HELIOS_COLOR = "#009900"
-RFP_COLOR = "#720072"
+HELIOS_COLOR = "#E98300"
+RFP_COLOR = "#620059"
 IFUSE_COLOR = "#FFE600"
 BASELINE_COLOR = "#808080"
-IDEAL_FUSION_COLOR = "#000000"
+IDEAL_FUSION_COLOR = "#FEDD5C"
 AVERAGE_SEPARATOR_COLOR = "#4A4A4A"
 SMALL_BAR_THRESHOLD = 0.5
+BAR_LABEL_GAP = 1.2
+SMALL_LABEL_ARROW_GAP = 0.6
 BAR_WIDTH = 0.18
 BAR_EDGE_WIDTH = 2.5
 FONT_FAMILY = "Noto Serif"
@@ -575,43 +577,67 @@ def _annotate_ipc_bar_labels(
     values: list[float],
     *,
     fontsize: int = IPC_AXIS_FONT,
+    small_values_only: bool = False,
+    label_lane: int = 0,
+    n_label_lanes: int = 1,
 ) -> None:
-    """Label bar speedups; tiny positive values use a downward arrow and black text."""
+    """Label bar speedups; tiny values use a downward arrow and black text."""
+    lane_step = 5.0
+    lane_base = 4.0
+    small_fontsize = max(18, fontsize - 10)
     for patch, val in zip(container.patches, values, strict=True):
-        if math.isnan(val) or abs(val) < 1e-9:
+        if math.isnan(val):
             continue
         x = patch.get_x() + patch.get_width() / 2.0
-        if 0 <= val < SMALL_BAR_THRESHOLD:
-            arrow_top = 5.5
+        if val < SMALL_BAR_THRESHOLD:
+            bar_top = patch.get_height()
+            arrow_target = max(bar_top + 0.08, 0.12)
+            arrow_top = lane_base + label_lane * lane_step
+            if n_label_lanes > 1:
+                left_shift = (n_label_lanes - 1 - label_lane) * patch.get_width() * 0.45
+                if label_lane == n_label_lanes - 1:
+                    ha = "left"
+                    x_label = patch.get_x() + patch.get_width() * 0.2
+                else:
+                    ha = "right"
+                    x_label = x - left_shift
+            else:
+                ha = "center"
+                x_label = x
             ax.annotate(
                 "",
-                xy=(x, 0),
+                xy=(x, arrow_target),
                 xytext=(x, arrow_top),
                 arrowprops=dict(
                     arrowstyle="->",
                     color="black",
                     lw=1.5,
                     mutation_scale=12,
+                    shrinkA=0,
+                    shrinkB=2,
                 ),
                 zorder=10,
             )
             ax.text(
-                x,
-                arrow_top + 0.4,
+                x_label,
+                arrow_top + SMALL_LABEL_ARROW_GAP,
                 f"{val:+.1f}",
-                ha="center",
+                ha=ha,
                 va="bottom",
-                fontsize=fontsize,
+                fontsize=small_fontsize,
                 fontfamily=FONT_FAMILY,
                 color="black",
                 zorder=10,
             )
             continue
 
+        if small_values_only:
+            continue
+
         height = patch.get_height()
         ax.text(
             x,
-            height,
+            height + BAR_LABEL_GAP,
             f"{val:+.1f}",
             ha="center",
             va="bottom",

@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import math
 import sys
 from pathlib import Path
 
@@ -48,21 +49,22 @@ for path in (str(MAIN_GRAPHS), str(SCRIPTS_DIR)):
         sys.path.insert(0, path)
 
 from plot_ipc import (  # noqa: E402
-    AVERAGE_SEPARATOR_COLOR,
     BAR_EDGE_WIDTH,
     BAR_WIDTH,
     FONT_FAMILY,
     HELIOS_COLOR,
     IDEAL_FUSION_COLOR,
-    IPC_AXIS_LABEL_FONT,
+    IPC_AXIS_FONT,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     RFP_COLOR,
+    _annotate_ipc_bar_labels,
     _apply_ipc_plot_style,
     _apply_speedup_y_ticks,
     _ipc_legend_handles,
     _ylim_snap_to_tens,
     _ylim_speedup_pct_auto,
+    _ylim_with_bar_label_headroom,
     collect_trace_pairs,
     ipc_from_sim_dir,
     load_simpoint_trace_weights,
@@ -109,15 +111,13 @@ SERIES: tuple[SeriesSpec, ...] = tuple(SCHEME_SPECS[k] for k in DEFAULT_SCHEMES)
 CATEGORY_GAP = 1.35
 GROUP_GAP = 0.45
 SUMMARY_GAP = 0.08
-AXIS_FONT = 34
-GROUP_FONT = 30
-APP_FONT = 28
-FIGSIZE = (26.0, 11.9)
-GROUP_SEPARATOR_COLOR = "#666666"
-SUMMARY_SEPARATOR_COLOR = "#424242"
-SUMMARY_XTICK = "Average"
-CHAR_BAR_WIDTH = 0.24
-CHAR_END_PAD = 0.45
+AXIS_FONT = IPC_TICK_FONT
+FIGSIZE = (24.0, 6.5)
+GROUP_BAR_WIDTH = 0.22
+LEGEND_FONT = 32
+AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
+AVERAGE_SEPARATOR_WIDTH = 3.5
+Y_LABEL_PAD = 20
 
 DEFAULT_SCARAB_ROOT = Path("/users/deepmish/scarab")
 DEFAULT_SIM_ROOT = DEFAULT_SCARAB_ROOT / "src" / "simulations"
@@ -303,15 +303,21 @@ def ordered_apps(apps: list[str]) -> list[str]:
 
 
 def _char_bar_offsets(n: int) -> list[float]:
-    return [(i - (n - 1) / 2.0) * CHAR_BAR_WIDTH for i in range(n)]
+    return [(i - (n - 1) / 2.0) * GROUP_BAR_WIDTH for i in range(n)]
 
 
-def _char_tight_x_limits(ax, x_min: float, x_max: float, *, n_bars: int) -> None:
+def _grouped_tight_x_limits(ax, x_min: float, x_max: float, *, n_bars: int) -> None:
     left_pad = 0.12
-    right_pad = 0.10
-    half_span = (n_bars * CHAR_BAR_WIDTH) / 2.0
+    right_pad = 0.12
+    half_span = (n_bars * GROUP_BAR_WIDTH) / 2.0
     ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
     ax.margins(x=0)
+
+
+def _bar_height(pct: float) -> float:
+    if math.isnan(pct):
+        return 0.0
+    return max(0.0, pct)
 
 
 def plot_speedup(
@@ -322,8 +328,6 @@ def plot_speedup(
     series: tuple[SeriesSpec, ...],
     output_stems: tuple[str, ...],
 ) -> None:
-    import math
-
     apps = ordered_apps(apps)
     offsets = _char_bar_offsets(len(series))
     display_apps = [rename_workload(wl) for wl in apps] + ["Average"]
@@ -336,23 +340,38 @@ def plot_speedup(
         avg = sum(finite) / len(finite) if finite else float("nan")
         pct_with_avg[key] = vals + [avg]
 
-    pct_sets = [pct_with_avg[key] for key, _, _ in series]
-    ylim = _ylim_snap_to_tens(_ylim_speedup_pct_auto(*pct_sets))
+    display_sets = [
+        [_bar_height(v) for v in pct_with_avg[key]]
+        for key, _, _ in series
+    ]
+    _, ymax = _ylim_speedup_pct_auto(*display_sets)
+    label_headroom = 4.0 + (len(series) - 1) * 5.0 + 3.0
+    ymax = max(ymax, label_headroom)
+    ylim = _ylim_snap_to_tens(_ylim_with_bar_label_headroom((0.0, ymax)))
 
     _apply_ipc_plot_style()
-    fig, ax = plt.subplots(figsize=(24, 6.5))
+    fig, ax = plt.subplots(figsize=FIGSIZE)
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
-    for (key, _label, color), offset in zip(series, offsets):
+    for series_idx, ((key, _label, color), offset) in enumerate(zip(series, offsets)):
         pct_vals = pct_with_avg[key]
-        ax.bar(
+        container = ax.bar(
             [i + offset for i in x],
-            [0.0 if math.isnan(val) else val for val in pct_vals],
-            CHAR_BAR_WIDTH,
+            [_bar_height(val) for val in pct_vals],
+            GROUP_BAR_WIDTH,
             color=color,
             edgecolor="black",
             linewidth=BAR_EDGE_WIDTH,
             zorder=3,
+        )
+        _annotate_ipc_bar_labels(
+            ax,
+            container,
+            pct_vals,
+            fontsize=IPC_AXIS_FONT,
+            small_values_only=True,
+            label_lane=series_idx,
+            n_label_lanes=len(series),
         )
 
     if len(display_apps) > 1:
@@ -360,8 +379,7 @@ def plot_speedup(
             x=len(display_apps) - 1.5,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
-            alpha=0.9,
-            linewidth=2.5,
+            linewidth=AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
@@ -370,28 +388,29 @@ def plot_speedup(
         display_apps,
         rotation=45,
         ha="right",
-        fontsize=IPC_TICK_FONT,
+        fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
     )
     for label in ax.get_xticklabels():
+        label.set_fontsize(AXIS_FONT)
+        label.set_fontfamily(FONT_FAMILY)
         if label.get_text() == "Average":
             label.set_weight("bold")
 
-    _char_tight_x_limits(ax, x[0], x[-1], n_bars=len(series))
-    xmin, xmax = ax.get_xlim()
-    ax.set_xlim(xmin - CHAR_END_PAD, xmax + CHAR_END_PAD)
+    _grouped_tight_x_limits(ax, x[0], x[-1], n_bars=len(series))
 
     ax.set_ylabel(
         "Speedup (%)\n(normalized to baseline)",
-        fontsize=IPC_AXIS_LABEL_FONT,
+        fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
+        labelpad=Y_LABEL_PAD,
     )
-    ax.set_ylim(ylim[0], ylim[1])
+    ax.set_ylim(0.0, ylim[1])
     _apply_speedup_y_ticks(ax)
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
-    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{max(0, y):.0f}"))
+    ax.tick_params(axis="both", labelsize=AXIS_FONT)
     for label in ax.get_yticklabels():
+        label.set_fontsize(AXIS_FONT)
         label.set_fontfamily(FONT_FAMILY)
 
     legend = ax.legend(
@@ -400,14 +419,17 @@ def plot_speedup(
         fancybox=False,
         shadow=False,
         loc="upper left",
-        fontsize=IPC_LEGEND_FONT,
+        fontsize=LEGEND_FONT,
         edgecolor="black",
-        ncol=min(len(series), 2),
-        handlelength=1.1,
-        handleheight=1.1,
+        ncol=len(series),
+        columnspacing=1.0,
+        handlelength=0.9,
+        handleheight=0.9,
+        borderpad=0.5,
+        labelspacing=0.35,
         framealpha=1.0,
     )
-    legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
+    legend.get_frame().set_linewidth(2.2)
     legend.get_frame().set_facecolor("white")
     legend.get_frame().set_alpha(1.0)
 
@@ -416,12 +438,11 @@ def plot_speedup(
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
-    plt.tight_layout()
-    plt.subplots_adjust(top=1.12, bottom=0.28)
+    plt.subplots_adjust(top=0.98, bottom=0.32, left=0.10)
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in output_stems:
-        fig.savefig(output_dir / f"{stem}.png", bbox_inches="tight", dpi=300)
-        fig.savefig(output_dir / f"{stem}.pdf", bbox_inches="tight", dpi=300)
+        fig.savefig(output_dir / f"{stem}.png", bbox_inches="tight", pad_inches=0.08, dpi=300)
+        fig.savefig(output_dir / f"{stem}.pdf", bbox_inches="tight", pad_inches=0.08, dpi=300)
         print(f"Wrote {output_dir / stem}.png")
     plt.close(fig)
 
