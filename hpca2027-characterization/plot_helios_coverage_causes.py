@@ -68,7 +68,7 @@ COMMITTED_STAT = HELIOS_FUSED_STAT
 IDEAL_FUSED_STAT = "IDEAL_FUSION_FUSED_LOADS_count"
 
 BAR_WIDTH = 0.40
-FIGSIZE = (24.0, 7.5)
+FIGSIZE = (24.0, 8.0)
 BAR_EDGE_WIDTH = 3.0
 AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
 AVERAGE_SEPARATOR_WIDTH = 3.5
@@ -83,8 +83,8 @@ Y_AXIS_LABEL = (
 
 # (field, color) — bottom-to-top stack order.
 BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
-    ("committed_frac", "#279989"),
-    ("head_evicted_frac", "#0098DB"),
+    ("committed_frac", "#008080"),
+    ("head_evicted_frac", "#0047AB"),
     ("deadlock_frac", "#D5D5D4"),
     ("addr_mismatch_frac", "#FFD700"),
     ("distance_invalid_frac", "#984EA3"),
