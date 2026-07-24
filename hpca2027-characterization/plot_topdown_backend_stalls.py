@@ -32,7 +32,6 @@ if str(MAIN_GRAPHS) not in sys.path:
     sys.path.insert(0, str(MAIN_GRAPHS))
 
 from plot_ipc import (  # noqa: E402
-    AVERAGE_SEPARATOR_COLOR,
     BAR_EDGE_WIDTH,
     FONT_FAMILY,
     IPC_AXIS_LABEL_FONT,
@@ -434,10 +433,13 @@ def write_simpoint_csv(rows: list[dict[str, float]], path: Path) -> None:
 
 
 # Plot styling (aligned with hpca2027-main-graphs/plot_ipc.py)
-CARNEGIE_RED = "#C41230"
+STANFORD_RED = "#8C1515"
+CMU_RED = "#C41230"
+BAR_COLOR = "#A81423"  # 50/50 blend of Stanford and CMU cardinal reds
+AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
+AVERAGE_SEPARATOR_WIDTH = 3.5
 BAR_WIDTH = 0.40
 FIGSIZE = (24.0, 6.5)
-END_PAD = 0.45
 DEFAULT_SCARAB_ROOT = Path("/users/deepmish/scarab")
 DEFAULT_SIM_ROOT = DEFAULT_SCARAB_ROOT / "src" / "simulations" / "baseline"
 DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
@@ -461,7 +463,7 @@ def _apply_plot_style() -> None:
 
 def _tight_x_limits(ax, x_min: float, x_max: float) -> None:
     left_pad = 0.12
-    right_pad = 0.10
+    right_pad = 0.12
     half_span = BAR_WIDTH / 2.0
     ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
     ax.margins(x=0)
@@ -518,7 +520,7 @@ def plot(
         x,
         values,
         BAR_WIDTH,
-        color=CARNEGIE_RED,
+        color=BAR_COLOR,
         edgecolor="black",
         linewidth=BAR_EDGE_WIDTH,
         zorder=3,
@@ -529,8 +531,7 @@ def plot(
             x=len(display_apps) - 1.5,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
-            alpha=0.9,
-            linewidth=2.5,
+            linewidth=AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
@@ -547,8 +548,6 @@ def plot(
             label.set_weight("bold")
 
     _tight_x_limits(ax, x[0], x[-1])
-    xmin, xmax = ax.get_xlim()
-    ax.set_xlim(xmin - END_PAD, xmax + END_PAD)
 
     ax.set_ylabel(
         "Backend bound stalls (%)",

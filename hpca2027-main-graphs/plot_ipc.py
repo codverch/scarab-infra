@@ -56,7 +56,7 @@ except ImportError:
 
 GAP_WORKLOADS = ["bfs", "dfs", "pagerank"]
 AGENTIC_WORKLOADS = ["appworld", "core_bench", "terminal_bench"]
-DATABASE_WORKLOADS = ["leveldb", "clickhouse"]
+DATABASE_WORKLOADS = ["duckdb", "rocksdb", "clickhouse"]
 
 WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("GAP", tuple(GAP_WORKLOADS)),
