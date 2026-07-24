@@ -19,8 +19,7 @@ cd ~/scarab-infra
 python3 -m scripts.register_local_traces \
   --traces-dir /dev/shm/baseline/simpoint_traces \
   --warmup 20000000 \
-  --workloads appworld bfs dfs pagerank sssp_ego_fb core_bench mlgym_fmnist \
-    terminal_bench duckdb leveldb rocksdb clickhouse masstree silo
+  --workloads appworld bfs clickhouse core_bench dfs duckdb pagerank rocksdb terminal_bench
 ```
 
 ## Run simulations
@@ -64,16 +63,13 @@ Rebuild Scarab only when source or the workload Dockerfile changed:
 |-----|--------|
 | `terminal_bench` | `T100/W64/I1/D10/stores-off` |
 | `bfs` | `T300/W64/I1/D10/stores-off` |
-| `sssp_ego_fb` | `T100/W64/I1/D3/stores-off` |
 | `dfs` | `T300/W64/I1/D10/stores-off` |
 | `pagerank` | `T300/W64/I1/D10/stores-off` |
 | `core_bench` | `T1000/W64/I1/D10/stores-off` |
-| `leveldb` | `T100000/W64/I1/D10000/stores-off` |
 | `appworld` | `T10000/W64/I1/D10/stores-off` |
 | `rocksdb` | `T4800/W64/I1/D10/stores-off` |
 | `duckdb` | `T30000/W64/I1/D10/stores-off` |
 | `clickhouse` | `T300/W64/I10/D10/stores-off` |
-| `masstree` | `T60000/W64/I1/D10/stores-off` |
 
 ## Ideal fusion workflow
 
