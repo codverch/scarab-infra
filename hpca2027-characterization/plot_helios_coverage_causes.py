@@ -418,7 +418,7 @@ def _style_legend(ax, active_segments: list[tuple[str, str]]) -> None:
         fancybox=False,
         shadow=False,
         loc="lower center",
-        bbox_to_anchor=(0.5, 1.06),
+        bbox_to_anchor=(0.5, 1.12),
         bbox_transform=ax.transAxes,
         borderaxespad=0.0,
         fontsize=IPC_LEGEND_FONT,
@@ -500,7 +500,7 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
         label.set_fontsize(AXIS_FONT)
         label.set_fontfamily(FONT_FAMILY)
 
-    plt.subplots_adjust(top=0.72, bottom=0.32, left=0.10, right=0.99)
+    plt.subplots_adjust(top=0.70, bottom=0.32, left=0.10, right=0.99)
     _style_legend(ax, active_segments)
 
     for spine in ax.spines.values():
