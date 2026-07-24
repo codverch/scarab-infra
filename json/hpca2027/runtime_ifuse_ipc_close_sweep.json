@@ -16,16 +16,15 @@
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
+        "appworld",
         "bfs",
+        "clickhouse",
+        "core_bench",
         "dfs",
         "duckdb",
-        "leveldb",
         "pagerank",
         "rocksdb",
-        "sssp_ego_fb",
-        "clickhouse",
-        "masstree",
-        "silo"
+        "terminal_bench"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",

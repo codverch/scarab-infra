@@ -22,6 +22,11 @@ TRACEFILE="${11}"
 SCARAB_BIN="${12}"
 SEGMENT_IDX="${13}"
 
+APP_NAME="${WORKLOAD_HOME##*/}"
+SIMHOME=$SCENARIO/$APP_NAME
+mkdir -p $SIMHOME
+OUTDIR=$SIMHOME
+
 PARAMS_FILE="$SCARABHOME/src/PARAMS.$SCARABARCH"
 if [[ "$SCARAB_BIN" =~ ^scarab_([0-9a-fA-F]+) ]]; then
   HASH="${BASH_REMATCH[1]}"
@@ -31,15 +36,10 @@ if [[ "$SCARAB_BIN" =~ ^scarab_([0-9a-fA-F]+) ]]; then
   fi
 fi
 
-SIMHOME=$SCENARIO/$WORKLOAD_HOME
-mkdir -p $SIMHOME
-OUTDIR=$SIMHOME
-
 # Expand per-simpoint placeholders in Scarab params, e.g.
 #   --ideal_fusion_log /home/<user>/ideal_fusion_candidates/{workload}/{cluster_id}.csv
 #   --ifuse_fct_preload_file {root_dir}/pgo-candidates/.../{workload}/{cluster_id}.csv
 # {root_dir} is the descriptor root_dir bind-mounted as $HOME inside the container.
-APP_NAME="${WORKLOAD_HOME##*/}"
 SCARABPARAMS="${SCARABPARAMS//\{root_dir\}/$HOME}"
 SCARABPARAMS="${SCARABPARAMS//\{workload\}/$APP_NAME}"
 SCARABPARAMS="${SCARABPARAMS//\{cluster_id\}/$CLUSTER_ID}"
