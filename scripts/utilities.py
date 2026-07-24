@@ -33,6 +33,14 @@ _docker_client = None
 BASE_MEMORY_BY_MODE_KEY = "base_memory_mb_by_mode"
 VALID_SIMULATION_MODES = ("memtrace", "pt", "exec")
 
+def simpoint_result_dir(root_dir, config_key, workload, cluster_id):
+    """Flat sim output layout: simulations/<config>/<workload>/<cluster_id>/"""
+    return os.path.join(root_dir, "simulations", config_key, workload, str(cluster_id))
+
+def simulation_scenario_dir(user, config_key):
+    """Docker scenario root passed to run_*_single_simpoint.sh as SCENARIO."""
+    return f"/home/{user}/simulations/{config_key}"
+
 def get_docker_client():
     global _docker_client
     if docker is None:
@@ -1556,16 +1564,19 @@ def generate_single_scarab_run_command(user, workload_home, experiment, config_k
                                        env_vars, bincmd, client_bincmd):
 
     if mode == "memtrace":
-        command = f"run_memtrace_single_simpoint.sh \\\"{workload_home}\\\" \\\"/home/{user}/simulations/{experiment}/{config_key}\\\" \\\"{config}\\\" \\\"{seg_size}\\\" \\\"{arch}\\\" \\\"{warmup}\\\" \\\"{trace_warmup}\\\" \\\"{trace_type}\\\" /home/{user}/scarab_stage/{experiment}/scarab {cluster_id} {trace_file} {scarab_binary}"
+        scenario = simulation_scenario_dir(user, config_key)
+        command = f"run_memtrace_single_simpoint.sh \\\"{workload_home}\\\" \\\"{scenario}\\\" \\\"{config}\\\" \\\"{seg_size}\\\" \\\"{arch}\\\" \\\"{warmup}\\\" \\\"{trace_warmup}\\\" \\\"{trace_type}\\\" /home/{user}/scarab_stage/{experiment}/scarab {cluster_id} {trace_file} {scarab_binary}"
     elif mode == "pt":
-        command = f"run_pt_single_simpoint.sh \\\"{workload_home}\\\" \\\"/home/{user}/simulations/{experiment}/{config_key}\\\" \\\"{config}\\\" \\\"{arch}\\\" \\\"{warmup}\\\" /home/{user}/scarab_stage/{experiment}/scarab {scarab_binary}"
+        scenario = simulation_scenario_dir(user, config_key)
+        command = f"run_pt_single_simpoint.sh \\\"{workload_home}\\\" \\\"{scenario}\\\" \\\"{config}\\\" \\\"{arch}\\\" \\\"{warmup}\\\" /home/{user}/scarab_stage/{experiment}/scarab {scarab_binary}"
     elif mode == "exec":
         env_vars_safe = env_vars if env_vars else ""
         client_bincmd_safe = client_bincmd if client_bincmd else ""
+        scenario = simulation_scenario_dir(user, config_key)
         command = (
             "run_exec_single_simpoint.sh "
             f"\\\"{workload_home}\\\" "                      # $1 WORKLOAD_HOME
-            f"\\\"/home/{user}/simulations/{experiment}/{config_key}\\\" "  # $2 SCENARIO
+            f"\\\"{scenario}\\\" "                           # $2 SCENARIO
             f"\\\"{config}\\\" "                             # $3 SCARABPARAMS
             f"\\\"{seg_size}\\\" "                           # $4 SEGSIZE
             f"\\\"{arch}\\\" "                               # $5 SCARABARCH
@@ -2244,7 +2255,6 @@ def print_simulation_status_summary(
             continue
 
         descriptor_aligned_log_count += 1
-        workload_path = f"{suite}/{subsuite}/{workload}"
         with open(log_path, 'r') as f:
             contents = f.read()
             contents_after_docker = contents
@@ -2252,10 +2262,7 @@ def print_simulation_status_summary(
                 continue
 
             scarab_logfile_path = os.path.join(
-                root_directory,
-                config,
-                workload_path,
-                cluster_id,
+                simpoint_result_dir(descriptor_data["root_dir"], config, workload, cluster_id),
                 "sim.log",
             )
             sim_log_to_job_log[scarab_logfile_path] = str(log_path)
@@ -2302,9 +2309,7 @@ def print_simulation_status_summary(
                 continue
 
             prep_err = 0
-            workload_parts = workload_path.split("/")
-            sim_dir = Path(descriptor_data["root_dir"]) / "simulations" / descriptor_data["experiment"] / config
-            sim_dir = sim_dir.joinpath(*workload_parts, cluster_id)
+            sim_dir = Path(simpoint_result_dir(descriptor_data["root_dir"], config, workload, cluster_id))
             has_csv = False
             try:
                 has_csv = any(x.endswith(".csv") for x in os.listdir(sim_dir))
@@ -2818,8 +2823,7 @@ def image_exist(image_tag, node=None):
 # Returns true if experiment exists
 def check_sp_exist (descriptor_data, config_key, suite, subsuite, workload, exp_cluster_id):
     # Check if simpoint exists
-    experiment_dir =  f"{descriptor_data['root_dir']}/simulations/{descriptor_data['experiment']}/"
-    experiment_dir += f"{config_key}/{suite}/{subsuite}/{workload}/{exp_cluster_id}"
+    experiment_dir = simpoint_result_dir(descriptor_data['root_dir'], config_key, workload, exp_cluster_id)
 
     #print(experiment_dir)
 
@@ -2833,8 +2837,7 @@ def check_sp_exist (descriptor_data, config_key, suite, subsuite, workload, exp_
 # Returns true if experiment failed
 def check_sp_failed (descriptor_data, config_key, suite, subsuite, workload, exp_cluster_id):
     # Check if simpoint exists
-    experiment_dir =  f"{descriptor_data['root_dir']}/simulations/{descriptor_data['experiment']}/"
-    experiment_dir += f"{config_key}/{suite}/{subsuite}/{workload}/{exp_cluster_id}"
+    experiment_dir = simpoint_result_dir(descriptor_data['root_dir'], config_key, workload, exp_cluster_id)
 
     if Path(experiment_dir).is_dir() == False:
         return True
@@ -2849,8 +2852,7 @@ def check_sp_failed (descriptor_data, config_key, suite, subsuite, workload, exp
 # Clean up failed run
 def clean_failed_run (descriptor_data, config_key, suite, subsuite, workload, exp_cluster_id, dbg_lvl=1):
     # Remove failed run artifacts while preserving directory structure
-    experiment_dir =  f"{descriptor_data['root_dir']}/simulations/{descriptor_data['experiment']}/"
-    experiment_dir += f"{config_key}/{suite}/{subsuite}/{workload}/{exp_cluster_id}"
+    experiment_dir = simpoint_result_dir(descriptor_data['root_dir'], config_key, workload, exp_cluster_id)
 
     experiment_path = Path(experiment_dir)
     patterns_to_clean = ["*.csv", "*.out", "*.in", "*.csv.warmup", "*.out.warmup", "sim.log"]

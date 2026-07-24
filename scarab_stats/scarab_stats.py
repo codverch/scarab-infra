@@ -756,7 +756,7 @@ class stat_aggregator:
                         out[row_idx] = nan
                     seen[row_idx] = 1
     def sp_is_complete(self, suite, subsuite, workload, config, cluster_id, experiment_name, simulations_path):
-        directory = f"{simulations_path}{experiment_name}/{config}/{suite}/{subsuite}/{workload}/{str(cluster_id)}/"
+        directory = f"{simulations_path}{config}/{workload}/{str(cluster_id)}/"
 
         if not os.path.exists(directory):
             print(f"WARN: Simpoint directory <{directory}> not found")
@@ -909,9 +909,9 @@ class stat_aggregator:
 
 
         config0, suite0, subsuite0, workload0, cid0 = tasks[0]
-        sim_dir0 = f"{simulations_path}{experiment_name}/{config0}/{suite0}/{subsuite0}/{workload0}/{cid0}/"
+        sim_dir0 = f"{simulations_path}{config0}/{workload0}/{cid0}/"
         task_sim_dirs = [
-            (f"{simulations_path}{experiment_name}/{conf}/{suite}/{subsuite}/{workload}/{cid}/", (conf, suite, subsuite, workload, cid))
+            (f"{simulations_path}{conf}/{workload}/{cid}/", (conf, suite, subsuite, workload, cid))
             for (conf, suite, subsuite, workload, cid) in tasks
         ]
 

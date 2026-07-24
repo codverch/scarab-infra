@@ -28,7 +28,8 @@ if [ "$SEGMENT_ID" != "0" ]; then
   exit
 fi
 
-SIMHOME=$SCENARIO/$WORKLOAD_HOME
+APP_NAME="${WORKLOAD_HOME##*/}"
+SIMHOME=$SCENARIO/$APP_NAME
 mkdir -p $SIMHOME
 traceMap="trace.gz"
 
