@@ -73,7 +73,6 @@ IDEAL_FUSION_COLOR = "#FEDD5C"
 AVERAGE_SEPARATOR_COLOR = "#4A4A4A"
 SMALL_BAR_THRESHOLD = 0.5
 BAR_LABEL_GAP = 1.2
-SMALL_LABEL_ARROW_GAP = 0.6
 BAR_WIDTH = 0.18
 BAR_EDGE_WIDTH = 2.5
 FONT_FAMILY = "Noto Serif"
@@ -593,17 +592,6 @@ def _annotate_ipc_bar_labels(
             bar_top = patch.get_height()
             arrow_target = max(bar_top + 0.08, 0.12)
             arrow_top = lane_base + label_lane * lane_step
-            if n_label_lanes > 1:
-                left_shift = (n_label_lanes - 1 - label_lane) * patch.get_width() * 0.45
-                if label_lane == n_label_lanes - 1:
-                    ha = "left"
-                    x_label = patch.get_x() + patch.get_width() * 0.2
-                else:
-                    ha = "right"
-                    x_label = x - left_shift
-            else:
-                ha = "center"
-                x_label = x
             ax.annotate(
                 "",
                 xy=(x, arrow_target),
@@ -619,15 +607,15 @@ def _annotate_ipc_bar_labels(
                 zorder=10,
             )
             ax.text(
-                x_label,
-                arrow_top + SMALL_LABEL_ARROW_GAP,
+                x,
+                arrow_top,
                 f"{val:+.1f}",
-                ha=ha,
+                ha="center",
                 va="bottom",
                 fontsize=small_fontsize,
                 fontfamily=FONT_FAMILY,
                 color="black",
-                zorder=10,
+                zorder=11,
             )
             continue
 
