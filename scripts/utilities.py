@@ -1437,6 +1437,14 @@ def prepare_simulation(user, scarab_path, scarab_build, docker_home, experiment_
         os.system(f"mkdir -p {scarab_stage_dir}/scarab/bin/scarab_globals")
         os.system(f"cp {scarab_path}/bin/scarab_launch.py  {scarab_stage_dir}/scarab/bin/scarab_launch.py ")
         os.system(f"cp {scarab_path}/bin/scarab_globals/*  {scarab_stage_dir}/scarab/bin/scarab_globals/ ")
+        os.system(f"mkdir -p {scarab_stage_dir}/scarab/bin/power")
+        os.system(f"cp -r {scarab_path}/bin/power/*  {scarab_stage_dir}/scarab/bin/power/")
+        mcpat_src = os.environ.get("MCPAT_BIN", f"{infra_dir}/../mcpat/mcpat")
+        cacti_src = os.environ.get("CACTI_BIN", f"{infra_dir}/../toolchain/bin/cacti")
+        if os.path.isfile(mcpat_src):
+            os.system(f"cp {mcpat_src} {scarab_stage_dir}/scarab/bin/mcpat")
+        if os.path.isfile(cacti_src):
+            os.system(f"cp {cacti_src} {scarab_stage_dir}/scarab/bin/cacti")
 
         return scarab_githash, image_tag_list
     except subprocess.CalledProcessError as e:

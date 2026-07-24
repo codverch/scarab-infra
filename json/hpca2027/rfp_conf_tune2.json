@@ -1,0 +1,53 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "rfp-conf-tune2",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/scarab/src",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline/simpoint_traces",
+  "workload_db": "baseline.json",
+  "top_simpoint": false,
+  "_comment": "Ultra-conservative prob_shift sweep for bfs/dfs.",
+  "simulations": [
+    {
+      "suite": "datacenter",
+      "subsuite": "datacenter",
+      "workload": ["bfs", "dfs"],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "rfp_prob_p14": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --rfp_on 1 --rfp_prob_shift 14 --rfp_conf_max 1 --rfp_pt_num_sets 512 --rfp_pt_num_ways 8 --rfp_pat_num_sets 64 --rfp_pat_num_ways 4",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "rfp_prob_p16": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --rfp_on 1 --rfp_prob_shift 16 --rfp_conf_max 1 --rfp_pt_num_sets 512 --rfp_pt_num_ways 8 --rfp_pat_num_sets 64 --rfp_pat_num_ways 4",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "rfp_prob_p18": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --rfp_on 1 --rfp_prob_shift 18 --rfp_conf_max 1 --rfp_pt_num_sets 512 --rfp_pt_num_ways 8 --rfp_pat_num_sets 64 --rfp_pat_num_ways 4",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "rfp_prob_p20": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --rfp_on 1 --rfp_prob_shift 20 --rfp_conf_max 1 --rfp_pt_num_sets 512 --rfp_pt_num_ways 8 --rfp_pat_num_sets 64 --rfp_pat_num_ways 4",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": { "configs": null },
+  "visualize": { "baseline": "rfp_prob_p14", "configs": [], "counters": ["IPC"], "average": false },
+  "mem": { "collection_baseline": null, "fallback_mb": 16384 }
+}
