@@ -33,11 +33,12 @@ if str(MAIN_GRAPHS) not in sys.path:
 
 from plot_ipc import (  # noqa: E402
     FONT_FAMILY,
-    IPC_AXIS_LABEL_FONT,
     IPC_TICK_FONT,
     SIMPOINT_WORKLOADS,
     rename_workload,
 )
+
+AXIS_FONT = IPC_TICK_FONT
 
 
 WORKLOAD_LABELS = {
@@ -440,6 +441,7 @@ AVERAGE_SEPARATOR_WIDTH = 3.5
 BAR_WIDTH = 0.40
 FIGSIZE = (24.0, 6.5)
 BAR_EDGE_WIDTH = 3.0
+Y_LABEL_PAD = 20
 DEFAULT_SCARAB_ROOT = Path("/users/deepmish/scarab")
 DEFAULT_SIM_ROOT = DEFAULT_SCARAB_ROOT / "src" / "simulations" / "baseline"
 DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
@@ -454,9 +456,9 @@ def _apply_plot_style() -> None:
         {
             "font.family": FONT_FAMILY,
             "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "axes.labelsize": IPC_AXIS_LABEL_FONT,
-            "xtick.labelsize": IPC_TICK_FONT,
-            "ytick.labelsize": IPC_TICK_FONT,
+            "axes.labelsize": AXIS_FONT,
+            "xtick.labelsize": AXIS_FONT,
+            "ytick.labelsize": AXIS_FONT,
         }
     )
 
@@ -540,10 +542,12 @@ def plot(
         display_apps,
         rotation=45,
         ha="right",
-        fontsize=IPC_TICK_FONT,
+        fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
     )
     for label in ax.get_xticklabels():
+        label.set_fontsize(AXIS_FONT)
+        label.set_fontfamily(FONT_FAMILY)
         if label.get_text() == "Average":
             label.set_weight("bold")
 
@@ -551,17 +555,18 @@ def plot(
 
     ax.set_ylabel(
         "Backend bound stalls (%)",
-        fontsize=IPC_AXIS_LABEL_FONT,
+        fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
+        labelpad=Y_LABEL_PAD,
     )
     y_max = max(values) if values else 100.0
     ymax = min(100.0, max(10.0, (int(y_max / 10) + 1) * 10))
     ax.set_ylim(0.0, ymax * 1.08)
     ax.yaxis.set_major_locator(mticker.MultipleLocator(10))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
-    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
+    ax.tick_params(axis="both", labelsize=AXIS_FONT)
     for label in ax.get_yticklabels():
+        label.set_fontsize(AXIS_FONT)
         label.set_fontfamily(FONT_FAMILY)
 
     for spine in ax.spines.values():
@@ -569,11 +574,10 @@ def plot(
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
-    plt.tight_layout()
-    plt.subplots_adjust(top=1.12, bottom=0.28)
-    fig.savefig(out_png, bbox_inches="tight", dpi=300)
+    plt.subplots_adjust(top=0.98, bottom=0.32, left=0.10)
+    fig.savefig(out_png, bbox_inches="tight", pad_inches=0.08, dpi=300)
     if out_pdf:
-        fig.savefig(out_pdf, bbox_inches="tight", dpi=300)
+        fig.savefig(out_pdf, bbox_inches="tight", pad_inches=0.08, dpi=300)
     plt.close(fig)
 
 
