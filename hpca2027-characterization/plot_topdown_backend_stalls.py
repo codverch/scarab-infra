@@ -32,7 +32,6 @@ if str(MAIN_GRAPHS) not in sys.path:
     sys.path.insert(0, str(MAIN_GRAPHS))
 
 from plot_ipc import (  # noqa: E402
-    BAR_EDGE_WIDTH,
     FONT_FAMILY,
     IPC_AXIS_LABEL_FONT,
     IPC_TICK_FONT,
@@ -440,6 +439,7 @@ AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
 AVERAGE_SEPARATOR_WIDTH = 3.5
 BAR_WIDTH = 0.40
 FIGSIZE = (24.0, 6.5)
+BAR_EDGE_WIDTH = 3.0
 DEFAULT_SCARAB_ROOT = Path("/users/deepmish/scarab")
 DEFAULT_SIM_ROOT = DEFAULT_SCARAB_ROOT / "src" / "simulations" / "baseline"
 DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
