@@ -802,10 +802,10 @@ def plot_per_app_single_offset_delta(
         reports,
         fraction_attr="mean_dominant_offset_delta_frac",
         ylabel=(
-            "% of times a specific cache block\n"
-            "offset delta occurs across all\n"
-            "dynamic instances of a fusible\n"
-            "load pair"
+            "% of times a specific cache\n"
+            "block offset delta occurs\n"
+            "across all dynamic instances\n"
+            "of a fusible load pair"
         ),
         output_path=output_path,
     )
