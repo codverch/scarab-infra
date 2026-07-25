@@ -101,6 +101,7 @@ BACKEND_STALLS_BAR_WIDTH = 0.40
 BACKEND_STALLS_BAR_EDGE_WIDTH = 3.0
 BACKEND_STALLS_AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
 BACKEND_STALLS_AVERAGE_SEPARATOR_WIDTH = 3.5
+BACKEND_STALLS_REF_FIGSIZE = (24.0, 6.5)
 BACKEND_STALLS_FIGSIZE = (24.0, 5.5)
 BACKEND_STALLS_Y_LABEL_PAD = 20
 NOTO_SERIF_FONT_DIR = Path.home() / ".local/share/fonts" / "noto-serif"
@@ -566,6 +567,30 @@ def plot_accuracy_cdf(
     plt.close(fig)
 
 
+def _backend_stalls_axis_font() -> int:
+    """Match saved label size of plot_topdown_backend_stalls at 6.5in height."""
+    _, ref_h = BACKEND_STALLS_REF_FIGSIZE
+    _, h = BACKEND_STALLS_FIGSIZE
+    if h >= ref_h:
+        return IPC_TICK_FONT
+    # bbox_inches='tight' shrinks apparent text slightly at shorter heights.
+    return round(IPC_TICK_FONT * (ref_h / h) ** 0.28)
+
+
+def _apply_backend_stalls_plot_style(axis_font: int) -> None:
+    import matplotlib.pyplot as plt
+
+    plt.rcParams.update(
+        {
+            "font.family": FONT_FAMILY,
+            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
+            "axes.labelsize": axis_font,
+            "xtick.labelsize": axis_font,
+            "ytick.labelsize": axis_font,
+        }
+    )
+
+
 def _backend_stalls_tight_x_limits(ax, x_min: float, x_max: float) -> None:
     left_pad = 0.12
     right_pad = 0.12
@@ -583,16 +608,8 @@ def plot_per_app_single_offset_delta(
     import matplotlib.ticker as mticker
 
     _ensure_noto_serif()
-    axis_font = IPC_TICK_FONT
-    plt.rcParams.update(
-        {
-            "font.family": "serif",
-            "font.serif": [FONT_FAMILY, "Noto Serif", "DejaVu Serif", "serif"],
-            "axes.labelsize": axis_font,
-            "xtick.labelsize": axis_font,
-            "ytick.labelsize": axis_font,
-        }
-    )
+    axis_font = _backend_stalls_axis_font()
+    _apply_backend_stalls_plot_style(axis_font)
 
     by_wl = {r.workload: r for r in reports if r.workload != "Suite average"}
     ordered = [by_wl[wl] for wl in SIMPOINT_WORKLOADS if wl in by_wl]
@@ -629,20 +646,22 @@ def plot_per_app_single_offset_delta(
         rotation=45,
         ha="right",
         fontsize=axis_font,
+        fontfamily=FONT_FAMILY,
     )
     for label in ax.get_xticklabels():
-        label.set_fontname(FONT_FAMILY)
+        label.set_fontsize(axis_font)
+        label.set_fontfamily(FONT_FAMILY)
         if label.get_text() == "Average":
             label.set_weight("bold")
 
     _backend_stalls_tight_x_limits(ax, x[0], x[-1])
 
-    ylabel = ax.set_ylabel(
+    ax.set_ylabel(
         "Fusible PC pairs with exactly\none offset delta (%)",
         fontsize=axis_font,
+        fontfamily=FONT_FAMILY,
         labelpad=BACKEND_STALLS_Y_LABEL_PAD,
     )
-    ylabel.set_fontname(FONT_FAMILY)
     y_max = max(pct_values) if pct_values else 100.0
     ymax = min(100.0, max(20.0, (int(y_max / 20) + 1) * 20))
     ax.set_ylim(0.0, ymax * 1.08)
@@ -650,7 +669,8 @@ def plot_per_app_single_offset_delta(
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
     ax.tick_params(axis="both", labelsize=axis_font)
     for label in ax.get_yticklabels():
-        label.set_fontname(FONT_FAMILY)
+        label.set_fontsize(axis_font)
+        label.set_fontfamily(FONT_FAMILY)
 
     for spine in ax.spines.values():
         spine.set_visible(True)
