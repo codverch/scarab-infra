@@ -69,7 +69,7 @@ HELIOS_COLOR = "#E98300"
 RFP_COLOR = "#620059"
 IFUSE_COLOR = "#FFE600"
 BASELINE_COLOR = "#808080"
-IDEAL_FUSION_COLOR = "#FEDD5C"
+IDEAL_FUSION_COLOR = "#FEC51D"
 AVERAGE_SEPARATOR_COLOR = "#4A4A4A"
 SMALL_BAR_THRESHOLD = 0.5
 BAR_LABEL_GAP = 1.2
@@ -844,12 +844,30 @@ def main() -> None:
     )
     parser.add_argument("--exclude-workloads", nargs="*", default=[])
     parser.add_argument(
+        "--schemes",
+        nargs="*",
+        default=None,
+        metavar="SCHEME",
+        help=(
+            "IPC series to plot (subset of: helios, rfp, ifuse, ideal_fusion). "
+            "Default: all series."
+        ),
+    )
+    parser.add_argument(
         "--optional-configs",
         nargs="*",
         default=["helios"],
         help="Configs that may have missing simpoints without excluding the app.",
     )
     args = parser.parse_args()
+
+    scheme_keys = tuple(args.schemes) if args.schemes else tuple(key for key, _, _ in IPC_SERIES)
+    unknown = [key for key in scheme_keys if key not in {k for k, _, _ in IPC_SERIES}]
+    if unknown:
+        raise SystemExit(f"Unknown scheme(s): {', '.join(unknown)}")
+    active_series = tuple(entry for entry in IPC_SERIES if entry[0] in scheme_keys)
+    if not active_series:
+        raise SystemExit("No schemes selected for plotting.")
 
     sim_root = args.simulations_root
     baseline_dir = args.baseline_dir or DEFAULT_BASELINE_DIR
@@ -914,14 +932,18 @@ def main() -> None:
         "ifuse": ifuse_ipc,
         "ideal_fusion": ideal_ipc,
     }
-    directories = {
+    all_directories = {
         "baseline": (baseline_dir, args.baseline_config),
         "helios": (helios_dir, args.helios_config),
         "rfp": (rfp_dir, args.rfp_config),
         "ifuse": (ifuse_dir, args.ifuse_config),
         "ideal_fusion": (ideal_dir, args.ideal_fusion_config),
     }
-    config_by_label = {label: cfg for label, (_d, cfg) in directories.items()}
+    directories = {
+        key: all_directories[key]
+        for key in ("baseline", *scheme_keys)
+    }
+    config_by_label = {label: cfg for label, (_d, cfg) in all_directories.items()}
 
     complete_apps, reference_by_workload = check_simpoint_coverage(
         directories,
@@ -933,9 +955,9 @@ def main() -> None:
         optional_configs=set(args.optional_configs),
     )
     if not complete_apps:
+        scheme_list = ", ".join(scheme_keys)
         raise SystemExit(
-            "No apps have complete simpoint files across baseline, helios, rfp, "
-            "ifuse, and ideal fusion."
+            f"No apps have complete simpoint files across baseline and: {scheme_list}."
         )
 
     optional_configs = set(args.optional_configs)
@@ -943,11 +965,11 @@ def main() -> None:
 
     baseline_pairs: dict[str, list[tuple[str, float, float]]] = {}
     series_pairs: dict[str, dict[str, list[tuple[str, float, float]]]] = {
-        key: {} for key, _, _ in IPC_SERIES
+        key: {} for key, _, _ in active_series
     }
     baseline_avg: list[float] = []
-    series_avg: dict[str, list[float]] = {key: [] for key, _, _ in IPC_SERIES}
-    series_normalized: dict[str, list[float]] = {key: [] for key, _, _ in IPC_SERIES}
+    series_avg: dict[str, list[float]] = {key: [] for key, _, _ in active_series}
+    series_normalized: dict[str, list[float]] = {key: [] for key, _, _ in active_series}
 
     for workload in apps:
         ref = reference_by_workload[workload]
@@ -959,7 +981,7 @@ def main() -> None:
         b_avg = weighted_avg(bp)
         baseline_avg.append(b_avg)
 
-        for key, _, _ in IPC_SERIES:
+        for key, _, _ in active_series:
             pairs = collect_trace_pairs(
                 ipc_by_label[key],
                 sp_weights,
@@ -1000,15 +1022,16 @@ def main() -> None:
         series_pairs,
         series_avg,
         series_normalized,
+        series=active_series,
     )
     print(f"Detailed computation log written to: {output_dir / 'ipc_computation_log.txt'}")
 
     header = f"{'App':<20} {'Baseline':>10}"
-    for _key, label, _color in IPC_SERIES:
+    for _key, label, _color in active_series:
         header += f" {label:>12}"
     print("\nSummary of Weighted Average IPCs (Normalized to Baseline):\n")
     print(header)
-    print("-" * (32 + 13 * len(IPC_SERIES)))
+    print("-" * (32 + 13 * len(active_series)))
 
     summary_rows: list[dict[str, str | float]] = []
     for idx, workload in enumerate(apps):
@@ -1018,7 +1041,7 @@ def main() -> None:
         }
         norm_parts: list[str] = []
         line = f"{workload:<20} {1.0:>10.2f}"
-        for key, label, _color in IPC_SERIES:
+        for key, label, _color in active_series:
             norm = series_normalized[key][idx]
             row[f"{key}_ipc"] = series_avg[key][idx]
             row[f"{key}_speedup"] = norm
@@ -1038,7 +1061,7 @@ def main() -> None:
         summary_rows.append(row)
 
     avg_row: dict[str, str | float] = {"workload": "arithmetic_mean", "baseline_ipc": ""}
-    for key, _, _ in IPC_SERIES:
+    for key, _, _ in active_series:
         values = [val for val in series_normalized[key] if not math.isnan(val)]
         avg = sum(values) / len(values) if values else float("nan")
         avg_row[f"{key}_ipc"] = ""
@@ -1046,7 +1069,7 @@ def main() -> None:
     summary_rows.append(avg_row)
 
     write_summary_csv(output_dir / "ipc_summary.csv", summary_rows)
-    plot_speedup_bars(apps, series_normalized, output_dir)
+    plot_speedup_bars(apps, series_normalized, output_dir, series=active_series)
 
     print("\nIPC comparison plots saved as:")
     print(f"  - {output_dir / 'ipc-labeled.png'}")
