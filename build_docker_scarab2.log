@@ -1,0 +1,2274 @@
+mkdir -p build/opt/
+echo gcc
+gcc
+echo g++
+g++
+cd build/opt/; \
+  CC=gcc      \
+  CXX=g++     \
+  ASM=as   \
+  /usr/bin/cmake ../.. -DCMAKE_BUILD_TYPE=SCARABOPT
+-- The C compiler identification is GNU 9.4.0
+-- The CXX compiler identification is GNU 9.4.0
+-- The ASM compiler identification is GNU
+-- Found assembler: /usr/bin/as
+-- Check for working C compiler: /usr/bin/gcc
+-- Check for working C compiler: /usr/bin/gcc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /usr/bin/g++
+-- Check for working CXX compiler: /usr/bin/g++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found Git: /usr/bin/git (found version "2.25.1") 
+-- Found Python3: /usr/bin/python3.8 (found version "3.8.10") found components: Interpreter 
+'/usr/bin/python3.8' '/scarab/src/deps/xed/mfile.py'
+[PYTHON VERSION] 3.8.10
+[GIT VERSION] 12.0.1-72-gd57a3bd0
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/files-xregs.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/via/files-via-padlock.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/amd/files-amd.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/amd/amdxop/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/mpx/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/cet/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/rdrand/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/glm/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/sha/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/xsaveopt/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/xsaves/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/xsavec/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/clflushopt/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/rdseed/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/fsgsbase/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/smap/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/sgx/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/rdpid/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/pt/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/tremont/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/movdir/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/waitpkg/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/cldemote/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/sgx-enclv/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/avx/files.cfg
+[Clearing file list for type dec-spine: [ /scarab/src/deps/xed/datafiles/xed-spine.txt ]] 
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/ivbavx/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/hswavx/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/hswbmi/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/hsw/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/bdw/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/skl/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/skx/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/pku/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/clwb/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/clx/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/vnni/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/cpx/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/avx512-bf16/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/knl/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/knm/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/4fmaps-512/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/4vnniw-512/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/vpopcntdq-512/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/avx512f/shared-files.cfg
+[Clearing file list for type dec-spine: [ /scarab/src/deps/xed/datafiles/avx/avx-spine.txt ]] 
+[CONSIDERING SOURCE] /scarab/src/deps/xed/datafiles/knc/xed-operand-values-interface-uisa.c source 1
+[ADDING SOURCE] /scarab/src/deps/xed/datafiles/knc/xed-operand-values-interface-uisa.c source 1
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/avx512f/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/avx512cd/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/avx512-skx/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/cnl/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/avx512ifma/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/avx512vbmi/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/icl/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/wbnoinvd/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/pconfig/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/bitalg/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/vbmi2/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/gfni-vaes-vpcl/files-sse.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/gfni-vaes-vpcl/files-avx-avx512.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/vpopcntdq-vl/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/tgl/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/vp2intersect/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/keylocker/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/adl/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/hreset/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/avx-vnni/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/spr/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/uintr/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/amx-spr/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/enqcmd/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/tsx-ldtrk/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/serialize/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/tdx/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/avx512-fp16/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/evex-map5-6/files.cfg
+[EXTF PROCESSING] /scarab/src/deps/xed/datafiles/future/files.cfg
+[REUSING BUILD DEFINES HEADER FILE] 
+R: 0 P: 0 C: 0 E: 0 / 21 msecs 
+R: 0 P: 0 C: 0 E: 0 / 10 msecs 
+[XED KIT BUILD COMPLETE] 
+[ELAPSED TIME] 1 secs
+[RETVAL=0] 
+-- CMake version 3.16.3
+-- Building for x86
+-- Processor vendor is AuthenticAMD
+-- Version number: 11.90.20143
+-- Performing Test proc_found_avx
+-- Performing Test proc_found_avx - Success
+-- Compiler and processor support AVX.
+-- Performing Test proc_found_avx2
+-- Performing Test proc_found_avx2 - Success
+-- Compiler and processor support AVX2.
+-- Performing Test proc_found_avx512
+-- Performing Test proc_found_avx512 - Failed
+-- WARNING: Compiler or processor do not support AVX-512. Skipping tests
+-- Found Perl: /usr/bin/perl (found version "5.30.0") 
+-- Looking for sys/types.h
+-- Looking for sys/types.h - found
+-- Looking for stdint.h
+-- Looking for stdint.h - found
+-- Looking for stddef.h
+-- Looking for stddef.h - found
+-- Check size of uint
+-- Check size of uint - done
+-- Check size of ushort
+-- Check size of ushort - done
+-- Check size of bool
+-- Check size of bool - failed
+-- Check size of byte
+-- Check size of byte - failed
+-- Check size of sbyte
+-- Check size of sbyte - failed
+-- Check size of uint32
+-- Check size of uint32 - failed
+-- Check size of uint64
+-- Check size of uint64 - failed
+-- Check size of int32
+-- Check size of int32 - failed
+-- Check size of int64
+-- Check size of int64 - failed
+-- Check size of _Bool
+-- Check size of _Bool - done
+-- Performing Test cxx17_available
+-- Performing Test cxx17_available - Success
+-- Performing Test no_pie_avail
+-- Performing Test no_pie_avail - Success
+-- Performing Test no_stack_protector_avail
+-- Performing Test no_stack_protector_avail - Success
+-- Performing Test suggest_override_avail
+-- Performing Test suggest_override_avail - Success
+-- Performing Test nounused_avail
+-- Performing Test nounused_avail - Success
+-- Performing Test stringop_truncation_avail
+-- Performing Test stringop_truncation_avail - Success
+-- Performing Test format_truncation_avail
+-- Performing Test format_truncation_avail - Success
+-- Performing Test stringop_overflow_avail
+-- Performing Test stringop_overflow_avail - Success
+-- Performing Test HAVE_TYPELIMITS_CONTROL
+-- Performing Test HAVE_TYPELIMITS_CONTROL - Success
+-- Performing Test dangling_pointer_avail
+-- Performing Test dangling_pointer_avail - Failed
+-- Performing Test HAVE_FVISIBILITY_INTERNAL
+-- Performing Test HAVE_FVISIBILITY_INTERNAL - Success
+-- Performing Test HAVE_FVISIBILITY_HIDDEN
+-- Performing Test HAVE_FVISIBILITY_HIDDEN - Success
+-- Performing Test HAVE_FNOSANITIZE_NULL
+-- Performing Test HAVE_FNOSANITIZE_NULL - Success
+-- Looking for linux/rseq.h
+-- Looking for linux/rseq.h - found
+-- Looking for libunwind.h
+-- Looking for libunwind.h - found
+-- Intel PT not found.
+-- For dbghelp, choosing among: 
+-- Found ZLIB: /usr/lib/x86_64-linux-gnu/libz.so (found version "1.2.11") 
+-- Found snappy: /usr/lib/x86_64-linux-gnu/libsnappy.so
+-- Found liblz4: /usr/lib/x86_64-linux-gnu/liblz4.so
+-- Performing Test implicit_fallthrough_avail
+-- Performing Test implicit_fallthrough_avail - Success
+-- WARNING: vera++ not found: disabling code style checks
+-- WARNING: Could not find Qt 5: DrGUI will NOT be built
+--   Point CMake variable Qt5Widgets_DIR at the Qt5WidgetsConfig.cmake directory
+-- Using elfutils
+patching file /scarab/src/build/opt/deps/dynamorio/ext/drsyms/dwarf_begin_elf.c (read from libdw/dwarf_begin_elf.c)
+patching file /scarab/src/build/opt/deps/dynamorio/ext/drsyms/dwarf_getsrclines.c (read from libdw/dwarf_getsrclines.c)
+patching file /scarab/src/build/opt/deps/dynamorio/ext/drsyms/elf_compress.c (read from libelf/elf_compress.c)
+patching file /scarab/src/build/opt/deps/dynamorio/ext/drsyms/elf_memory.c (read from libelf/elf_memory.c)
+-- Swapped in patched /scarab/src/build/opt/deps/dynamorio/ext/drsyms/elf_compress.c
+-- Swapped in patched /scarab/src/build/opt/deps/dynamorio/ext/drsyms/elf_memory.c
+-- Swapped in patched /scarab/src/build/opt/deps/dynamorio/ext/drsyms/dwarf_begin_elf.c
+-- Swapped in patched /scarab/src/build/opt/deps/dynamorio/ext/drsyms/dwarf_getsrclines.c
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /scarab/src/build/opt
+make[1]: warning: -j0 forced in submake: resetting jobserver mode.
+Scanning dependencies of target api_headers
+Scanning dependencies of target generate_syslog
+Scanning dependencies of target run_in_bg
+Scanning dependencies of target pevent
+Scanning dependencies of target drloader
+Scanning dependencies of target test_helpers
+Scanning dependencies of target drcpusim_ops
+Scanning dependencies of target runstats
+Scanning dependencies of target minizip
+Scanning dependencies of target drnudgeunix
+Scanning dependencies of target ramulator
+[  0%] Built target api_headers
+[  0%] Generating ../event_strings.h
+[  0%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/pevent.dir/__/__/__/__/third_party/libipt/pevent/src/pevent.c.o
+[  0%] Building C object deps/dynamorio/tools/CMakeFiles/run_in_bg.dir/run_in_bg.c.o
+[  0%] Building C object deps/dynamorio/tools/CMakeFiles/drloader.dir/drloader.c.o
+[  1%] Building C object deps/dynamorio/tools/CMakeFiles/runstats.dir/runstats.c.o
+Scanning dependencies of target dwelf_pic
+Scanning dependencies of target ipt
+[  1%] Building CXX object deps/dynamorio/clients/drcpusim/CMakeFiles/drcpusim_ops.dir/optionlist.cpp.o
+[  1%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/test_helpers.dir/tests/test_helpers.cpp.o
+[  1%] Building CXX object deps/dynamorio/clients/drcpusim/CMakeFiles/drcpusim_ops.dir/options.cpp.o
+[  1%] Building C object deps/dynamorio/clients/drcachesim/CMakeFiles/minizip.dir/__/__/third_party/zlib/contrib/minizip/mztools.c.o
+[  1%] Building C object deps/dynamorio/clients/drcachesim/CMakeFiles/minizip.dir/__/__/third_party/zlib/contrib/minizip/miniunz.c.o
+[  1%] Building C object deps/dynamorio/clients/drcachesim/CMakeFiles/minizip.dir/__/__/third_party/zlib/contrib/minizip/minizip.c.o
+[  1%] Building C object deps/dynamorio/clients/drcachesim/CMakeFiles/minizip.dir/__/__/third_party/zlib/contrib/minizip/ioapi.c.o
+Scanning dependencies of target pin_lib_for_scarab
+[  1%] Building C object deps/dynamorio/clients/drcachesim/CMakeFiles/minizip.dir/__/__/third_party/zlib/contrib/minizip/unzip.c.o
+[  1%] Building C object deps/dynamorio/clients/drcachesim/CMakeFiles/minizip.dir/__/__/third_party/zlib/contrib/minizip/zip.c.o
+[  1%] Building C object deps/dynamorio/tools/CMakeFiles/drnudgeunix.dir/nudgeunix.c.o
+[  2%] Building C object deps/dynamorio/tools/CMakeFiles/drnudgeunix.dir/__/core/unix/nudgesig.c.o
+[  2%] Building CXX object ramulator/CMakeFiles/ramulator.dir/Config.cpp.o
+[  2%] Building CXX object ramulator/CMakeFiles/ramulator.dir/Cache.cpp.o
+[  2%] Building CXX object ramulator/CMakeFiles/ramulator.dir/DDR3.cpp.o
+[  2%] Building CXX object ramulator/CMakeFiles/ramulator.dir/ALDRAM.cpp.o
+[  2%] Building CXX object ramulator/CMakeFiles/ramulator.dir/DDR4.cpp.o
+[  2%] Building CXX object ramulator/CMakeFiles/ramulator.dir/Controller.cpp.o
+[  2%] Building CXX object ramulator/CMakeFiles/ramulator.dir/HBM.cpp.o
+[  2%] Building CXX object ramulator/CMakeFiles/ramulator.dir/LPDDR3.cpp.o
+Scanning dependencies of target drmemtrace_mutex_dbg_owned
+[  2%] Building CXX object ramulator/CMakeFiles/ramulator.dir/GDDR5.cpp.o
+[  2%] Building CXX object ramulator/CMakeFiles/ramulator.dir/Processor.cpp.o
+Scanning dependencies of target drmemtrace_schedule_file
+[  2%] Building CXX object ramulator/CMakeFiles/ramulator.dir/LPDDR4.cpp.o
+[  2%] Built target generate_syslog
+[  3%] Building CXX object ramulator/CMakeFiles/ramulator.dir/ScarabWrapper.cpp.o
+[  3%] Building CXX object ramulator/CMakeFiles/ramulator.dir/MemoryFactory.cpp.o
+[  3%] Building CXX object ramulator/CMakeFiles/ramulator.dir/DSARP.cpp.o
+[  3%] Building CXX object ramulator/CMakeFiles/ramulator.dir/SALP.cpp.o
+Scanning dependencies of target drmemtrace_basic_counts
+Scanning dependencies of target drmemtrace_histogram
+Scanning dependencies of target drmemtrace_reuse_time
+[  3%] Building CXX object ramulator/CMakeFiles/ramulator.dir/StatType.cpp.o
+Scanning dependencies of target drmemtrace_schedule_stats
+[  3%] Building CXX object ramulator/CMakeFiles/ramulator.dir/Refresh.cpp.o
+Scanning dependencies of target drmemtrace_reuse_distance
+Scanning dependencies of target drcachesim_ops
+Scanning dependencies of target drmemtrace_syscall_mix
+Scanning dependencies of target ebl_pic
+[  3%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_packet_decoder.c.o
+[  3%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dwelf_pic.dir/__/__/third_party/elfutils/libdwelf/dwelf_dwarf_gnu_debugaltlink.c.o
+[  3%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dwelf_pic.dir/__/__/third_party/elfutils/libdwelf/dwelf_elf_e_machine_string.c.o
+[  3%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dwelf_pic.dir/__/__/third_party/elfutils/libdwelf/dwelf_elf_gnu_build_id.c.o
+[  3%] Building CXX object ramulator/CMakeFiles/ramulator.dir/WideIO.cpp.o
+[  3%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dwelf_pic.dir/__/__/third_party/elfutils/libdwelf/dwelf_elf_gnu_debuglink.c.o
+[  3%] Building CXX object ramulator/CMakeFiles/ramulator.dir/WideIO2.cpp.o
+[  4%] Building CXX object pin/pin_lib/CMakeFiles/pin_lib_for_scarab.dir/message_queue_interface_lib.cc.o
+[  4%] Building CXX object pin/pin_lib/CMakeFiles/pin_lib_for_scarab.dir/pin_scarab_common_lib.cc.o
+[  4%] Building CXX object ramulator/CMakeFiles/ramulator.dir/TLDRAM.cpp.o
+Scanning dependencies of target drmemtrace_empty
+[  4%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_event_decoder.c.o
+[  4%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dwelf_pic.dir/__/__/third_party/elfutils/libdwelf/dwelf_scn_gnu_compressed_size.c.o
+[  4%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_schedule_file.dir/common/schedule_file.cpp.o
+[  4%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dwelf_pic.dir/__/__/third_party/elfutils/libdwelf/dwelf_elf_begin.c.o
+[  5%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_mutex_dbg_owned.dir/common/mutex_dbg_owned.cpp.o
+[  5%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_query_decoder.c.o
+[  5%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_sync.c.o
+Scanning dependencies of target drmemtrace_func_view
+[  5%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_error.c.o
+[  5%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dwelf_pic.dir/__/__/third_party/elfutils/libdwelf/dwelf_strtab.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+Scanning dependencies of target drmemtrace_simulator
+[  5%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_encoder.c.o
+[  5%] Building C object pin/pin_lib/CMakeFiles/pin_lib_for_scarab.dir/uop_generator.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[  5%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_basic_counts.dir/tools/basic_counts.cpp.o
+[  6%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_histogram.dir/tools/histogram.cpp.o
+[  6%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_version.c.o
+[  6%] Linking CXX static library ../lib64/release/libtest_helpers.a
+[  6%] Building CXX object pin/pin_lib/CMakeFiles/pin_lib_for_scarab.dir/x86_decoder.cc.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[  6%] Building CXX object pin/pin_lib/CMakeFiles/pin_lib_for_scarab.dir/x87_stack_delta.cc.o
+[  6%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_reuse_time.dir/tools/reuse_time.cpp.o
+[  6%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_last_ip.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+Scanning dependencies of target drmemfuncs
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[  6%] Building CXX object pin/pin_lib/CMakeFiles/pin_lib_for_scarab.dir/gather_scatter_addresses.cc.o
+[  6%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/ebl_check_special_section.c.o
+[  6%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/ebl_check_special_symbol.c.o
+[  6%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drcachesim_ops.dir/optionlist.cpp.o
+[  6%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drcachesim_ops.dir/common/options.cpp.o
+[  6%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/ebl_data_marker_symbol.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[  6%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblabicfi.c.o
+Scanning dependencies of target drlibc
+[  6%] Linking C static library ../../../../third_party/lib64/release/libpevent.a
+[  6%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_ild.c.o
+[  7%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_tnt_cache.c.o
+[  7%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblauxvinfo.c.o
+[  8%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_syscall_mix.dir/tools/syscall_mix.cpp.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[  8%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/simulator.cpp.o
+[  9%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_schedule_stats.dir/tools/schedule_stats.cpp.o
+[  9%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblbackendname.c.o
+[  9%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_retstack.c.o
+<built-in>: note: this is the location of the previous definition
+[  9%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_insn_decoder.c.o
+Scanning dependencies of target elf_pic
+[  9%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_time.c.o
+[  9%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_func_view.dir/tools/func_view.cpp.o
+[  9%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_image_section_cache.c.o
+[  9%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/cache.cpp.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[  9%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_asid.c.o
+<built-in>: note: this is the location of the previous definition
+[  9%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_reuse_distance.dir/tools/reuse_distance.cpp.o
+Scanning dependencies of target dw_pic
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[  9%] Linking C executable ../bin64/run_in_bg
+[  9%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_image.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[  9%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/cache_fifo.cpp.o
+[  9%] Linking C executable ../bin64/drloader
+[  9%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/cache_lru.cpp.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[  9%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_packet.c.o
+[  9%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_event_queue.c.o
+[  9%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/caching_device.cpp.o
+[  9%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblbsspltp.c.o
+[  9%] Building CXX object deps/dynamorio/clients/drcachesim/tools/external/example/CMakeFiles/drmemtrace_empty.dir/empty.cpp.o
+[  9%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblcheckreloctargettype.c.o
+[  9%] Building CXX object deps/dynamorio/clients/drcachesim/tools/external/example/CMakeFiles/drmemtrace_empty.dir/__/__/__/common/options.cpp.o
+[  9%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblcheckobjattr.c.o
+[  9%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/cache_miss_analyzer.cpp.o
+[  9%] Building ASM object deps/dynamorio/core/CMakeFiles/drmemfuncs.dir/arch/x86/memfuncs.asm.o
+[  9%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_checksum.c.o
+[  9%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/caching_device_stats.cpp.o
+[  9%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_getchdr.c.o
+[  9%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblcopyrelocp.c.o
+[ 10%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblclosebackend.c.o
+[ 11%] Building C object deps/dynamorio/core/CMakeFiles/drmemfuncs.dir/lib/memmove.c.o
+[ 11%] Building ASM object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc_xarch.asm.o
+[ 11%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_getehdr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 11%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_config.c.o
+[ 11%] Building C object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc.c.o
+[ 11%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_aggregate_size.c.o
+<built-in>: note: this is the location of the previous definition
+[ 11%] Building ASM object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc_x86.asm.o
+[ 11%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_getshdr.c.o
+[ 11%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_fsize.c.o
+[ 11%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_arrayorder.c.o
+[ 11%] Built target test_helpers
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 11%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_block_decoder.c.o
+[ 11%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/cache_stats.cpp.o
+[ 11%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/cie.c.o
+[ 11%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_abbrevhaschildren.c.o
+[ 12%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_insn.c.o
+[ 12%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_getphdr.c.o
+[ 13%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_newehdr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 13%] Linking C static library ../lib64/release/libminizip.a
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 13%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_attr.c.o
+<built-in>: note: this is the location of the previous definition
+[ 13%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/cfi.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 13%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/prefetcher.cpp.o
+[ 13%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/snoop_filter.cpp.o
+[ 14%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_abbrev_hash.c.o
+[ 14%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_newphdr.c.o
+[ 14%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_addrdie.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 14%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/tlb.cpp.o
+<built-in>: note: this is the location of the previous definition
+[ 14%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_attr_integrate.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 14%] Building C object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc_notdr_dcxt.c.o
+[ 14%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_offscn.c.o
+[ 14%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblcorenote.c.o
+[ 14%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblcorenotetypename.c.o
+[ 15%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/cache_simulator.cpp.o
+[ 15%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_begin.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 15%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_simulator.dir/simulator/tlb_simulator.cpp.o
+[ 15%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_msec_cache.c.o
+[ 15%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/ebldwarftoregno.c.o
+[ 15%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/ebldebugscnp.c.o
+[ 15%] Linking C executable ../bin64/drnudgeunix
+[ 15%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_block_cache.c.o
+[ 15%] Building C object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc_notdr_error.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 15%] Built target pevent
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 16%] Building C object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc_notdr_ignoreassert.c.o
+[ 16%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_section.c.o
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/ebldynamictagcheck.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_updatefile.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 16%] Linking C executable ../bin64/runstats
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 16%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/pt_section_file.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 16%] Building C object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc_notdr_logfile.c.o
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 16%] Building C object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc_notdr_printlog.c.o
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_xlatetof.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_updatenull.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 16%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt.dir/__/__/__/__/third_party/libipt/libipt/src/posix/pt_section_posix.c.o
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/ebldynamictagname.c.o
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf32_xlatetom.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_bitoffset.c.o
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_bitsize.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_checksum.c.o
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblelfclass.c.o
+<built-in>: note: this is the location of the previous definition
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_bytesize.c.o
+[ 16%] Building C object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc_notdr_report.c.o
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblelfdata.c.o
+[ 16%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_cfi_end.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 16%] Building C object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc_notdr_stats.c.o
+[ 17%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_cfi_addrframe.c.o
+[ 17%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblelfmachine.c.o
+[ 17%] Building C object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc_notdr_saferead.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 17%] Building C object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc_unix.c.o
+[ 17%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblinitreg.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 17%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblmachineflagcheck.c.o
+[ 17%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_child.c.o
+[ 18%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblgotpcreloccheck.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 18%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_fsize.c.o
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 18%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_getchdr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 18%] Built target drloader
+<built-in>: note: this is the location of the previous definition
+[ 18%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_cu_die.c.o
+[ 18%] Building C object deps/dynamorio/core/CMakeFiles/drlibc.dir/drlibc/drlibc_module_elf.c.o
+[ 18%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_getshdr.c.o
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_getphdr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 19%] Built target run_in_bg
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_cu_getdwarf.c.o
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_getehdr.c.o
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_cu_info.c.o
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_cuoffset.c.o
+<built-in>: note: this is the location of the previous definition
+[ 19%] Built target minizip
+[ 19%] Linking CXX static library ../lib64/release/libdrmemtrace_mutex_dbg_owned.a
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblmachineflagname.c.o
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_newehdr.c.o
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblnonerelocp.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblnormalizepc.c.o
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblobjnote.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_decl_column.c.o
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblmachinesectionflagcheck.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblobjnotetypename.c.o
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_decl_file.c.o
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_decl_line.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 19%] Linking C static library ../lib64/release/libdwelf_pic.a
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 19%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_default_lower_bound.c.o
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_diecu.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_updatefile.c.o
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_newphdr.c.o
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_die_addr_die.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_offscn.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 20%] Built target runstats
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_xlatetof.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_updatenull.c.o
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblopenbackend.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_begin.c.o
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblosabiname.c.o
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblrelocsimpletype.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf64_xlatetom.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 20%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_clone.c.o
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblrelativerelocp.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblreginfo.c.o
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_dieoffset.c.o
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblreloctypecheck.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_entry_breakpoints.c.o
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_diename.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_error.c.o
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_end.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_entrypc.c.o
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_formaddr.c.o
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_filesrc.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblreloctypename.c.o
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_compress_gnu.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 21%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_error.c.o
+[ 22%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_cntl.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 22%] Built target dwelf_pic
+<built-in>: note: this is the location of the previous definition
+[ 22%] Built target drnudgeunix
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 22%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_end.c.o
+[ 22%] Linking C static library ../../../../third_party/lib64/release/libipt.a
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 22%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_fill.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 22%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblrelocvaliduse.c.o
+[ 22%] Built target drmemtrace_mutex_dbg_owned
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 22%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_formflag.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 22%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_formblock.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 22%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblretval.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 22%] Linking C static library ../lib64/libdrmemfuncs.a
+[ 22%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblresolvesym.c.o
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_formref.c.o
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_formref_die.c.o
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_flagdata.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_flagehdr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblsectionname.c.o
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_flagphdr.c.o
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_flagscn.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblsectionstripp.c.o
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_flagelf.c.o
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_formsdata.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_flagshdr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_formstring.c.o
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_getarhdr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 23%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_formudata.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 24%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_getaroff.c.o
+[ 24%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_frame_cfa.c.o
+[ 24%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblsectiontypename.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 24%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblunwind.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblstother.c.o
+<built-in>: note: this is the location of the previous definition
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblsymbolbindingname.c.o
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblsegmenttypename.c.o
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_getarsym.c.o
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblsysvhashentrysize.c.o
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/ebl_pic.dir/__/__/third_party/elfutils/libebl/eblsymboltypename.c.o
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_frame_info.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_getdata.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_getbase.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_getdata_rawchunk.c.o
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 25%] Built target ipt
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_frame_register.c.o
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_get_units.c.o
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_func_inline.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getabbrev.c.o
+Scanning dependencies of target ipt-sb
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_getident.c.o
+<built-in>: note: this is the location of the previous definition
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_getphdrnum.c.o
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_getshdrnum.c.o
+[ 25%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getabbrevcode.c.o
+[ 26%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getabbrevattr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 26%] Built target drmemfuncs
+[ 26%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_getshdrstrndx.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 26%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_getscn.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 26%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_gnu_hash.c.o
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_hash.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_ndxscn.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 27%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt-sb.dir/__/__/__/__/third_party/libipt/sideband/src/pt_sb_file.c.o
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_kind.c.o
+[ 27%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt-sb.dir/__/__/__/__/third_party/libipt/sideband/src/pt_sb_context.c.o
+[ 27%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt-sb.dir/__/__/__/__/third_party/libipt/sideband/src/pt_sb_pevent.c.o
+[ 27%] Building C object deps/dynamorio/clients/drcachesim/drpt2trace/libipt/CMakeFiles/ipt-sb.dir/__/__/__/__/third_party/libipt/sideband/src/pt_sb_session.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getabbrevtag.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getalt.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getarange_addr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 27%] Linking C static library ../lib64/release/libebl_pic.a
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 27%] Linking C static library ../lib64/libdrlibc.a
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getarangeinfo.c.o
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_newdata.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_newscn.c.o
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getaranges.c.o
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getattrcnt.c.o
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getattrs.c.o
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_next.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getcfi.c.o
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_nextscn.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getcfi_elf.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_rand.c.o
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getelf.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 27%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_rawdata.c.o
+[ 28%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getfuncs.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 28%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getlocation.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 28%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_rawfile.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 28%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_readall.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 28%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_scnshndx.c.o
+[ 28%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getlocation_attr.c.o
+<built-in>: note: this is the location of the previous definition
+[ 28%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getlocation_implicit_pointer.c.o
+[ 28%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getlocation_die.c.o
+[ 28%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getmacros.c.o
+[ 29%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_strptr.c.o
+[ 30%] Linking C static library ../../../../third_party/lib64/release/libipt-sb.a
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getpubnames.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_update.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/elf_version.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_checksum.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 30%] Built target ebl_pic
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_fsize.c.o
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getscopes_die.c.o
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getscopes.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getscopevar.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getauxv.c.o
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getclass.c.o
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getchdr.c.o
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getsrc_die.c.o
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 30%] Built target ipt-sb
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 30%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getehdr.c.o
+[ 31%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getsrc_file.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 31%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getdyn.c.o
+[ 31%] Built target drlibc
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 31%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getsrcdirs.c.o
+[ 31%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getsrcfiles.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 31%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_getstring.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 31%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getlib.c.o
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 31%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_hasattr.c.o
+<built-in>: note: this is the location of the previous definition
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getmove.c.o
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_haschildren.c.o
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_hasattr_integrate.c.o
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getnote.c.o
+Scanning dependencies of target drfrontendlib
+Scanning dependencies of target drdecode
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getphdr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getrel.c.o
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_hasform.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 32%] Building C object deps/dynamorio/libutil/CMakeFiles/drfrontendlib.dir/dr_frontend_unix.c.o
+[ 32%] Building C object deps/dynamorio/libutil/CMakeFiles/drfrontendlib.dir/dr_frontend_common.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+Scanning dependencies of target drpreload
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getrela.c.o
+[ 32%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/opnd_shared.c.o
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_haspc.c.o
+[ 32%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/instr_shared.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_highpc.c.o
+[ 32%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/x86/instr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 32%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/x86/opnd.c.o
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_line_file.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 32%] Building C object deps/dynamorio/core/CMakeFiles/drpreload.dir/unix/preload.c.o
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getshdr.c.o
+[ 32%] Building C object deps/dynamorio/core/CMakeFiles/drpreload.dir/string.c.o
+[ 32%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_lineaddr.c.o
+[ 32%] Building C object deps/dynamorio/core/CMakeFiles/drpreload.dir/config.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 32%] Building C object deps/dynamorio/core/CMakeFiles/drpreload.dir/io.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 33%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_linebeginstatement.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 33%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getsym.c.o
+[ 33%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getsyminfo.c.o
+[ 33%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/decode_shared.c.o
+[ 33%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/instrlist.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 33%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getsymshndx.c.o
+[ 33%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_lineblock.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 33%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_linecol.c.o
+[ 33%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/x86/decode.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 33%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getverdaux.c.o
+[ 33%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_linecontext.c.o
+[ 34%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/x86/encode.c.o
+[ 34%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getverdef.c.o
+[ 34%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/encode_shared.c.o
+Scanning dependencies of target dynamorio
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 35%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getvernaux.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 35%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_linediscriminator.c.o
+[ 35%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/isa_regdeps/encoding_common.c.o
+[ 35%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/isa_regdeps/encode.c.o
+[ 35%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getverneed.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 35%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_lineendsequence.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 35%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/isa_regdeps/decode.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 35%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_lineepiloguebegin.c.o
+[ 35%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/options.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 35%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_linefunctionname.c.o
+[ 35%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_getversym.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 35%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/dynamo.c.o
+[ 36%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/fcache.c.o
+[ 36%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/fragment.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 36%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/link.c.o
+[ 36%] Linking CXX static library ../lib64/release/libdrmemtrace_histogram.a
+[ 36%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_lineisa.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 36%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/isa_regdeps/disassemble.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 36%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_newphdr.c.o
+[ 36%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/disassemble_shared.c.o
+[ 36%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_newehdr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 36%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/dispatch.c.o
+[ 36%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/x86/disassemble.c.o
+[ 36%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/ir_utils_shared.c.o
+[ 36%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/x86/ir_utils.c.o
+[ 36%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_lineop_index.c.o
+[ 36%] Linking C static library ../lib64/libdrfrontendlib.a
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 36%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_linesrc.c.o
+[ 36%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_lineno.c.o
+[ 36%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/emit.c.o
+[ 36%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_offscn.c.o
+[ 37%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_lineprologueend.c.o
+[ 37%] Linking CXX static library ../../../../lib64/release/libdrmemtrace_empty.a
+[ 37%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_auxv.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 37%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/config.c.o
+[ 37%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_dyn.c.o
+[ 37%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_lowpc.c.o
+[ 37%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/x86/decode_table.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 37%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_macro_getparamcnt.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 37%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_ehdr.c.o
+[ 37%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/utils.c.o
+[ 37%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_lib.c.o
+[ 37%] Linking CXX executable ../bin64/drcpusim_ops
+[ 37%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/stats.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+Scanning dependencies of target dynamorio_static
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 37%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/decodelib.c.o
+[ 37%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/monitor.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 37%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/ir/x86/decode_fast.c.o
+[ 37%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/heap.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 37%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/perfctr.c.o
+<built-in>: note: this is the location of the previous definition
+[ 37%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_macro_getsrcfiles.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 37%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_move.c.o
+<built-in>: note: this is the location of the previous definition
+[ 38%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/string.c.o
+[ 38%] Building C object deps/dynamorio/core/CMakeFiles/drdecode.dir/io.c.o
+[ 38%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_phdr.c.o
+[ 38%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_macro_opcode.c.o
+[ 38%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_macro_param.c.o
+[ 38%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_macro_param1.c.o
+[ 39%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_rel.c.o
+[ 39%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_macro_param2.c.o
+[ 39%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/hashtable.c.o
+[ 39%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_rela.c.o
+[ 39%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/vmareas.c.o
+[ 39%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/options.c.o
+[ 39%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_syminfo.c.o
+[ 39%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/dynamo.c.o
+[ 39%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/module_list.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 39%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/fragment.c.o
+[ 40%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/rct.c.o
+[ 40%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_symshndx.c.o
+[ 40%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_shdr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 40%] Built target drmemtrace_histogram
+[ 40%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/moduledb.c.o
+[ 40%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_sym.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 40%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/hotpatch.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 40%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/link.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 40%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/fcache.c.o
+[ 40%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/perscache.c.o
+[ 40%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/nudge.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 40%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/synch.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 40%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_next_cfi.c.o
+[ 40%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_verdef.c.o
+[ 40%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_verdaux.c.o
+[ 40%] Linking CXX static library ../lib64/release/libdrmemtrace_reuse_time.a
+[ 40%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/dispatch.c.o
+[ 40%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_next_lines.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 40%] Built target drmemtrace_empty
+[ 41%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_nextcu.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 41%] Built target drfrontendlib
+<built-in>: note: this is the location of the previous definition
+[ 41%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_vernaux.c.o
+[ 42%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/emit.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 42%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_offabbrev.c.o
+[ 42%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/buildmark.c.o
+[ 42%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/io.c.o
+[ 43%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/native_exec.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 43%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/loader_shared.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 43%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/utils.c.o
+[ 43%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/lib/instrument.c.o
+[ 43%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_verneed.c.o
+[ 43%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/config.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+Scanning dependencies of target empty_creator
+[ 43%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/translate.c.o
+[ 43%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_offdie.c.o
+[ 43%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_update_versym.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 43%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/stats.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 43%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/lib/module_api.c.o
+[ 43%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/heap.c.o
+[ 43%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_onearange.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_xlate.c.o
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_onesrcline.c.o
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_peel_type.c.o
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/monitor.c.o
+Scanning dependencies of target directory_iterator
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_xlatetof.c.o
+[ 44%] Building CXX object deps/dynamorio/clients/drcachesim/tools/external/example/CMakeFiles/empty_creator.dir/empty_creator.cpp.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/perfctr.c.o
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_ranges.c.o
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/vmareas.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+Scanning dependencies of target drconfiglib
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_setalt.c.o
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/jit_opt.c.o
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/annotations.c.o
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/string.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/rct.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_siblingof.c.o
+[ 44%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/directory_iterator.dir/common/directory_iterator.cpp.o
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/arch.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 44%] Building C object deps/dynamorio/libutil/CMakeFiles/drconfiglib.dir/dr_config.c.o
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/gelf_xlatetom.c.o
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/libelf_crc32.c.o
+[ 44%] Building C object deps/dynamorio/libutil/CMakeFiles/drconfiglib.dir/__/core/io.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/emit_utils_shared.c.o
+[ 44%] Built target drcpusim_ops
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/libelf_next_prime.c.o
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/hotpatch.c.o
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_sig8_hash.c.o
+<built-in>: note: this is the location of the previous definition
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_srclang.c.o
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/__/__/third_party/elfutils/libelf/nlist.c.o
+[ 44%] Building C object deps/dynamorio/libutil/CMakeFiles/drconfiglib.dir/__/core/unix/nudgesig.c.o
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/elf_compress.c.o
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_tag.c.o
+[ 44%] Building C object deps/dynamorio/libutil/CMakeFiles/drconfiglib.dir/utils.c.o
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/x86/emit_utils.c.o
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/moduledb.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/opnd_shared.c.o
+[ 44%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/elf_pic.dir/elf_memory.c.o
+[ 44%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/hashtable.c.o
+[ 44%] Built target drmemtrace_reuse_time
+[ 45%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/module_list.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 45%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/fde.c.o
+<built-in>: note: this is the location of the previous definition
+[ 45%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_whatform.c.o
+[ 45%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/libdw_alloc.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 45%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/x86/opnd.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 45%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/frame-cache.c.o
+[ 45%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/perscache.c.o
+[ 46%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/dwarf_whatattr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 46%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/libdw_find_split_unit.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 47%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/instr_shared.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+[ 47%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/nudge.c.o
+<built-in>: note: this is the location of the previous definition
+[ 47%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/x86/instr.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 47%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/decode_shared.c.o
+<built-in>: note: this is the location of the previous definition
+[ 47%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/instrlist.c.o
+[ 47%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/synch.c.o
+[ 47%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/buildmark.c.o
+[ 47%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/libdw_form.c.o
+[ 47%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/libdw_findcu.c.o
+[ 47%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/loader_shared.c.o
+[ 47%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/x86/decode.c.o
+[ 47%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/io.c.o
+[ 47%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/native_exec.c.o
+[ 47%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/__/__/third_party/elfutils/libdw/libdw_visit_scopes.c.o
+[ 47%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/dwarf_begin_elf.c.o
+[ 47%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/dw_pic.dir/dwarf_getsrclines.c.o
+[ 47%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/lib/instrument.c.o
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/annotations.c.o
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/lib/module_api.c.o
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/translate.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/jit_opt.c.o
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/encode_shared.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/x86/encode.c.o
+<command-line>: warning: "_FORTIFY_SOURCE" redefined
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/isa_regdeps/encoding_common.c.o
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/isa_regdeps/encode.c.o
+<built-in>: note: this is the location of the previous definition
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/isa_regdeps/decode.c.o
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/isa_regdeps/disassemble.c.o
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/string.c.o
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/arch.c.o
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/emit_utils_shared.c.o
+[ 48%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/x86/emit_utils.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/disassemble_shared.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/x86/ir_utils.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/opnd_shared.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/x86/disassemble.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/ir_utils_shared.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/x86/opnd.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/x86/decode_table.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/instr_shared.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/x86/instr.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/ir/x86/decode_fast.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/proc_shared.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/interp.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/x86/proc.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/mangle_shared.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/instrlist.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/x86/decode.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/x86/encode.c.o
+[ 49%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/isa_regdeps/encoding_common.c.o
+[ 50%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/decode_shared.c.o
+[ 50%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/encode_shared.c.o
+[ 50%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/x86/mangle.c.o
+[ 50%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/clean_call_opt_shared.c.o
+[ 50%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/isa_regdeps/encode.c.o
+[ 50%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/isa_regdeps/decode.c.o
+[ 51%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/x86/clean_call_opt.c.o
+[ 51%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/x86_code.c.o
+[ 51%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/x86/optimize.c.o
+[ 51%] Building ASM object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/x86/x86.asm.o
+[ 51%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/sideline.c.o
+[ 51%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/disassemble_shared.c.o
+[ 51%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/retcheck.c.o
+[ 51%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/isa_regdeps/disassemble.c.o
+[ 51%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/ir_utils_shared.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/x86/ir_utils.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/x86/disassemble.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/arch/x86/x86_to_x64.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/os.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/x86/decode_table.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/module.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/signal.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/interp.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/ir/x86/decode_fast.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/x86/proc.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/proc_shared.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/pcprofile.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/mangle_shared.c.o
+[ 52%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/loader.c.o
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/stackdump.c.o
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/diagnost.c.o
+[ 53%] Linking C static library ../lib64/release/libelf_pic.a
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/coredump.c.o
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/loader_linux.c.o
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/x86/mangle.c.o
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/clean_call_opt_shared.c.o
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/x86/clean_call_opt.c.o
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/memquery_linux.c.o
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/x86_code.c.o
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/memcache.c.o
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/memquery.c.o
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/module_elf.c.o
+[ 53%] Linking CXX static library ../lib64/release/libdrmemtrace_basic_counts.a
+[ 53%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/ksynch_linux.c.o
+[ 53%] Building ASM object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/x86/x86.asm.o
+[ 54%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/x86/optimize.c.o
+[ 54%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/sideline.c.o
+[ 54%] Linking CXX static library ../lib64/release/libdirectory_iterator.a
+[ 54%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/retcheck.c.o
+[ 54%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/tls_linux_x86.c.o
+[ 54%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/signal_linux_x86.c.o
+[ 54%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/native_elf.c.o
+[ 54%] Linking C shared library ../lib64/release/libdrpreload.so
+[ 55%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/signal_linux.c.o
+[ 55%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/arch/x86/x86_to_x64.c.o
+[ 55%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/nudgesig.c.o
+[ 55%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio.dir/unix/rseq_linux.c.o
+[ 55%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/os.c.o
+[ 55%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/signal.c.o
+[ 55%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/module.c.o
+[ 55%] Linking CXX static library ../lib64/release/libdrmemtrace_schedule_file.a
+[ 55%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/pcprofile.c.o
+[ 55%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/stackdump.c.o
+[ 55%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/diagnost.c.o
+[ 55%] Built target directory_iterator
+[ 55%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/loader.c.o
+[ 55%] Built target drmemtrace_basic_counts
+[ 56%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/loader_linux.c.o
+[ 56%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/coredump.c.o
+[ 56%] Built target elf_pic
+[ 56%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/memquery_linux.c.o
+[ 56%] Linking CXX static library ../lib64/release/libdrmemtrace_syscall_mix.a
+[ 56%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/memquery.c.o
+[ 56%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/memcache.c.o
+[ 56%] Built target drmemtrace_schedule_file
+[ 56%] Built target drpreload
+Scanning dependencies of target drmemtrace_analyzer
+[ 56%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/module_elf.c.o
+[ 56%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/ksynch_linux.c.o
+[ 56%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/tls_linux_x86.c.o
+[ 56%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/signal_linux.c.o
+[ 56%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/analyzer.cpp.o
+[ 56%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/scheduler/scheduler.cpp.o
+[ 56%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/scheduler/scheduler_impl.cpp.o
+[ 56%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/signal_linux_x86.c.o
+[ 56%] Linking C static library ../lib64/libdrconfiglib.a
+[ 57%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/scheduler/scheduler_dynamic.cpp.o
+[ 57%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/native_elf.c.o
+[ 57%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/scheduler/scheduler_fixed.cpp.o
+[ 57%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/scheduler/scheduler_replay.cpp.o
+[ 57%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/nudgesig.c.o
+[ 57%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/scheduler/speculator.cpp.o
+[ 57%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/common/trace_entry.cpp.o
+[ 57%] Built target drmemtrace_syscall_mix
+[ 58%] Building C object deps/dynamorio/core/CMakeFiles/dynamorio_static.dir/unix/rseq_linux.c.o
+[ 58%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/reader/reader.cpp.o
+[ 59%] Linking C static library ../lib64/release/libdw_pic.a
+[ 59%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/reader/config_reader.cpp.o
+[ 59%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/reader/v2p_reader.cpp.o
+[ 59%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/reader/file_reader.cpp.o
+[ 59%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/reader/record_file_reader.cpp.o
+[ 59%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/reader/compressed_file_reader.cpp.o
+[ 60%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/reader/zipfile_file_reader.cpp.o
+[ 60%] Built target drconfiglib
+[ 60%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/reader/snappy_file_reader.cpp.o
+[ 60%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/common/crc32c.cpp.o
+[ 60%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/common/snappy_consts.cpp.o
+Scanning dependencies of target drconfig
+[ 60%] Linking C static library ../lib64/libdrdecode.a
+[ 60%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_analyzer.dir/reader/lz4_file_reader.cpp.o
+[ 60%] Building C object deps/dynamorio/tools/CMakeFiles/drconfig.dir/drdeploy.c.o
+[ 60%] Linking CXX static library ../lib64/release/libdrmemtrace_reuse_distance.a
+[ 61%] Linking CXX shared library ../../../../lib64/release/libempty_creator.so
+[ 61%] Built target dw_pic
+[ 61%] Built target drmemtrace_reuse_distance
+[ 61%] Built target drdecode
+Scanning dependencies of target drir2trace
+Scanning dependencies of target drpt2ir
+[ 61%] Built target empty_creator
+Scanning dependencies of target drdisas
+Scanning dependencies of target drinjectlib
+[ 61%] Building CXX object deps/dynamorio/clients/drcachesim/drpt2trace/CMakeFiles/drir2trace.dir/ir2trace.cpp.o
+[ 61%] Building CXX object deps/dynamorio/clients/drdisas/CMakeFiles/drdisas.dir/drdisas.cpp.o
+[ 61%] Linking CXX static library ../lib64/release/libdrmemtrace_schedule_stats.a
+[ 61%] Building CXX object deps/dynamorio/clients/drcachesim/drpt2trace/CMakeFiles/drpt2ir.dir/pt2ir.cpp.o
+[ 61%] Building CXX object deps/dynamorio/clients/drcachesim/drpt2trace/CMakeFiles/drpt2ir.dir/elf_loader.cpp.o
+[ 61%] Building C object deps/dynamorio/core/CMakeFiles/drinjectlib.dir/unix/injector.c.o
+[ 62%] Building C object deps/dynamorio/core/CMakeFiles/drinjectlib.dir/config.c.o
+[ 62%] Building C object deps/dynamorio/core/CMakeFiles/drinjectlib.dir/io.c.o
+[ 62%] Linking C executable ../bin64/drconfig
+[ 62%] Building C object deps/dynamorio/core/CMakeFiles/drinjectlib.dir/string.c.o
+[ 62%] Built target drmemtrace_schedule_stats
+[ 62%] Built target drconfig
+[ 62%] Linking CXX static library ../lib64/release/libdrmemtrace_func_view.a
+[ 62%] Linking CXX static library ../../lib64/release/libdrir2trace.a
+[ 62%] Linking CXX static library ../../lib64/release/libdrpt2ir.a
+[ 62%] Built target drir2trace
+[ 62%] Built target drmemtrace_func_view
+[ 62%] Built target drpt2ir
+[ 62%] Linking C static library ../lib64/libdrinjectlib.a
+[ 62%] Built target drinjectlib
+Scanning dependencies of target drinject
+Scanning dependencies of target drrun
+[ 62%] Building C object deps/dynamorio/tools/CMakeFiles/drinject.dir/drdeploy.c.o
+[ 62%] Building C object deps/dynamorio/tools/CMakeFiles/drrun.dir/drdeploy.c.o
+[ 62%] Linking CXX static library ../lib64/release/libdrmemtrace_simulator.a
+[ 62%] Linking C shared library ../lib64/release/libdynamorio.so
+[ 62%] Linking C static library ../lib64/release/libdynamorio_static.a
+[ 62%] Built target drmemtrace_simulator
+[ 62%] Linking C executable ../bin64/drinject
+[ 62%] Linking C executable ../bin64/drrun
+[ 62%] Built target drinject
+[ 62%] Built target drrun
+[ 62%] Built target dynamorio
+Scanning dependencies of target drcallstack_static
+Scanning dependencies of target tracedump
+Scanning dependencies of target empty
+Scanning dependencies of target drpttracer_static
+Scanning dependencies of target stl_test
+Scanning dependencies of target drcontainers
+Scanning dependencies of target drcallstack
+Scanning dependencies of target drpttracer
+Scanning dependencies of target drpt2trace
+Scanning dependencies of target drmemtrace_record_filter
+[ 62%] Building C object deps/dynamorio/api/samples/CMakeFiles/empty.dir/empty.c.o
+[ 62%] Building C object deps/dynamorio/ext/drcallstack/CMakeFiles/drcallstack_static.dir/drcallstack.c.o
+[ 62%] Building C object deps/dynamorio/api/samples/CMakeFiles/tracedump.dir/tracedump.c.o
+[ 62%] Building C object deps/dynamorio/ext/drpttracer/CMakeFiles/drpttracer.dir/drpttracer.c.o
+[ 62%] Building C object deps/dynamorio/ext/drcallstack/CMakeFiles/drcallstack.dir/drcallstack.c.o
+[ 62%] Building C object deps/dynamorio/ext/drpttracer/CMakeFiles/drpttracer_static.dir/drpttracer.c.o
+[ 62%] Building CXX object deps/dynamorio/api/samples/CMakeFiles/stl_test.dir/stl_test.cpp.o
+[ 62%] Building C object deps/dynamorio/ext/drcontainers/CMakeFiles/drcontainers.dir/hashtable.c.o
+[ 62%] Building C object deps/dynamorio/ext/drcontainers/CMakeFiles/drcontainers.dir/drvector.c.o
+[ 62%] Building CXX object deps/dynamorio/clients/drcachesim/drpt2trace/CMakeFiles/drpt2trace.dir/drpt2trace.cpp.o
+[ 62%] Building C object deps/dynamorio/ext/drcontainers/CMakeFiles/drcontainers.dir/drtable.c.o
+[ 62%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_record_filter.dir/tools/filter/record_filter.cpp.o
+[ 62%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_record_filter.dir/tools/filter/cache_filter.cpp.o
+[ 62%] Linking CXX executable ../bin64/drdisas
+[ 62%] Linking C shared library ../lib64/release/libdrcallstack.so
+[ 62%] Linking C shared library ../bin/libempty.so
+[ 63%] Linking C static library ../lib64/release/libdrcallstack_static.a
+[ 63%] Linking C executable ../bin/tracedump
+[ 63%] Built target drcallstack
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libempty.so
+[ 63%] Built target empty
+[ 63%] Built target drcallstack_static
+[ 63%] Linking C shared library ../lib64/release/libdrpttracer.so
+[ 63%] Linking C static library ../lib64/release/libdrpttracer_static.a
+Make sure the loader finds the dynamorio library (set LD_LIBRARY_PATH)
+[ 63%] Built target tracedump
+[ 63%] Built target drdisas
+[ 63%] Built target drpttracer
+[ 63%] Built target drpttracer_static
+[ 64%] Linking C static library ../lib64/release/libdrcontainers.a
+[ 64%] Built target drcontainers
+Scanning dependencies of target drmgr_static
+Scanning dependencies of target drmgr
+Scanning dependencies of target drsyms
+Scanning dependencies of target drsyms_static
+[ 64%] Building C object deps/dynamorio/ext/drmgr/CMakeFiles/drmgr_static.dir/drmgr.c.o
+[ 64%] Building C object deps/dynamorio/ext/drmgr/CMakeFiles/drmgr.dir/drmgr.c.o
+[ 64%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_static.dir/drsyms_unix_frontend.c.o
+[ 64%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_static.dir/drsyms_common.c.o
+[ 64%] Building CXX object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_static.dir/demangle.cc.o
+[ 64%] Building CXX object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms.dir/demangle.cc.o
+[ 64%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_static.dir/drsyms_unix_common.c.o
+[ 64%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms.dir/drsyms_unix_frontend.c.o
+[ 64%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms.dir/drsyms_common.c.o
+[ 64%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms.dir/drsyms_dw.c.o
+[ 64%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_static.dir/drsyms_dw.c.o
+[ 65%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms.dir/drsyms_unix_common.c.o
+[ 65%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_static.dir/drsyms_elf.c.o
+[ 65%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms.dir/drsyms_elf.c.o
+[ 65%] Linking CXX shared library ../bin/libstl_test.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libstl_test.so
+[ 65%] Built target stl_test
+[ 65%] Linking CXX shared library ../lib64/release/libdrsyms.so
+[ 65%] Linking CXX static library ../lib64/release/libdrsyms_static.a
+[ 65%] Built target dynamorio_static
+[ 65%] Built target drsyms_static
+Scanning dependencies of target drcallstack_drstatic
+Scanning dependencies of target drpttracer_drstatic
+Scanning dependencies of target drcontainers_drstatic
+[ 65%] Built target drsyms
+[ 65%] Building C object deps/dynamorio/ext/drpttracer/CMakeFiles/drpttracer_drstatic.dir/drpttracer.c.o
+[ 65%] Building C object deps/dynamorio/ext/drcallstack/CMakeFiles/drcallstack_drstatic.dir/drcallstack.c.o
+[ 65%] Building C object deps/dynamorio/ext/drcontainers/CMakeFiles/drcontainers_drstatic.dir/drvector.c.o
+[ 65%] Building C object deps/dynamorio/ext/drcontainers/CMakeFiles/drcontainers_drstatic.dir/hashtable.c.o
+[ 65%] Building C object deps/dynamorio/ext/drcontainers/CMakeFiles/drcontainers_drstatic.dir/drtable.c.o
+Scanning dependencies of target drsyms_bench
+[ 65%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_bench.dir/drsyms_bench.c.o
+[ 65%] Linking C static library ../lib64/release/libdrcallstack_drstatic.a
+[ 65%] Linking C executable ../drsyms_bench
+[ 65%] Linking C static library ../lib64/release/libdrmgr_static.a
+[ 65%] Built target drcallstack_drstatic
+[ 65%] Linking C static library ../lib64/release/libdrpttracer_drstatic.a
+[ 65%] Built target drsyms_bench
+[ 65%] Linking C shared library ../lib64/release/libdrmgr.so
+[ 65%] Built target drmgr_static
+[ 65%] Built target drpttracer_drstatic
+Scanning dependencies of target drutil_static
+Scanning dependencies of target drreg_static
+Scanning dependencies of target drwrap_static
+[ 65%] Built target drmgr
+[ 65%] Building C object deps/dynamorio/ext/drutil/CMakeFiles/drutil_static.dir/drutil.c.o
+[ 65%] Building C object deps/dynamorio/ext/drreg/CMakeFiles/drreg_static.dir/drreg.c.o
+[ 65%] Building C object deps/dynamorio/ext/drwrap/CMakeFiles/drwrap_static.dir/drwrap.c.o
+[ 65%] Building ASM object deps/dynamorio/ext/drwrap/CMakeFiles/drwrap_static.dir/drwrap_asm_x86.asm.o
+Scanning dependencies of target cbr
+Scanning dependencies of target div
+Scanning dependencies of target drutil
+Scanning dependencies of target modxfer_app2lib
+Scanning dependencies of target inscount
+Scanning dependencies of target drreg
+Scanning dependencies of target inline
+Scanning dependencies of target syscall
+Scanning dependencies of target drwrap
+Scanning dependencies of target signal
+Scanning dependencies of target prefetch
+[ 65%] Linking C static library ../lib64/release/libdrcontainers_drstatic.a
+[ 65%] Building C object deps/dynamorio/api/samples/CMakeFiles/div.dir/div.c.o
+[ 65%] Building C object deps/dynamorio/api/samples/CMakeFiles/cbr.dir/cbr.c.o
+[ 65%] Building C object deps/dynamorio/ext/drutil/CMakeFiles/drutil.dir/drutil.c.o
+[ 66%] Building C object deps/dynamorio/api/samples/CMakeFiles/inline.dir/inline.c.o
+[ 66%] Building CXX object deps/dynamorio/api/samples/CMakeFiles/inscount.dir/inscount.cpp.o
+[ 66%] Building ASM object deps/dynamorio/ext/drwrap/CMakeFiles/drwrap.dir/drwrap_asm_x86.asm.o
+[ 66%] Building C object deps/dynamorio/api/samples/CMakeFiles/modxfer_app2lib.dir/modxfer_app2lib.c.o
+[ 66%] Building C object deps/dynamorio/ext/drwrap/CMakeFiles/drwrap.dir/drwrap.c.o
+[ 66%] Building C object deps/dynamorio/ext/drreg/CMakeFiles/drreg.dir/drreg.c.o
+[ 66%] Building C object deps/dynamorio/api/samples/CMakeFiles/syscall.dir/syscall.c.o
+[ 66%] Building C object deps/dynamorio/api/samples/CMakeFiles/signal.dir/signal.c.o
+[ 66%] Building C object deps/dynamorio/api/samples/CMakeFiles/prefetch.dir/prefetch.c.o
+[ 66%] Built target drcontainers_drstatic
+Scanning dependencies of target drmgr_drstatic
+[ 66%] Linking C shared library ../bin/libdiv.so
+Scanning dependencies of target drsyms_drstatic
+[ 66%] Linking C shared library ../bin/libprefetch.so
+[ 66%] Linking C shared library ../bin/libsignal.so
+[ 66%] Building C object deps/dynamorio/ext/drmgr/CMakeFiles/drmgr_drstatic.dir/drmgr.c.o
+[ 67%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_drstatic.dir/drsyms_unix_frontend.c.o
+[ 67%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_drstatic.dir/drsyms_elf.c.o
+[ 67%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_drstatic.dir/drsyms_common.c.o
+[ 67%] Building CXX object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_drstatic.dir/demangle.cc.o
+[ 67%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_drstatic.dir/drsyms_dw.c.o
+[ 67%] Building C object deps/dynamorio/ext/drsyms/CMakeFiles/drsyms_drstatic.dir/drsyms_unix_common.c.o
+[ 67%] Linking C shared library ../bin/libmodxfer_app2lib.so
+[ 68%] Linking C shared library ../bin/libinline.so
+[ 68%] Linking C shared library ../bin/libsyscall.so
+[ 68%] Linking C static library ../lib64/release/libdrutil_static.a
+[ 68%] Linking C shared library ../bin/libcbr.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libdiv.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libprefetch.so
+[ 68%] Linking C shared library ../lib64/release/libdrutil.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libsignal.so
+[ 68%] Built target div
+[ 68%] Built target prefetch
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libmodxfer_app2lib.so
+[ 68%] Built target signal
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libinline.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libsyscall.so
+[ 68%] Built target modxfer_app2lib
+[ 68%] Built target inline
+[ 68%] Built target syscall
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libcbr.so
+[ 68%] Built target drutil_static
+[ 68%] Built target cbr
+[ 68%] Built target drutil
+Scanning dependencies of target drmemtrace_raw2trace
+[ 68%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/tracer/raw2trace.cpp.o
+[ 68%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/tracer/instru_online.cpp.o
+[ 68%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/tracer/instru.cpp.o
+[ 69%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/tracer/raw2trace_directory.cpp.o
+[ 69%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/reader/snappy_file_reader.cpp.o
+[ 69%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/tracer/instru_offline.cpp.o
+[ 69%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/tracer/raw2trace_shared.cpp.o
+[ 69%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/reader/record_file_reader.cpp.o
+[ 69%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/reader/reader.cpp.o
+[ 69%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/common/snappy_consts.cpp.o
+[ 69%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/common/trace_entry.cpp.o
+[ 70%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/reader/file_reader.cpp.o
+[ 70%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/common/crc32c.cpp.o
+[ 70%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_raw2trace.dir/reader/compressed_file_reader.cpp.o
+[ 70%] Linking C static library ../lib64/release/libdrwrap_static.a
+[ 70%] Linking C shared library ../lib64/release/libdrwrap.so
+[ 70%] Built target drwrap
+[ 70%] Built target drwrap_static
+Scanning dependencies of target callstack
+Scanning dependencies of target wrap
+Scanning dependencies of target ssljack
+[ 70%] Building CXX object deps/dynamorio/api/samples/CMakeFiles/callstack.dir/callstack.cpp.o
+[ 70%] Building C object deps/dynamorio/api/samples/CMakeFiles/ssljack.dir/ssljack.c.o
+[ 70%] Building C object deps/dynamorio/api/samples/CMakeFiles/wrap.dir/wrap.c.o
+[ 70%] Linking C static library ../lib64/release/libdrreg_static.a
+[ 70%] Linking C shared library ../bin/libssljack.so
+[ 71%] Linking C shared library ../bin/libwrap.so
+[ 71%] Linking CXX static library ../lib64/release/libdrsyms_drstatic.a
+[ 71%] Linking C shared library ../lib64/release/libdrreg.so
+[ 71%] Built target drreg_static
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libssljack.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libwrap.so
+[ 71%] Built target drreg
+[ 71%] Built target ssljack
+[ 71%] Built target wrap
+Scanning dependencies of target drbbdup_static
+Scanning dependencies of target drx_static
+Scanning dependencies of target drstatecmp_static
+[ 71%] Building C object deps/dynamorio/ext/drbbdup/CMakeFiles/drbbdup_static.dir/drbbdup.c.o
+Scanning dependencies of target inc2add
+[ 71%] Building C object deps/dynamorio/ext/drx/CMakeFiles/drx_static.dir/drx.c.o
+[ 71%] Building C object deps/dynamorio/ext/drx/CMakeFiles/drx_static.dir/drx_buf.c.o
+[ 71%] Building C object deps/dynamorio/ext/drx/CMakeFiles/drx_static.dir/scatter_gather_shared.c.o
+[ 72%] Building C object deps/dynamorio/ext/drstatecmp/CMakeFiles/drstatecmp_static.dir/drstatecmp.c.o
+[ 72%] Building C object deps/dynamorio/ext/drx/CMakeFiles/drx_static.dir/scatter_gather_x86.c.o
+Scanning dependencies of target countcalls
+Scanning dependencies of target drstatecmp
+Scanning dependencies of target drbbdup
+Scanning dependencies of target drx
+[ 72%] Building C object deps/dynamorio/api/samples/CMakeFiles/inc2add.dir/inc2add.c.o
+[ 72%] Building C object deps/dynamorio/api/samples/CMakeFiles/countcalls.dir/countcalls.c.o
+[ 72%] Built target drsyms_drstatic
+[ 72%] Building C object deps/dynamorio/ext/drstatecmp/CMakeFiles/drstatecmp.dir/drstatecmp.c.o
+[ 72%] Building C object deps/dynamorio/ext/drbbdup/CMakeFiles/drbbdup.dir/drbbdup.c.o
+[ 72%] Building C object deps/dynamorio/ext/drx/CMakeFiles/drx.dir/scatter_gather_x86.c.o
+[ 72%] Building C object deps/dynamorio/ext/drx/CMakeFiles/drx.dir/drx_buf.c.o
+[ 72%] Building C object deps/dynamorio/ext/drx/CMakeFiles/drx.dir/drx.c.o
+[ 72%] Building C object deps/dynamorio/ext/drx/CMakeFiles/drx.dir/scatter_gather_shared.c.o
+[ 72%] Linking CXX static library libpin_lib_for_scarab.a
+[ 72%] Linking C shared library ../bin/libinc2add.so
+[ 72%] Linking C shared library ../bin/libcountcalls.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libinc2add.so
+[ 72%] Built target inc2add
+[ 72%] Linking C shared library ../lib64/release/libdrstatecmp.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libcountcalls.so
+[ 72%] Built target pin_lib_for_scarab
+[ 72%] Built target countcalls
+[ 72%] Linking CXX shared library ../bin/libinscount.so
+[ 72%] Linking C static library ../lib64/release/libdrstatecmp_static.a
+[ 72%] Built target drstatecmp
+Scanning dependencies of target statecmp
+[ 73%] Building C object deps/dynamorio/api/samples/CMakeFiles/statecmp.dir/statecmp.c.o
+[ 73%] Built target drstatecmp_static
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libinscount.so
+[ 73%] Built target inscount
+[ 73%] Linking C static library ../lib64/release/libdrmgr_drstatic.a
+[ 73%] Linking C shared library ../bin/libstatecmp.so
+[ 73%] Built target drmgr_drstatic
+Scanning dependencies of target drreg_drstatic
+Scanning dependencies of target drutil_drstatic
+Scanning dependencies of target drwrap_drstatic
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libstatecmp.so
+[ 74%] Building C object deps/dynamorio/ext/drreg/CMakeFiles/drreg_drstatic.dir/drreg.c.o
+[ 74%] Built target statecmp
+[ 74%] Building C object deps/dynamorio/ext/drwrap/CMakeFiles/drwrap_drstatic.dir/drwrap.c.o
+[ 74%] Building C object deps/dynamorio/ext/drutil/CMakeFiles/drutil_drstatic.dir/drutil.c.o
+[ 74%] Building ASM object deps/dynamorio/ext/drwrap/CMakeFiles/drwrap_drstatic.dir/drwrap_asm_x86.asm.o
+[ 74%] Linking C static library ../lib64/release/libdrx_static.a
+[ 74%] Linking C static library ../lib64/release/libdrbbdup_static.a
+[ 74%] Linking C shared library ../lib64/release/libdrbbdup.so
+[ 74%] Built target drbbdup_static
+[ 74%] Built target drx_static
+[ 74%] Built target drbbdup
+[ 74%] Linking C shared library ../lib64/release/libdrx.so
+Scanning dependencies of target drcovlib_static
+[ 74%] Building C object deps/dynamorio/ext/drcovlib/CMakeFiles/drcovlib_static.dir/drcovlib.c.o
+[ 74%] Building C object deps/dynamorio/ext/drcovlib/CMakeFiles/drcovlib_static.dir/modules.c.o
+[ 74%] Linking C static library ../lib64/release/libdrutil_drstatic.a
+[ 74%] Built target drx
+Scanning dependencies of target opcode_count
+Scanning dependencies of target hot_bbcount
+Scanning dependencies of target instrace_x86_binary
+Scanning dependencies of target drcpusim
+Scanning dependencies of target instrace_simple
+Scanning dependencies of target bbsize
+Scanning dependencies of target bbcount
+Scanning dependencies of target drcovlib
+Scanning dependencies of target opcodes
+Scanning dependencies of target modxfer
+Scanning dependencies of target memtrace_x86_binary
+Scanning dependencies of target memtrace_simple
+Scanning dependencies of target memval_simple
+Scanning dependencies of target instrcalls
+Scanning dependencies of target instrace_x86_text
+Scanning dependencies of target bbbuf
+Scanning dependencies of target cbrtrace
+Scanning dependencies of target memtrace_x86_text
+[ 74%] Building C object deps/dynamorio/api/samples/CMakeFiles/hot_bbcount.dir/hot_bbcount.c.o
+[ 74%] Building C object deps/dynamorio/api/samples/CMakeFiles/instrace_x86_binary.dir/instrace_x86.c.o
+[ 74%] Building CXX object deps/dynamorio/api/samples/CMakeFiles/opcode_count.dir/opcode_count.cpp.o
+[ 74%] Building C object deps/dynamorio/api/samples/CMakeFiles/instrace_x86_binary.dir/utils.c.o
+[ 74%] Building CXX object deps/dynamorio/clients/drcpusim/CMakeFiles/drcpusim.dir/options.cpp.o
+[ 74%] Building CXX object deps/dynamorio/clients/drcpusim/CMakeFiles/drcpusim.dir/drcpusim.cpp.o
+[ 74%] Building C object deps/dynamorio/api/samples/CMakeFiles/instrace_simple.dir/instrace_simple.c.o
+[ 74%] Building C object deps/dynamorio/api/samples/CMakeFiles/bbsize.dir/bbsize.c.o
+[ 74%] Building C object deps/dynamorio/api/samples/CMakeFiles/bbcount.dir/bbcount.c.o
+[ 74%] Building C object deps/dynamorio/ext/drcovlib/CMakeFiles/drcovlib.dir/drcovlib.c.o
+[ 75%] Building C object deps/dynamorio/ext/drcovlib/CMakeFiles/drcovlib.dir/modules.c.o
+[ 75%] Building C object deps/dynamorio/api/samples/CMakeFiles/memtrace_simple.dir/utils.c.o
+[ 75%] Building C object deps/dynamorio/api/samples/CMakeFiles/modxfer.dir/utils.c.o
+[ 75%] Building C object deps/dynamorio/api/samples/CMakeFiles/instrace_simple.dir/utils.c.o
+[ 75%] Building C object deps/dynamorio/api/samples/CMakeFiles/modxfer.dir/modxfer.c.o
+[ 75%] Building C object deps/dynamorio/api/samples/CMakeFiles/opcodes.dir/opcodes.c.o
+[ 75%] Building C object deps/dynamorio/api/samples/CMakeFiles/memtrace_x86_binary.dir/utils.c.o
+[ 75%] Building C object deps/dynamorio/api/samples/CMakeFiles/instrace_x86_text.dir/instrace_x86.c.o
+[ 75%] Building C object deps/dynamorio/api/samples/CMakeFiles/instrcalls.dir/instrcalls.c.o
+[ 75%] Building C object deps/dynamorio/api/samples/CMakeFiles/memval_simple.dir/memval_simple.c.o
+[ 75%] Building C object deps/dynamorio/api/samples/CMakeFiles/memtrace_simple.dir/memtrace_simple.c.o
+[ 75%] Building C object deps/dynamorio/api/samples/CMakeFiles/instrace_x86_text.dir/utils.c.o
+[ 77%] Building C object deps/dynamorio/api/samples/CMakeFiles/cbrtrace.dir/cbrtrace.c.o
+[ 77%] Building C object deps/dynamorio/api/samples/CMakeFiles/bbbuf.dir/bbbuf.c.o
+[ 77%] Building C object deps/dynamorio/api/samples/CMakeFiles/memval_simple.dir/utils.c.o
+[ 77%] Building C object deps/dynamorio/api/samples/CMakeFiles/memtrace_x86_text.dir/utils.c.o
+[ 77%] Building C object deps/dynamorio/api/samples/CMakeFiles/memtrace_x86_text.dir/memtrace_x86.c.o
+[ 77%] Building C object deps/dynamorio/api/samples/CMakeFiles/cbrtrace.dir/utils.c.o
+[ 77%] Building C object deps/dynamorio/api/samples/CMakeFiles/memtrace_x86_binary.dir/memtrace_x86.c.o
+[ 77%] Building C object deps/dynamorio/api/samples/CMakeFiles/instrcalls.dir/utils.c.o
+[ 77%] Built target drutil_drstatic
+[ 77%] Linking C shared library ../bin/libbbsize.so
+[ 77%] Linking C shared library ../bin/libbbcount.so
+[ 77%] Linking C shared library ../bin/libbbbuf.so
+[ 77%] Linking C shared library ../bin/libcbrtrace.so
+[ 77%] Linking C shared library ../bin/libhot_bbcount.so
+[ 77%] Linking C shared library ../bin/libinstrcalls.so
+[ 77%] Linking C shared library ../bin/libopcodes.so
+[ 78%] Linking C shared library ../bin/libinstrace_x86_text.so
+[ 78%] Linking C shared library ../bin/libinstrace_x86_binary.so
+[ 78%] Linking CXX shared library ../bin/libcallstack.so
+[ 78%] Linking C shared library ../bin/libinstrace_simple.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libbbsize.so
+[ 78%] Linking C shared library ../bin/libmemtrace_x86_binary.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libbbcount.so
+[ 78%] Linking C static library ../lib64/release/libdrcovlib_static.a
+[ 78%] Built target bbsize
+[ 78%] Linking C shared library ../bin/libmemtrace_x86_text.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libbbbuf.so
+[ 79%] Linking C shared library ../bin/libmodxfer.so
+[ 79%] Built target bbcount
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libcbrtrace.so
+[ 79%] Linking C shared library ../bin/libmemval_simple.so
+[ 79%] Built target bbbuf
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libinstrcalls.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libhot_bbcount.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libopcodes.so
+[ 79%] Built target instrcalls
+[ 79%] Built target cbrtrace
+[ 79%] Built target opcodes
+[ 79%] Built target hot_bbcount
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libinstrace_x86_text.so
+[ 79%] Linking C shared library ../bin/libmemtrace_simple.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libinstrace_x86_binary.so
+[ 79%] Built target instrace_x86_text
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libinstrace_simple.so
+[ 79%] Built target instrace_x86_binary
+[ 79%] Linking C static library ../lib64/release/libdrwrap_drstatic.a
+[ 79%] Built target instrace_simple
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libmemtrace_x86_binary.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libmodxfer.so
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libmemtrace_x86_text.so
+[ 79%] Built target memtrace_x86_binary
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libmemval_simple.so
+[ 79%] Built target drcovlib_static
+[ 79%] Built target modxfer
+[ 79%] Built target memtrace_x86_text
+[ 79%] Built target memval_simple
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libmemtrace_simple.so
+Scanning dependencies of target drcov2lcov
+Scanning dependencies of target drmemtrace_decode_cache
+[ 79%] Built target memtrace_simple
+[ 79%] Building CXX object deps/dynamorio/clients/drcov/CMakeFiles/drcov2lcov.dir/postprocess/drcov2lcov.cpp.o
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libcallstack.so
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_decode_cache.dir/tools/common/decode_cache.cpp.o
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_decode_cache.dir/tracer/raw2trace_shared.cpp.o
+[ 79%] Built target callstack
+[ 79%] Built target drwrap_drstatic
+Scanning dependencies of target drmemtrace_static
+Scanning dependencies of target drmemtrace_nomain
+[ 79%] Linking C shared library ../lib64/release/libdrcovlib.so
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/tracer/tracer.cpp.o
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/tracer/instr_counter.cpp.o
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/tracer/output.cpp.o
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/tracer/physaddr.cpp.o
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/tracer/instru.cpp.o
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/tracer/instru_online.cpp.o
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/tracer/instru_online.cpp.o
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/tracer/instr_counter.cpp.o
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/tracer/instru.cpp.o
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/tracer/tracer.cpp.o
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/tracer/output.cpp.o
+[ 79%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/tracer/instru_offline.cpp.o
+[ 80%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/tracer/instru_offline.cpp.o
+[ 80%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/tracer/func_trace.cpp.o
+[ 80%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/common/named_pipe_unix.cpp.o
+[ 80%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/tracer/raw2trace_shared.cpp.o
+[ 80%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/tracer/func_trace.cpp.o
+[ 80%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/tracer/physaddr.cpp.o
+[ 80%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/tracer/raw2trace_shared.cpp.o
+[ 80%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/tracer/snappy_file_writer.cpp.o
+[ 80%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/tracer/syscall_pt_trace.cpp.o
+[ 80%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/tracer/syscall_pt_trace.cpp.o
+[ 80%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/common/trace_entry.cpp.o
+[ 81%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/common/options.cpp.o
+[ 81%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/common/options.cpp.o
+[ 81%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/tracer/kcore_copy.cpp.o
+[ 80%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/common/named_pipe_unix.cpp.o
+[ 81%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/tracer/snappy_file_writer.cpp.o
+[ 81%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/common/snappy_consts.cpp.o
+[ 81%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/tracer/kcore_copy.cpp.o
+[ 81%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/common/crc32c.cpp.o
+[ 81%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/common/trace_entry.cpp.o
+[ 81%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_static.dir/common/snappy_consts.cpp.o
+[ 81%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_nomain.dir/common/crc32c.cpp.o
+[ 82%] Linking CXX executable ../../bin64/drpt2trace
+[ 82%] Built target drcovlib
+[ 82%] Linking C static library ../lib64/release/libdrreg_drstatic.a
+Scanning dependencies of target drcov
+[ 82%] Building C object deps/dynamorio/clients/drcov/CMakeFiles/drcov.dir/drcov.c.o
+Scanning dependencies of target drmemtrace
+[ 82%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/tracer/output.cpp.o
+[ 82%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/tracer/tracer.cpp.o
+[ 82%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/tracer/instru_offline.cpp.o
+[ 82%] Built target drreg_drstatic
+[ 82%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/tracer/instr_counter.cpp.o
+[ 82%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/tracer/instru.cpp.o
+[ 82%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/tracer/instru_online.cpp.o
+Scanning dependencies of target drx_drstatic
+Scanning dependencies of target drbbdup_drstatic
+[ 82%] Building C object deps/dynamorio/ext/drx/CMakeFiles/drx_drstatic.dir/scatter_gather_shared.c.o
+[ 82%] Building C object deps/dynamorio/ext/drx/CMakeFiles/drx_drstatic.dir/drx_buf.c.o
+[ 82%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/tracer/physaddr.cpp.o
+Scanning dependencies of target drstatecmp_drstatic
+[ 83%] Building C object deps/dynamorio/ext/drx/CMakeFiles/drx_drstatic.dir/drx.c.o
+[ 83%] Building C object deps/dynamorio/ext/drx/CMakeFiles/drx_drstatic.dir/scatter_gather_x86.c.o
+[ 83%] Building C object deps/dynamorio/ext/drbbdup/CMakeFiles/drbbdup_drstatic.dir/drbbdup.c.o
+[ 83%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/tracer/raw2trace_shared.cpp.o
+[ 83%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/tracer/func_trace.cpp.o
+[ 83%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/common/options.cpp.o
+[ 83%] Linking C shared library ../lib64/release/libdrcov.so
+[ 83%] Building C object deps/dynamorio/ext/drstatecmp/CMakeFiles/drstatecmp_drstatic.dir/drstatecmp.c.o
+[ 84%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/common/named_pipe_unix.cpp.o
+[ 84%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/tracer/syscall_pt_trace.cpp.o
+[ 84%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/common/trace_entry.cpp.o
+[ 84%] Built target drpt2trace
+[ 84%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/tracer/kcore_copy.cpp.o
+[ 84%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/tracer/snappy_file_writer.cpp.o
+[ 84%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/common/snappy_consts.cpp.o
+[ 84%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace.dir/common/crc32c.cpp.o
+Usage: pass to drconfig or drrun: -t drcov
+[ 84%] Built target drcov
+[ 84%] Linking C static library ../lib64/release/libdrstatecmp_drstatic.a
+[ 84%] Built target drstatecmp_drstatic
+[ 84%] Linking CXX shared library ../bin/libopcode_count.so
+[ 85%] Linking C static library ../lib64/release/libdrbbdup_drstatic.a
+[ 85%] Linking C static library ../lib64/release/libdrx_drstatic.a
+[ 85%] Built target drbbdup_drstatic
+[ 85%] Linking CXX static library ../lib64/release/libdrmemtrace_record_filter.a
+[ 85%] Built target drx_drstatic
+Usage: pass to drconfig or drrun: -c /scarab/src/build/opt/deps/dynamorio/api/samples/../bin/libopcode_count.so
+[ 85%] Built target opcode_count
+Scanning dependencies of target drcovlib_drstatic
+[ 85%] Building C object deps/dynamorio/ext/drcovlib/CMakeFiles/drcovlib_drstatic.dir/modules.c.o
+[ 85%] Building C object deps/dynamorio/ext/drcovlib/CMakeFiles/drcovlib_drstatic.dir/drcovlib.c.o
+[ 85%] Linking CXX shared library ../lib64/release/libdrcpusim.so
+[ 85%] Built target drmemtrace_record_filter
+Usage: pass to drconfig or drrun: -t drcpusim
+[ 85%] Built target drcpusim
+[ 85%] Linking C static library ../lib64/release/libdrcovlib_drstatic.a
+[ 85%] Built target drcovlib_drstatic
+Scanning dependencies of target drmemtrace_drstatic
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/tracer/tracer.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/tracer/instr_counter.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/tracer/instru.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/common/trace_entry.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/tracer/instru_offline.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/tracer/output.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/tracer/physaddr.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/tracer/raw2trace_shared.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/common/named_pipe_unix.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/common/options.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/tracer/instru_online.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/common/snappy_consts.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/tracer/func_trace.cpp.o
+[ 86%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/tracer/kcore_copy.cpp.o
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/common/crc32c.cpp.o
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/tracer/snappy_file_writer.cpp.o
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_drstatic.dir/tracer/syscall_pt_trace.cpp.o
+[ 87%] Linking CXX static library ../lib64/release/libdrmemtrace_decode_cache.a
+[ 87%] Built target drmemtrace_decode_cache
+Scanning dependencies of target drmemtrace_opcode_mix
+Scanning dependencies of target drmemtrace_invariant_checker
+Scanning dependencies of target drmemtrace_view
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_opcode_mix.dir/tools/opcode_mix.cpp.o
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_invariant_checker.dir/tools/invariant_checker.cpp.o
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_view.dir/tracer/raw2trace_shared.cpp.o
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_view.dir/tools/view.cpp.o
+[ 87%] Linking CXX executable ../bin64/drcov2lcov
+Make sure the loader finds the dynamorio library (set LD_LIBRARY_PATH)
+[ 87%] Built target drcov2lcov
+[ 87%] Linking CXX static library ../lib64/release/libdrmemtrace_raw2trace.a
+[ 87%] Linking CXX static library ../lib64/release/libdrmemtrace_view.a
+[ 87%] Linking CXX executable ../bin64/drcachesim_ops
+[ 87%] Built target drmemtrace_view
+[ 87%] Built target drmemtrace_raw2trace
+[ 87%] Linking CXX static library ../lib64/release/libdrmemtrace_opcode_mix.a
+Scanning dependencies of target drraw2trace
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drraw2trace.dir/tracer/instru.cpp.o
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drraw2trace.dir/tracer/raw2trace_launcher.cpp.o
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drraw2trace.dir/tracer/instru_online.cpp.o
+[ 87%] Built target drmemtrace_opcode_mix
+[ 87%] Built target drcachesim_ops
+[ 87%] Linking CXX static library ../lib64/release/libdrmemtrace_invariant_checker.a
+[ 87%] Built target drmemtrace_invariant_checker
+Scanning dependencies of target drmemtrace_launcher
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/scheduler/scheduler_dynamic.cpp.o
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/launcher.cpp.o
+[ 87%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/scheduler/scheduler.cpp.o
+[ 88%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/scheduler/scheduler_impl.cpp.o
+[ 88%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/analyzer_multi.cpp.o
+[ 88%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/analyzer.cpp.o
+[ 88%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/scheduler/scheduler_fixed.cpp.o
+[ 88%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/common/trace_entry.cpp.o
+[ 88%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/common/options.cpp.o
+[ 88%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/scheduler/scheduler_replay.cpp.o
+[ 88%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/scheduler/speculator.cpp.o
+[ 88%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/reader/v2p_reader.cpp.o
+[ 88%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/common/named_pipe_unix.cpp.o
+[ 88%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/common/snappy_consts.cpp.o
+[ 88%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/reader/config_reader.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/reader/record_file_reader.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/common/crc32c.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/reader/zipfile_file_reader.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/reader/snappy_file_reader.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/reader/ipc_reader.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/reader/lz4_file_reader.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/tracer/instru.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/reader/reader.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/reader/compressed_file_reader.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/reader/file_reader.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/tools/loader/external_tool_creator.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/tracer/instru_online.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/tools/loader/dynamic_lib.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/drmemtrace_launcher.dir/tools/loader/external_config_file.cpp.o
+[ 89%] Linking CXX static library ../lib64/release/libdrmemtrace_analyzer.a
+[ 89%] Built target drmemtrace_analyzer
+Scanning dependencies of target opcode_mix_launcher
+Scanning dependencies of target empty_launcher
+Scanning dependencies of target scheduler_launcher
+Scanning dependencies of target record_filter_launcher
+Scanning dependencies of target prefetch_analyzer_launcher
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/opcode_mix_launcher.dir/tools/opcode_mix_launcher.cpp.o
+Scanning dependencies of target histogram_launcher
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/prefetch_analyzer_launcher.dir/tests/prefetch_analyzer.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/tools/external/example/CMakeFiles/empty_launcher.dir/empty_launcher.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/scheduler_launcher.dir/tests/test_helpers.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/scheduler_launcher.dir/tests/scheduler_launcher.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/prefetch_analyzer_launcher.dir/tests/prefetch_analyzer_launcher.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/record_filter_launcher.dir/tools/record_filter_launcher.cpp.o
+[ 89%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/prefetch_analyzer_launcher.dir/tests/test_helpers.cpp.o
+[ 90%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/record_filter_launcher.dir/tests/test_helpers.cpp.o
+[ 90%] Building CXX object deps/dynamorio/clients/drcachesim/CMakeFiles/histogram_launcher.dir/tools/histogram_launcher.cpp.o
+[ 90%] Linking CXX executable ../bin64/drraw2trace
+[ 90%] Linking CXX executable ../../../../bin64/empty_launcher
+[ 90%] Built target drraw2trace
+[ 90%] Built target empty_launcher
+[ 91%] Linking CXX executable ../bin64/prefetch_analyzer_launcher
+[ 91%] Linking CXX executable ../bin64/opcode_mix_launcher
+[ 91%] Built target prefetch_analyzer_launcher
+[ 91%] Linking CXX executable ../bin64/record_filter_launcher
+[ 91%] Linking CXX executable ../bin64/histogram_launcher
+[ 91%] Built target opcode_mix_launcher
+[ 91%] Built target histogram_launcher
+[ 91%] Built target record_filter_launcher
+[ 91%] Linking CXX executable ../bin64/scheduler_launcher
+[ 91%] Built target scheduler_launcher
+[ 91%] Linking CXX static library ../lib64/release/libdrmemtrace_static.a
+[ 91%] Linking CXX shared library ../lib64/release/libdrmemtrace.so
+[ 91%] Linking CXX static library ../lib64/release/libdrmemtrace_nomain.a
+[ 91%] Built target drmemtrace_static
+Usage: pass to drconfig or drrun: -t drmemtrace
+[ 91%] Built target drmemtrace
+[ 91%] Built target drmemtrace_nomain
+[ 91%] Linking CXX static library ../lib64/release/libdrmemtrace_drstatic.a
+[ 91%] Built target drmemtrace_drstatic
+[ 91%] Linking CXX executable ../bin64/drmemtrace_launcher
+[ 91%] Built target drmemtrace_launcher
+[ 91%] Linking CXX static library libramulator.a
+[ 91%] Built target ramulator
+Scanning dependencies of target scarab
+[ 91%] Building CXX object CMakeFiles/scarab.dir/bp/bimodal.cc.o
+[ 91%] Building C object CMakeFiles/scarab.dir/bp/bp.c.o
+[ 91%] Building C object CMakeFiles/scarab.dir/bp/bp_conf.c.o
+[ 91%] Building C object CMakeFiles/scarab.dir/bp/bp_targ_mech.c.o
+[ 91%] Building CXX object CMakeFiles/scarab.dir/bp/hybridgp.cc.o
+[ 91%] Building CXX object CMakeFiles/scarab.dir/bp/cbp_tagescl_64k.cc.o
+[ 91%] Building CXX object CMakeFiles/scarab.dir/bp/mtage_unlimited.cc.o
+[ 91%] Building CXX object CMakeFiles/scarab.dir/bp/tagescl.cc.o
+[ 92%] Building CXX object CMakeFiles/scarab.dir/bp/gshare.cc.o
+[ 92%] Building C object CMakeFiles/scarab.dir/debug/debug_print.c.o
+[ 92%] Building CXX object CMakeFiles/scarab.dir/bp/cbp_to_scarab.cc.o
+[ 92%] Building C object CMakeFiles/scarab.dir/debug/pipeview.c.o
+[ 92%] Building C object CMakeFiles/scarab.dir/debug/memview.c.o
+[ 92%] Building C object CMakeFiles/scarab.dir/dvfs/perf_pred.c.o
+[ 92%] Building C object CMakeFiles/scarab.dir/dvfs/power_pred.c.o
+[ 92%] Building C object CMakeFiles/scarab.dir/dvfs/dvfs.c.o
+[ 92%] Building CXX object CMakeFiles/scarab.dir/frontend/pin_trace_read.cc.o
+[ 93%] Building C object CMakeFiles/scarab.dir/frontend/frontend.c.o
+[ 93%] Building C object CMakeFiles/scarab.dir/frontend/pin_trace_fe.c.o
+[ 93%] Building CXX object CMakeFiles/scarab.dir/frontend/pin_exec_driven_fe.cc.o
+[ 93%] Building C object CMakeFiles/scarab.dir/globals/enum.c.o
+[ 93%] Building C object CMakeFiles/scarab.dir/frontend/frontend_intf.c.o
+[ 93%] Building C object CMakeFiles/scarab.dir/globals/utils.c.o
+[ 93%] Building C object CMakeFiles/scarab.dir/ideal-fusion/ideal_fusion.c.o
+[ 93%] Building C object CMakeFiles/scarab.dir/isa/isa.c.o
+[ 93%] Building C object CMakeFiles/scarab.dir/libs/cache_lib.c.o
+[ 93%] Building CXX object CMakeFiles/scarab.dir/libs/cpp_hash_lib_wrapper.cc.o
+[ 93%] Building C object CMakeFiles/scarab.dir/libs/port_lib.c.o
+[ 94%] Building C object CMakeFiles/scarab.dir/libs/malloc_lib.c.o
+[ 94%] Building C object CMakeFiles/scarab.dir/libs/hash_lib.c.o
+[ 94%] Building C object CMakeFiles/scarab.dir/libs/list_lib.c.o
+[ 94%] Building C object CMakeFiles/scarab.dir/memory/cache_part.c.o
+[ 94%] Building C object CMakeFiles/scarab.dir/memory/mem_req.c.o
+[ 94%] Building C object CMakeFiles/scarab.dir/memory/memory.c.o
+[ 94%] Building CXX object CMakeFiles/scarab.dir/prefetcher/D_JOLT.cc.o
+[ 94%] Building CXX object CMakeFiles/scarab.dir/power/power_scarab_config.cc.o
+[ 94%] Building C object CMakeFiles/scarab.dir/prefetcher/branch_misprediction_table.c.o
+[ 94%] Building C object CMakeFiles/scarab.dir/power/power_intf.c.o
+[ 94%] Building CXX object CMakeFiles/scarab.dir/prefetcher/FNL+MMA.cc.o
+[ 94%] Building CXX object CMakeFiles/scarab.dir/prefetcher/eip.cc.o
+[ 94%] Building C object CMakeFiles/scarab.dir/prefetcher/l2markv_pref.c.o
+[ 95%] Building C object CMakeFiles/scarab.dir/prefetcher/l2l1pref.c.o
+[ 95%] Building CXX object CMakeFiles/scarab.dir/prefetcher/fdip.cc.o
+[ 95%] Building C object CMakeFiles/scarab.dir/prefetcher/pref_common.c.o
+[ 95%] Building C object CMakeFiles/scarab.dir/prefetcher/pref_2dc.c.o
+[ 95%] Building C object CMakeFiles/scarab.dir/prefetcher/l2way_pref.c.o
+[ 95%] Building C object CMakeFiles/scarab.dir/prefetcher/pref_markov.c.o
+[ 95%] Building C object CMakeFiles/scarab.dir/prefetcher/pref_ghb.c.o
+[ 95%] Building C object CMakeFiles/scarab.dir/prefetcher/pref_phase.c.o
+[ 95%] Building C object CMakeFiles/scarab.dir/prefetcher/pref_stream.c.o
+[ 95%] Building C object CMakeFiles/scarab.dir/prefetcher/pref_stride.c.o
+[ 96%] Building C object CMakeFiles/scarab.dir/prefetcher/pref_stridepc.c.o
+[ 96%] Building C object CMakeFiles/scarab.dir/prefetcher/stream_pref.c.o
+[ 96%] Building CXX object CMakeFiles/scarab.dir/prefetcher/udp.cc.o
+[ 96%] Building CXX object CMakeFiles/scarab.dir/prefetcher/uftq.cc.o
+[ 96%] Building CXX object CMakeFiles/scarab.dir/confidence/btb_miss_bp_taken_conf.cc.o
+[ 96%] Building CXX object CMakeFiles/scarab.dir/confidence/conf.cc.o
+[ 96%] Building C object CMakeFiles/scarab.dir/cmp_model.c.o
+[ 96%] Building CXX object CMakeFiles/scarab.dir/confidence/weight_conf.cc.o
+[ 96%] Building C object CMakeFiles/scarab.dir/addr_trans.c.o
+[ 96%] Building C object CMakeFiles/scarab.dir/dcache_stage.c.o
+[ 97%] Building C object CMakeFiles/scarab.dir/decode_stage.c.o
+[ 97%] Building CXX object CMakeFiles/scarab.dir/decoupled_frontend.cc.o
+[ 97%] Building C object CMakeFiles/scarab.dir/cmp_model_support.c.o
+[ 97%] Building C object CMakeFiles/scarab.dir/exec_stage.c.o
+[ 97%] Building C object CMakeFiles/scarab.dir/dumb_model.c.o
+[ 97%] Building C object CMakeFiles/scarab.dir/freq.c.o
+[ 97%] Building C object CMakeFiles/scarab.dir/exec_ports.c.o
+[ 97%] Building CXX object CMakeFiles/scarab.dir/ft_op_buffer.cc.o
+[ 97%] Building CXX object CMakeFiles/scarab.dir/ft.cc.o
+[ 97%] Building C object CMakeFiles/scarab.dir/icache_stage.c.o
+[ 97%] Building CXX object CMakeFiles/scarab.dir/issue_queue.cc.o
+[ 97%] Building CXX object CMakeFiles/scarab.dir/lookahead_buffer.cc.o
+[ 97%] Building CXX object CMakeFiles/scarab.dir/idq_stage.cc.o
+[ 98%] Building CXX object CMakeFiles/scarab.dir/lsq.cc.o
+[ 98%] Building C object CMakeFiles/scarab.dir/main.c.o
+[ 98%] Building C object CMakeFiles/scarab.dir/map_rename.c.o
+[ 98%] Building C object CMakeFiles/scarab.dir/map_stage.c.o
+[ 98%] Building C object CMakeFiles/scarab.dir/map.c.o
+[ 98%] Building C object CMakeFiles/scarab.dir/node_stage.c.o
+[ 98%] Building C object CMakeFiles/scarab.dir/op_pool.c.o
+[ 98%] Building C object CMakeFiles/scarab.dir/op_info.c.o
+[ 98%] Building C object CMakeFiles/scarab.dir/optimizer2.c.o
+[ 98%] Building CXX object CMakeFiles/scarab.dir/ramulator.cc.o
+[ 98%] Building C object CMakeFiles/scarab.dir/param_parser.c.o
+[ 99%] Building C object CMakeFiles/scarab.dir/sim.c.o
+[ 99%] Building C object CMakeFiles/scarab.dir/statistics.c.o
+[ 99%] Building C object CMakeFiles/scarab.dir/stat_trace.c.o
+[ 99%] Building C object CMakeFiles/scarab.dir/stat_mon.c.o
+[ 99%] Building C object CMakeFiles/scarab.dir/thread.c.o
+[ 99%] Building C object CMakeFiles/scarab.dir/trigger.c.o
+[ 99%] Building C object CMakeFiles/scarab.dir/topdown.c.o
+[ 99%] Building CXX object CMakeFiles/scarab.dir/uop_cache.cc.o
+[ 99%] Building CXX object CMakeFiles/scarab.dir/uop_queue_stage.cc.o
+[ 99%] Building C object CMakeFiles/scarab.dir/version.c.o
+[ 99%] Building CXX object CMakeFiles/scarab.dir/frontend/pt_memtrace/memtrace_fe.cc.o
+[100%] Building CXX object CMakeFiles/scarab.dir/frontend/pt_memtrace/memtrace_trace_reader_memtrace.cc.o
+[100%] Building CXX object CMakeFiles/scarab.dir/frontend/pt_memtrace/memtrace_trace_reader.cc.o
+[100%] Building CXX object CMakeFiles/scarab.dir/frontend/pt_memtrace/pt_fe.cc.o
+[100%] Building CXX object CMakeFiles/scarab.dir/frontend/pt_memtrace/trace_fe.cc.o
+[100%] Linking CXX executable scarab
+[100%] Built target scarab
+ln -sf build/opt/scarab scarab
+$ git rev-parse --short HEAD
+
+==> Build Scarab
+   Descriptor: ideal_fusion_pass1_available.json
+   Mode: make opt
+   Scarab path: /users/deepmish/scarab
+WARN: Scarab repo binary not found at /users/deepmish/scarab/src/build/opt/scarab; rebuilding.
+INFO: Rebuild reason(s): scarab repo binary not found at /users/deepmish/scarab/src/build/opt/scarab
+Rebuilding Scarab binary...
+Binaries matching current githash: ['scarab_740c40604.opt']
+Versions matching current githash: ['scarab_740c40604.opt']
+New index: 1
+Scarab build successful!
+   Scarab build completed successfully.

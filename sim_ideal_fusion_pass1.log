@@ -1,0 +1,94 @@
+Untagged: allbench_traces:bc6f831
+Deleted: sha256:4c6bdffe86a1814b1523fa559435dce567f09e0c8055b35be618aca3c8f6c232
+Deleted: sha256:6dac15dfb70ddfd53060d58833f87c7582bcd78527413d50c8ffedbb4a7bf4cf
+Deleted: sha256:84b084f6d7b3d9eb54d3a114101ee7ab42a9cb274c4f600b81d20356f76435ac
+Deleted: sha256:b1856c7661b27a69c2ff56d9d8df6273d86412a70b35ef9fac498ca0ce2c77e9
+Deleted: sha256:78de4c74f31b4c2e01af2dc71d47df369bf36322cb206b584ba697830d07ba36
+Deleted: sha256:83c46fb95af3f1f235c8ccc82211aef8cbdc833521a6dfe0c127da4518acfc13
+Deleted: sha256:45bc92df641fa9086fc2ae537d4a8a026c6636012eebe23af83bedfc1fa9f277
+Deleted: sha256:330c85b1868a2cc5c51a147f9090d8e809ff43c6495277844e4286de7c788354
+Deleted: sha256:3497739e5956d10f4b19aadf2dce7060ec66c4f5d020a91ae979b9d10321cd18
+Deleted: sha256:71b362c2e7f1a571f94ed7973780d05f8ec26a0b74b0534b8f773caf779ca07c
+Deleted: sha256:95bdea065b9ca5158394d99a4a4d717d6f73d5340ef9a4c4f521dd83576d732e
+Deleted: sha256:372f796f46f4b0495db4d66897e59edef5a3134778ca78ee5752328c61d0c802
+Deleted: sha256:12b86df399f6715731a113ed176542526c078e6435f30ffbb7f56e384bf327c0
+Deleted: sha256:3e36a5153f4d074c53de88860bf3da88d94cc09964204cfa19ed76af5d25faae
+Deleted: sha256:69030d0074b931e9c775025d833e64f2413a4e43f7901207a421bdf4d1e06438
+Deleted: sha256:9395965d4b8a8cec5d09d66307a3ab981a784fa82ebd072b3f7814c820623057
+Deleted: sha256:59164b2d82215be99f583e4f75e2d4d892d6fbdfa0b89c8150f8f406c165e51e
+Deleted: sha256:77005f35a44cd32417c45693c7a9547c81eda9bc9692c919783f99c958636616
+Deleted: sha256:d4b797c494ddd7559863d95525f94f7f3055556f1b4cabd7e054ed59564d8bb8
+Deleted: sha256:a87dab3e685644ddc237379d988cff6701752982e9ea6bae19f8d74a507bc87f
+Deleted: sha256:a4e018eec7a51c728d1d338f8dfe98f697984abe7d0182e94b265704c2b6656f
+Deleted: sha256:574f7de25cd348243fc4b4f5e914408dd29aad1a39556d2d462ac5c8f6def478
+Deleted: sha256:d0b5ac43344d231519cabe18d389bf96d836bad625d2e756026882bfea20492d
+Deleted: sha256:24a893c5bcdfde1c7b3b6b05cbd21b2fbf6c7e94418b0439bbf08f415e934edd
+Deleted: sha256:09cff6e8130125bdd6bc2b839261a47e0112f00dbec67b14daa2b8d5306c34cd
+Deleted: sha256:98da77bae160549f5a818b9577f34f6a593835de50b654e22fcf44178fcdbab8
+Deleted: sha256:7dd58105b7bafe84fc129476d4eadde4f1eaf052576bf619d071939a3b9a8f4b
+Deleted: sha256:a71d2b866a1607f946a050a176cc4ed5eddb653a3c26b6b9a42d4abd34c5991a
+Deleted: sha256:0aa37e30a8c59838d4d4d32770af7664e99e26525ebf957affeff248985e7e99
+Deleted: sha256:5d5323121dc4bc3aced9dc98f6709d8e70762c8b63a25b19bc2e70888ab05b62
+Deleted: sha256:0044d74d5fa913eee04373593b23b534d649dc4ab3dda0ae6e6f3af0eaea2c2f
+Deleted: sha256:a25c34b26f786f471dea7de3e961e8231b4d8f81c894686f3af56048bf8c545f
+Deleted: sha256:901456149fccb2b710b9984c8178074e7c7b34637af56619a280f1693ca27638
+Deleted: sha256:bbc4518c4dcfa345c154d6a068df6fbd498fd9d58bccaee8c066b88fc70f35f4
+Deleted: sha256:ee674a7f95e0d72da5534b1cb981668defae49a7ffb4665dc20622e5c9921c6f
+Deleted: sha256:7ba10af9992c37abc477ede605912bd721d9a8da109cd11608adc4c10107656f
+Deleted: sha256:de8d862505e920469b9ad36a586d088179fc7a2a4e270f134526638b7e16d68a
+Deleted: sha256:f314733498dea5d51b192bc7b34bf10523fb468d93a6af24ed466d13308620c2
+Deleted: sha256:0d0cc34c1bb472520afb73777e51b840299a36a50930ee4d88361324135f7356
+['allbench_traces:bc6f831']
+[None]
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/appworld/5//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/appworld/9//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/appworld/4//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/bfs/94//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/bfs/103//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/bfs/96//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/bfs/17//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/dfs/8//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/dfs/28//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/dfs/96//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/dfs/94//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/pagerank/97//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/pagerank/94//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/pagerank/91//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/pagerank/107//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/pagerank/99//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/core_bench/4//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/core_bench/9//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/core_bench/8//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/terminal_bench/12//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/terminal_bench/5//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/duckdb/5//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/duckdb/6//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/rocksdb/10//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/rocksdb/7//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/rocksdb/9//bp.stat.0.csv
+WARN: Couldn't find csv file /users/deepmish/scarab/src/simulations/ideal-fusion-pass1/pass1/datacenter/datacenter/clickhouse/17//bp.stat.0.csv
+WARN: The following simpoints were not found, and will be ignored for ALL configs:
+WARN: datacenter/datacenter/appworld:4, datacenter/datacenter/appworld:5, datacenter/datacenter/appworld:9, datacenter/datacenter/bfs:103, datacenter/datacenter/bfs:17, datacenter/datacenter/bfs:94, datacenter/datacenter/bfs:96, datacenter/datacenter/clickhouse:17, datacenter/datacenter/core_bench:4, datacenter/datacenter/core_bench:8, datacenter/datacenter/core_bench:9, datacenter/datacenter/dfs:28, datacenter/datacenter/dfs:8, datacenter/datacenter/dfs:94, datacenter/datacenter/dfs:96, datacenter/datacenter/duckdb:5, datacenter/datacenter/duckdb:6, datacenter/datacenter/pagerank:107, datacenter/datacenter/pagerank:91, datacenter/datacenter/pagerank:94, datacenter/datacenter/pagerank:97, datacenter/datacenter/pagerank:99, datacenter/datacenter/rocksdb:10, datacenter/datacenter/rocksdb:7, datacenter/datacenter/rocksdb:9, datacenter/datacenter/terminal_bench:12, datacenter/datacenter/terminal_bench:5
+Traceback (most recent call last):
+  File "/users/deepmish/scarab-infra/scarab_stats/stat_collector.py", line 88, in <module>
+    main()
+  File "/users/deepmish/scarab-infra/scarab_stats/stat_collector.py", line 75, in main
+    written = da.write_experiment_csv_numpy(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/users/deepmish/scarab-infra/scarab_stats/scarab_stats.py", line 898, in write_experiment_csv_numpy
+    raise RuntimeError("Descriptor expands to zero simulation runs; nothing to collect.")
+RuntimeError: Descriptor expands to zero simulation runs; nothing to collect.
+Experiment '/users/deepmish/scarab/src/simulations/ideal-fusion-pass1' already exists. It will overwrite the existing simulation results!
+[datacenter, datacenter, appworld, None, memtrace] is a valid simulation option.
+[datacenter, datacenter, bfs, None, memtrace] is a valid simulation option.
+[datacenter, datacenter, dfs, None, memtrace] is a valid simulation option.
+[datacenter, datacenter, pagerank, None, memtrace] is a valid simulation option.
+[datacenter, datacenter, core_bench, None, memtrace] is a valid simulation option.
+[datacenter, datacenter, terminal_bench, None, memtrace] is a valid simulation option.
+[datacenter, datacenter, duckdb, None, memtrace] is a valid simulation option.
+[datacenter, datacenter, rocksdb, None, memtrace] is a valid simulation option.
+[datacenter, datacenter, clickhouse, None, memtrace] is a valid simulation option.
+Found recent Scarab binary, no build required
+Submitting jobs...
+Wait processes...
+scripts/docker_cleaner.py --images allbench_traces:bc6f831

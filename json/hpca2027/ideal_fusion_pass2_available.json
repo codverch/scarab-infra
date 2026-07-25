@@ -1,0 +1,76 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "ideal-fusion-pass2",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/scarab/src",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline/simpoint_traces",
+  "workload_db": "baseline.json",
+  "top_simpoint": false,
+  "_comment": "Subset with locally available traces only (9 apps, 27 simpoints). Requires pass-1 candidates.",
+  "simulations": [
+    {
+      "suite": "datacenter",
+      "subsuite": "datacenter",
+      "workload": [
+        "appworld",
+        "bfs",
+        "dfs",
+        "pagerank",
+        "core_bench",
+        "terminal_bench",
+        "duckdb",
+        "rocksdb",
+        "clickhouse"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "pass2": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --ideal_fusion_pass 2 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{workload}/{cluster_id}.csv",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": [
+      "pass2"
+    ]
+  },
+  "visualize": {
+    "baseline": "pass2",
+    "configs": [],
+    "counters": [
+      "IPC"
+    ],
+    "average": false
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 16384
+  },
+  "perf_analyze": {
+    "baseline": "pass2",
+    "counters": [
+      "IPC"
+    ],
+    "stat_groups": [
+      "bp",
+      "fetch",
+      "core"
+    ],
+    "compare_all_stats": false,
+    "drift_top_workloads": 4,
+    "drift_top_simpoints": 5,
+    "prompt_budget_tokens": 12000,
+    "threshold_pct": 2.0,
+    "analyzer_cli_cmd": "codex"
+  }
+}

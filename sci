@@ -1212,7 +1212,7 @@ def ensure_traces(_: argparse.Namespace) -> Tuple[bool, str]:
 
     use_top_requested = confirm(
         "Download only the top 3 simpoints from workloads_top_simp.json? (Choose 'No' for all simpoints)",
-        default=True,
+        default=False,  # SCARAB_NONINTERACTIVE_TRACE_DEFAULT
     )
     use_top_three = bool(workloads_top) and use_top_requested
     if use_top_requested and not workloads_top:
