@@ -49,10 +49,17 @@ if str(GRAPH_DIR) not in sys.path:
     sys.path.insert(0, str(GRAPH_DIR))
 
 from plot_ipc import (  # noqa: E402
+    BAR_EDGE_WIDTH,
+    BAR_WIDTH,
     DEFAULT_RESULTS_ROOT,
     DEFAULT_TRACE_ROOT,
     FONT_FAMILY,
     IDEAL_FUSION_COLOR,
+    IPC_AXIS_FONT,
+    IPC_AXIS_LABEL_FONT,
+    IPC_LEGEND_FONT,
+    IPC_TICK_FONT,
+    SIMPOINT_WORKLOADS,
     load_simpoint_trace_weights,
     rename_workload,
 )
@@ -87,6 +94,31 @@ CSV_NAMES = [
 
 HIGHLY_PREDICTABLE_THRESHOLD = 0.95
 PREDICTABLE_THRESHOLD = 0.80
+
+# Styling aligned with hpca2027-characterization/plot_topdown_backend_stalls.py
+PREDICTABILITY_BAR_COLOR = "#017E7C"
+BACKEND_STALLS_BAR_WIDTH = 0.40
+BACKEND_STALLS_BAR_EDGE_WIDTH = 3.0
+BACKEND_STALLS_AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
+BACKEND_STALLS_AVERAGE_SEPARATOR_WIDTH = 3.5
+BACKEND_STALLS_FIGSIZE = (24.0, 6.5)
+BACKEND_STALLS_Y_LABEL_PAD = 20
+NOTO_SERIF_FONT_DIR = Path.home() / ".local/share/fonts" / "noto-serif"
+_noto_serif_registered = False
+
+
+def _ensure_noto_serif() -> None:
+    """Register user-local Noto Serif TTFs so matplotlib can render FONT_FAMILY."""
+    global _noto_serif_registered
+    if _noto_serif_registered:
+        return
+    import matplotlib.font_manager as fm
+
+    for name in ("NotoSerif-Regular.ttf", "NotoSerif-Bold.ttf"):
+        font_path = NOTO_SERIF_FONT_DIR / name
+        if font_path.is_file():
+            fm.fontManager.addfont(str(font_path))
+    _noto_serif_registered = True
 
 
 @dataclass(frozen=True)
@@ -227,6 +259,7 @@ def compute_workload_pairs(
 class WorkloadReport:
     workload: str
     num_pairs: int
+    single_delta_frac: float
     delta_highly_predictable_frac: float
     delta_predictable_or_better_frac: float
     size_highly_predictable_frac: float
@@ -255,9 +288,11 @@ def summarize_workload(workload: str, pairs: list[PairAccuracy]) -> WorkloadRepo
     delta_acc = [p.delta_accuracy for p in pairs]
     size_acc = [p.size_accuracy for p in pairs]
     dyn_weights = [p.dynamic_weight for p in pairs]
+    single_delta = sum(1 for p in pairs if p.raw_unique_deltas == 1)
     return WorkloadReport(
         workload=workload,
         num_pairs=len(pairs),
+        single_delta_frac=single_delta / len(pairs) if pairs else float("nan"),
         delta_highly_predictable_frac=fraction_at_least(delta_acc, HIGHLY_PREDICTABLE_THRESHOLD),
         delta_predictable_or_better_frac=fraction_at_least(delta_acc, PREDICTABLE_THRESHOLD),
         size_highly_predictable_frac=fraction_at_least(size_acc, HIGHLY_PREDICTABLE_THRESHOLD),
@@ -277,6 +312,7 @@ def suite_average(reports: list[WorkloadReport]) -> WorkloadReport:
     return WorkloadReport(
         workload="Suite average",
         num_pairs=sum(r.num_pairs for r in reports),
+        single_delta_frac=sum(r.single_delta_frac for r in reports) / n,
         delta_highly_predictable_frac=sum(r.delta_highly_predictable_frac for r in reports) / n,
         delta_predictable_or_better_frac=sum(r.delta_predictable_or_better_frac for r in reports) / n,
         size_highly_predictable_frac=sum(r.size_highly_predictable_frac for r in reports) / n,
@@ -346,6 +382,7 @@ def write_workload_report_csv(output_dir: Path, reports: list[WorkloadReport]) -
                 "workload",
                 "display_name",
                 "num_pairs",
+                "single_delta_frac",
                 "delta_highly_predictable_frac",
                 "delta_predictable_or_better_frac",
                 "size_highly_predictable_frac",
@@ -360,6 +397,7 @@ def write_workload_report_csv(output_dir: Path, reports: list[WorkloadReport]) -
                     r.workload,
                     rename_workload(r.workload) if r.workload != "Suite average" else r.workload,
                     r.num_pairs,
+                    f"{r.single_delta_frac:.4f}",
                     f"{r.delta_highly_predictable_frac:.4f}",
                     f"{r.delta_predictable_or_better_frac:.4f}",
                     f"{r.size_highly_predictable_frac:.4f}",
@@ -388,8 +426,9 @@ def write_computation_log(output_dir: Path, reports: list[WorkloadReport]) -> Pa
             fh.write(f"{label}\n")
             fh.write(f"  static PC pairs: {r.num_pairs}\n")
             fh.write(
-                "  offset delta   -- highly predictable: "
-                f"{r.delta_highly_predictable_frac:.1%}  "
+                "  offset delta   -- single invariant delta: "
+                f"{r.single_delta_frac:.1%}  "
+                f"highly predictable: {r.delta_highly_predictable_frac:.1%}  "
                 f"predictable-or-better: {r.delta_predictable_or_better_frac:.1%}\n"
             )
             fh.write(
@@ -410,11 +449,15 @@ def write_computation_log(output_dir: Path, reports: list[WorkloadReport]) -> Pa
 # --------------------------------------------------------------------------
 
 
-def build_cdf(values: list[float]) -> tuple[list[float], list[float]]:
+def build_cdf(values: list[float], *, optimistic: bool = False) -> tuple[list[float], list[float]]:
     if not values:
         return [], []
     ordered = sorted(values)
     n = len(ordered)
+    if optimistic:
+        xs = [0.0] + ordered
+        ys = [1.0] + [(n - i) / n for i in range(n)]
+        return xs, ys
     xs = [0.0] + ordered
     ys = [0.0] + [(i + 1) / n for i in range(n)]
     return xs, ys
@@ -453,34 +496,195 @@ def _save_figure(fig, output_path: Path) -> None:
         fig.savefig(f"{output_path}.{ext}", bbox_inches="tight", dpi=300)
 
 
+def workload_color(index: int) -> str:
+    palette = [
+        "#1f77b4",
+        "#ff7f0e",
+        "#2ca02c",
+        "#d62728",
+        "#9467bd",
+        "#8c564b",
+        "#e377c2",
+        "#7f7f7f",
+        "#bcbd22",
+        "#17becf",
+    ]
+    return palette[index % len(palette)]
+
+
+def group_pairs_by_workload(pairs: list[PairAccuracy]) -> dict[str, list[PairAccuracy]]:
+    grouped: dict[str, list[PairAccuracy]] = defaultdict(list)
+    for pair in pairs:
+        grouped[pair.workload].append(pair)
+    return grouped
+
+
 def plot_accuracy_cdf(
     pairs: list[PairAccuracy],
     accuracy_attr: str,
     xlabel: str,
     output_path: Path,
+    *,
+    optimistic: bool = True,
 ) -> None:
     import matplotlib.pyplot as plt
 
     _apply_plot_style()
-    fig, ax = plt.subplots(figsize=(8, 6))
-    xs, ys = build_cdf([getattr(p, accuracy_attr) for p in pairs])
-    ax.plot(xs, ys, color=IDEAL_FUSION_COLOR, linewidth=2.5)
+    plt.rcParams["legend.fontsize"] = IPC_LEGEND_FONT
+    grouped = group_pairs_by_workload(pairs)
+    workloads = [wl for wl in CANDIDATE_WORKLOADS if wl in grouped]
+    fig, ax = plt.subplots(figsize=(10, 7))
+    for index, workload in enumerate(workloads):
+        workload_pairs = grouped[workload]
+        xs, ys = build_cdf(
+            [getattr(p, accuracy_attr) for p in workload_pairs],
+            optimistic=optimistic,
+        )
+        ax.plot(
+            xs,
+            ys,
+            label=rename_workload(workload),
+            color=workload_color(index),
+            linewidth=2.5,
+        )
     ax.axvline(PREDICTABLE_THRESHOLD, color="gray", linestyle="--", linewidth=1.5, alpha=0.7)
     ax.axvline(HIGHLY_PREDICTABLE_THRESHOLD, color="gray", linestyle="--", linewidth=1.5, alpha=0.7)
 
     ax.set_xlim(0.0, 1.0)
     ax.set_ylim(0.0, 1.0)
     ax.set_xlabel(xlabel, fontsize=PLOT_LABEL_FONT)
-    ax.set_ylabel("Fraction of fusible load PC pairs", fontsize=PLOT_LABEL_FONT)
+    ylabel = (
+        "Fraction of fusible load PC pairs with accuracy ≥ threshold"
+        if optimistic
+        else "Fraction of fusible load PC pairs"
+    )
+    ax.set_ylabel(ylabel, fontsize=PLOT_LABEL_FONT)
+    if len(workloads) > 1:
+        ax.legend(loc="lower left" if optimistic else "lower right", frameon=True)
     _style_axes(ax)
     _save_figure(fig, output_path)
     plt.close(fig)
 
 
+def _backend_stalls_tight_x_limits(ax, x_min: float, x_max: float) -> None:
+    left_pad = 0.12
+    right_pad = 0.12
+    half_span = BACKEND_STALLS_BAR_WIDTH / 2.0
+    ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
+    ax.margins(x=0)
+
+
+def plot_per_app_single_offset_delta(
+    reports: list[WorkloadReport],
+    output_path: Path,
+) -> None:
+    """Per-app bar chart: fraction of fusible PC pairs with exactly one offset delta."""
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as mticker
+
+    _ensure_noto_serif()
+    axis_font = IPC_TICK_FONT
+    plt.rcParams.update(
+        {
+            "font.family": "serif",
+            "font.serif": [FONT_FAMILY, "Noto Serif", "DejaVu Serif", "serif"],
+            "axes.labelsize": axis_font,
+            "xtick.labelsize": axis_font,
+            "ytick.labelsize": axis_font,
+        }
+    )
+
+    by_wl = {r.workload: r for r in reports if r.workload != "Suite average"}
+    ordered = [by_wl[wl] for wl in SIMPOINT_WORKLOADS if wl in by_wl]
+    suite = next(r for r in reports if r.workload == "Suite average")
+
+    display_apps = [rename_workload(r.workload) for r in ordered] + ["Average"]
+    pct_values = [r.single_delta_frac * 100.0 for r in ordered] + [suite.single_delta_frac * 100.0]
+    x = list(range(len(display_apps)))
+
+    fig, ax = plt.subplots(figsize=BACKEND_STALLS_FIGSIZE)
+    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
+    ax.bar(
+        x,
+        pct_values,
+        BACKEND_STALLS_BAR_WIDTH,
+        color=PREDICTABILITY_BAR_COLOR,
+        edgecolor="black",
+        linewidth=BACKEND_STALLS_BAR_EDGE_WIDTH,
+        zorder=3,
+    )
+
+    if len(display_apps) > 1:
+        ax.axvline(
+            x=len(display_apps) - 1.5,
+            color=BACKEND_STALLS_AVERAGE_SEPARATOR_COLOR,
+            linestyle="--",
+            linewidth=BACKEND_STALLS_AVERAGE_SEPARATOR_WIDTH,
+            zorder=2,
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(
+        display_apps,
+        rotation=45,
+        ha="right",
+        fontsize=axis_font,
+    )
+    for label in ax.get_xticklabels():
+        label.set_fontname(FONT_FAMILY)
+        if label.get_text() == "Average":
+            label.set_weight("bold")
+
+    _backend_stalls_tight_x_limits(ax, x[0], x[-1])
+
+    ylabel = ax.set_ylabel(
+        "Fusible PC pairs with exactly\none offset delta (%)",
+        fontsize=axis_font,
+        labelpad=BACKEND_STALLS_Y_LABEL_PAD,
+    )
+    ylabel.set_fontname(FONT_FAMILY)
+    y_max = max(pct_values) if pct_values else 100.0
+    ymax = min(100.0, max(20.0, (int(y_max / 20) + 1) * 20))
+    ax.set_ylim(0.0, ymax * 1.08)
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
+    ax.tick_params(axis="both", labelsize=axis_font)
+    for label in ax.get_yticklabels():
+        label.set_fontname(FONT_FAMILY)
+
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_color("black")
+        spine.set_linewidth(2.5)
+
+    plt.subplots_adjust(top=0.98, bottom=0.32, left=0.10)
+    output_dir = output_path.parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+    stem = output_path.name
+    for ext in ("png", "pdf", "eps"):
+        fig.savefig(
+            output_dir / f"{stem}.{ext}",
+            bbox_inches="tight",
+            pad_inches=0.08,
+            dpi=300,
+        )
+    plt.close(fig)
+
+
 def plot_unique_delta_histogram(pairs: list[PairAccuracy], output_path: Path) -> None:
     import matplotlib.pyplot as plt
+    import matplotlib.ticker as mticker
 
-    _apply_plot_style()
+    plt.rcParams.update(
+        {
+            "font.family": FONT_FAMILY,
+            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
+            "font.size": IPC_AXIS_FONT,
+            "axes.labelsize": IPC_AXIS_LABEL_FONT,
+            "xtick.labelsize": IPC_TICK_FONT,
+            "ytick.labelsize": IPC_TICK_FONT,
+        }
+    )
     unique_delta_counts = [p.raw_unique_deltas for p in pairs]
     max_bucket = 6  # buckets: 1, 2, 3, 4, 5, ">=6"
     bucketed = [min(count, max_bucket) for count in unique_delta_counts]
@@ -490,12 +694,51 @@ def plot_unique_delta_histogram(pairs: list[PairAccuracy], output_path: Path) ->
     total = sum(heights)
     fractions = [h / total for h in heights]
 
-    fig, ax = plt.subplots(figsize=(8, 6))
-    ax.bar(labels, fractions, color=IDEAL_FUSION_COLOR, edgecolor="black", linewidth=2.0, zorder=3)
-    ax.set_xlabel("Unique offset deltas observed per PC pair", fontsize=PLOT_LABEL_FONT)
-    ax.set_ylabel("Fraction of fusible load PC pairs", fontsize=PLOT_LABEL_FONT)
-    _style_axes(ax)
-    _save_figure(fig, output_path)
+    fig, ax = plt.subplots(figsize=(24, 6.5))
+    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
+    x = list(range(len(labels)))
+    ax.bar(
+        x,
+        [f * 100.0 for f in fractions],
+        BAR_WIDTH * 3.0,
+        color=IDEAL_FUSION_COLOR,
+        edgecolor="black",
+        linewidth=BAR_EDGE_WIDTH,
+        zorder=3,
+    )
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, fontsize=IPC_TICK_FONT, fontfamily=FONT_FAMILY)
+    ax.set_xlabel(
+        "Unique offset deltas observed per PC pair",
+        fontsize=IPC_AXIS_LABEL_FONT,
+        fontfamily=FONT_FAMILY,
+    )
+    ax.set_ylabel(
+        "Fraction of fusible load PC pairs (%)",
+        fontsize=IPC_AXIS_LABEL_FONT,
+        fontfamily=FONT_FAMILY,
+    )
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
+    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
+    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
+    for label in ax.get_yticklabels():
+        label.set_fontfamily(FONT_FAMILY)
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_color("black")
+        spine.set_linewidth(2.5)
+    plt.subplots_adjust(top=0.90, bottom=0.22, left=0.08, right=0.99)
+    output_dir = output_path.parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+    stem = output_path.name
+    for ext in ("png", "pdf", "eps"):
+        fig.savefig(
+            output_dir / f"{stem}.{ext}",
+            bbox_inches="tight",
+            pad_inches=0.05,
+            dpi=300,
+        )
     plt.close(fig)
 
 
@@ -516,6 +759,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         nargs="*",
         default=None,
         help="Optional workload subset (default: all candidate workloads).",
+    )
+    parser.add_argument(
+        "--pessimistic-cdf",
+        action="store_true",
+        help="Also emit CDF plots using P(accuracy <= x) instead of P(accuracy >= x).",
+    )
+    parser.add_argument(
+        "--with-cdf",
+        action="store_true",
+        help="Also emit accuracy CDF plots (default output is per-app bar chart).",
     )
     return parser.parse_args(argv)
 
@@ -556,18 +809,25 @@ def main(argv: list[str] | None = None) -> None:
     write_workload_report_csv(output_dir, reports)
     write_computation_log(output_dir, reports)
 
-    plot_accuracy_cdf(
-        all_pairs,
-        "delta_accuracy",
-        "Majority offset-delta prediction accuracy",
-        output_dir / "offset_delta_predictability_cdf",
+    plot_per_app_single_offset_delta(
+        reports,
+        output_dir / "offset_delta_predictability_by_app",
     )
-    plot_accuracy_cdf(
-        all_pairs,
-        "size_accuracy",
-        "Majority LD2 size prediction accuracy",
-        output_dir / "ld2_size_predictability_cdf",
-    )
+    if args.with_cdf:
+        plot_accuracy_cdf(
+            all_pairs,
+            "delta_accuracy",
+            "Majority offset-delta prediction accuracy",
+            output_dir / "offset_delta_predictability_cdf",
+            optimistic=not args.pessimistic_cdf,
+        )
+        plot_accuracy_cdf(
+            all_pairs,
+            "size_accuracy",
+            "Majority LD2 size prediction accuracy",
+            output_dir / "ld2_size_predictability_cdf",
+            optimistic=not args.pessimistic_cdf,
+        )
     plot_unique_delta_histogram(all_pairs, output_dir / "unique_offset_delta_histogram")
 
     suite = reports[-1]
@@ -584,11 +844,16 @@ def main(argv: list[str] | None = None) -> None:
         "fusion_predictability_pair_summary.csv",
         "fusion_predictability_summary.csv",
         "fusion_predictability_computation_log.txt",
-        "offset_delta_predictability_cdf.png",
-        "ld2_size_predictability_cdf.png",
+        "offset_delta_predictability_by_app.png",
         "unique_offset_delta_histogram.png",
     ):
         print(f"  - {output_dir / name}")
+    if args.with_cdf:
+        for name in (
+            "offset_delta_predictability_cdf.png",
+            "ld2_size_predictability_cdf.png",
+        ):
+            print(f"  - {output_dir / name}")
 
 
 if __name__ == "__main__":
