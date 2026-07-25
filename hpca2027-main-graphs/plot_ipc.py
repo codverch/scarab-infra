@@ -73,12 +73,12 @@ IDEAL_FUSION_COLOR = "#FEC51D"
 AVERAGE_SEPARATOR_COLOR = "#4A4A4A"
 SMALL_BAR_THRESHOLD = 0.5
 BAR_LABEL_GAP = 1.2
-BAR_WIDTH = 0.18
+BAR_WIDTH = 0.24
 BAR_EDGE_WIDTH = 2.5
 FONT_FAMILY = "Noto Serif"
 IPC_TICK_FONT = 42
 IPC_AXIS_LABEL_FONT = IPC_TICK_FONT
-IPC_LEGEND_FONT = 36
+IPC_LEGEND_FONT = 32
 IPC_AXIS_FONT = 32
 
 # Backward-compatible aliases used by other hpca2027-main-graphs scripts.
@@ -733,8 +733,9 @@ def plot_speedup_bars(
             if show_bar_labels:
                 _annotate_ipc_bar_labels(ax, container, pct_vals, fontsize=IPC_AXIS_FONT)
 
+        separator_x = len(display_apps) - 1.5 if len(display_apps) > 1 else float(len(display_apps) - 1)
+
         if len(display_apps) > 1:
-            separator_x = len(display_apps) - 1.5
             ax.axvline(
                 x=separator_x,
                 color=AVERAGE_SEPARATOR_COLOR,
@@ -778,11 +779,13 @@ def plot_speedup_bars(
             fancybox=False,
             shadow=False,
             loc="upper left",
+            bbox_to_anchor=(0.01, 0.96),
+            bbox_transform=ax.transAxes,
             fontsize=IPC_LEGEND_FONT,
             edgecolor="black",
-            ncol=2,
-            handlelength=1.1,
-            handleheight=1.1,
+            ncol=len(series),
+            handlelength=0.9,
+            handleheight=0.9,
             framealpha=1.0,
         )
         legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
@@ -795,7 +798,7 @@ def plot_speedup_bars(
             spine.set_linewidth(2.5)
 
         plt.tight_layout()
-        plt.subplots_adjust(top=1.12, bottom=0.28)
+        plt.subplots_adjust(top=0.95, bottom=0.28, right=0.99)
 
         out = output_dir / stem
         fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.05, dpi=300)
