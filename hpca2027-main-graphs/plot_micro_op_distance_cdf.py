@@ -69,7 +69,14 @@ WORKLOAD_COLORS: dict[str, str] = {
 LEGEND_EDGE_WIDTH = 1.2
 LEGEND_FRAME_WIDTH = 1.0
 LEGEND_FRAME_COLOR = "#000000"
-PLOT_FIGSIZE = (10.0, 4.2)
+PLOT_FIGSIZE = (10.0, 3.5)
+# (CDF fraction, label, label offset in points from intersection)
+CDF_REFERENCE_LEVELS: tuple[tuple[float, str, tuple[int, int]], ...] = (
+    (0.80, "p80", (5, -10)),
+    (0.95, "p95", (5, -10)),
+)
+CDF_REFERENCE_COLOR = "#C74632"
+CDF_REFERENCE_LABEL_FONT = 12
 
 
 @dataclass
@@ -248,6 +255,28 @@ def histogram_to_cdf(hist: DistanceHistogram) -> tuple[list[float], list[float]]
         ys.append(1.0)
 
     return xs, ys
+
+
+def distance_at_fraction_from_cdf(
+    xs: list[float], ys: list[float], fraction: float,
+) -> float | None:
+    """Return the smallest distance where the empirical CDF reaches `fraction`."""
+    for x, y in zip(xs, ys):
+        if y >= fraction:
+            return x
+    return None
+
+
+def max_distance_at_fraction_across_curves(
+    curves: list[tuple[str, list[float], list[float], str]],
+    fraction: float,
+) -> float | None:
+    distances: list[float] = []
+    for _label, xs, ys, _color in curves:
+        dist = distance_at_fraction_from_cdf(xs, ys, fraction)
+        if dist is not None:
+            distances.append(dist)
+    return max(distances) if distances else None
 
 
 def percentile_from_histogram(hist: DistanceHistogram, fraction: float) -> float:
@@ -430,11 +459,57 @@ def plot_cdf(
         if xs:
             xmax = max(xmax, max(xs))
 
+    xmin = 1.0
     for label, xs, ys, color in curves:
         ax.plot(xs, ys, label=label, color=color, linewidth=2.5)
 
+    log_x_min = math.log10(xmin)
+    log_x_max = math.log10(xmax)
+    for fraction, ref_label, label_offset in CDF_REFERENCE_LEVELS:
+        all_apps_dist = max_distance_at_fraction_across_curves(curves, fraction)
+        if all_apps_dist is not None:
+            print(
+                f"All-apps {ref_label} distance (max across workloads): "
+                f"{int(all_apps_dist):,} micro-ops",
+                flush=True,
+            )
+
+        ax.axhline(
+            fraction,
+            color=CDF_REFERENCE_COLOR,
+            linestyle="--",
+            linewidth=1.8,
+            zorder=1,
+        )
+        if all_apps_dist is not None:
+            ax.axvline(
+                all_apps_dist,
+                color=CDF_REFERENCE_COLOR,
+                linestyle="--",
+                linewidth=1.8,
+                zorder=1,
+            )
+            label_xy = (all_apps_dist, fraction)
+        else:
+            label_xy = (
+                10.0 ** (log_x_min + 0.5 * (log_x_max - log_x_min)),
+                fraction,
+            )
+
+        ax.annotate(
+            ref_label,
+            xy=label_xy,
+            xytext=label_offset,
+            textcoords="offset points",
+            ha="left",
+            va="top",
+            fontsize=CDF_REFERENCE_LABEL_FONT,
+            color=CDF_REFERENCE_COLOR,
+            fontfamily=FONT_FAMILY,
+        )
+
     ax.set_xscale("log")
-    ax.set_xlim(1.0, xmax * 1.05)
+    ax.set_xlim(xmin, xmax * 1.05)
     ax.set_ylim(0.0, 1.0)
     ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
     ax.set_yticklabels(["0", "20", "40", "60", "80", "100"])
@@ -449,6 +524,7 @@ def plot_cdf(
             handles=_legend_handles(curves),
             loc="lower right",
             bbox_to_anchor=(0.99, 0.02),
+            ncol=2,
             frameon=True,
             fancybox=False,
             edgecolor=LEGEND_FRAME_COLOR,
