@@ -7,10 +7,13 @@ dynamic fusible LD1/LD2 pair Scarab found in pass-1), how predictable each
 static (LD1 PC, LD2 PC) pair's behavior is:
 
   1. Offset-delta predictability: cache_block_offset(LD2) - cache_block_offset(LD1)
-  2. LD2 access-size predictability
+  2. LD1 access-size predictability
+  3. LD2 access-size predictability (including invariant same-size fraction)
 
-For each static pair we assume a predictor that always guesses the majority
-(most frequent) value and report that predictor's accuracy.
+For each static pair we identify the SimPoint-weighted dominant offset delta and
+report whether LD2's memory access size is always the same across dynamic
+instances (same_ld2_size_frac). For each pair we also record what fraction of
+dynamic instances use the dominant LD2 mem size (ld2_dominant_size_frac).
 
 SimPoint weighting
 -------------------
@@ -83,10 +86,11 @@ CANDIDATE_WORKLOADS = [
 # load1_block_offset, load1_mem_size, load1_micro_op_num, load2_pc,
 # load2_data_addr, load2_block_offset, load2_mem_size, load2_micro_op_num,
 # micro_op_distance).
-CSV_COLUMNS = [0, 2, 5, 7, 8]
+CSV_COLUMNS = [0, 2, 3, 5, 7, 8]
 CSV_NAMES = [
     "load1_pc",
     "load1_block_offset",
+    "load1_mem_size",
     "load2_pc",
     "load2_block_offset",
     "load2_mem_size",
@@ -96,7 +100,7 @@ HIGHLY_PREDICTABLE_THRESHOLD = 0.95
 PREDICTABLE_THRESHOLD = 0.80
 
 # Styling aligned with hpca2027-characterization/plot_topdown_backend_stalls.py
-PREDICTABILITY_BAR_COLOR = "#017E7C"
+PREDICTABILITY_BAR_COLOR = "#FEC51D"
 BACKEND_STALLS_BAR_WIDTH = 0.40
 BACKEND_STALLS_BAR_EDGE_WIDTH = 3.0
 BACKEND_STALLS_AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
@@ -131,8 +135,12 @@ class PairAccuracy:
     load2_pc: str
     raw_observations: int
     raw_unique_deltas: int
+    raw_unique_ld2_sizes: int
     delta_accuracy: float
     dominant_delta: int
+    ld2_dominant_size_frac: float
+    ld1_size_accuracy: float
+    dominant_ld1_size: int
     size_accuracy: float
     dominant_size: int
     dynamic_weight: float  # SimPoint-weighted dynamic-instance mass, for dynamic-weighted reporting
@@ -162,12 +170,15 @@ def load_simpoint_frame(csv_path: Path) -> pd.DataFrame:
     return df
 
 
-def pair_distributions(df: pd.DataFrame) -> tuple[dict, pd.Series, pd.Series]:
-    """Per-pair dynamic totals, and per-(pair, value) counts for delta and LD2 size."""
+def pair_distributions(
+    df: pd.DataFrame,
+) -> tuple[dict, pd.Series, pd.Series, pd.Series]:
+    """Per-pair totals and per-(pair, value) counts for delta, LD1 size, and LD2 size."""
     totals = df.groupby(["load1_pc", "load2_pc"]).size().to_dict()
     delta_counts = df.groupby(["load1_pc", "load2_pc", "offset_delta"]).size()
-    size_counts = df.groupby(["load1_pc", "load2_pc", "load2_mem_size"]).size()
-    return totals, delta_counts, size_counts
+    ld1_size_counts = df.groupby(["load1_pc", "load2_pc", "load1_mem_size"]).size()
+    ld2_size_counts = df.groupby(["load1_pc", "load2_pc", "load2_mem_size"]).size()
+    return totals, delta_counts, ld1_size_counts, ld2_size_counts
 
 
 class WorkloadAccumulator:
@@ -181,9 +192,11 @@ class WorkloadAccumulator:
 
     def __init__(self) -> None:
         self.raw_delta: dict[tuple[str, str], Counter] = defaultdict(Counter)
-        self.raw_size: dict[tuple[str, str], Counter] = defaultdict(Counter)
+        self.raw_ld1_size: dict[tuple[str, str], Counter] = defaultdict(Counter)
+        self.raw_ld2_size: dict[tuple[str, str], Counter] = defaultdict(Counter)
         self.weighted_delta_mass: dict[tuple[str, str], Counter] = defaultdict(Counter)
-        self.weighted_size_mass: dict[tuple[str, str], Counter] = defaultdict(Counter)
+        self.weighted_ld1_size_mass: dict[tuple[str, str], Counter] = defaultdict(Counter)
+        self.weighted_ld2_size_mass: dict[tuple[str, str], Counter] = defaultdict(Counter)
         self.weight_seen: dict[tuple[str, str], float] = defaultdict(float)
         self.dynamic_weight: dict[tuple[str, str], float] = defaultdict(float)
 
@@ -192,7 +205,8 @@ class WorkloadAccumulator:
         weight: float,
         totals: dict,
         delta_counts: pd.Series,
-        size_counts: pd.Series,
+        ld1_size_counts: pd.Series,
+        ld2_size_counts: pd.Series,
     ) -> None:
         for pair, total in totals.items():
             self.weight_seen[pair] += weight
@@ -203,10 +217,15 @@ class WorkloadAccumulator:
             self.raw_delta[pair][delta] += count
             self.weighted_delta_mass[pair][delta] += weight * count / totals[pair]
 
-        for (load1_pc, load2_pc, size), count in size_counts.items():
+        for (load1_pc, load2_pc, size), count in ld1_size_counts.items():
             pair = (load1_pc, load2_pc)
-            self.raw_size[pair][size] += count
-            self.weighted_size_mass[pair][size] += weight * count / totals[pair]
+            self.raw_ld1_size[pair][size] += count
+            self.weighted_ld1_size_mass[pair][size] += weight * count / totals[pair]
+
+        for (load1_pc, load2_pc, size), count in ld2_size_counts.items():
+            pair = (load1_pc, load2_pc)
+            self.raw_ld2_size[pair][size] += count
+            self.weighted_ld2_size_mass[pair][size] += weight * count / totals[pair]
 
     def finalize(self, workload: str) -> list[PairAccuracy]:
         records = []
@@ -215,7 +234,13 @@ class WorkloadAccumulator:
                 continue
             load1_pc, load2_pc = pair
             dominant_delta, delta_mass = self.weighted_delta_mass[pair].most_common(1)[0]
-            dominant_size, size_mass = self.weighted_size_mass[pair].most_common(1)[0]
+            dominant_ld1_size, ld1_size_mass = self.weighted_ld1_size_mass[pair].most_common(1)[0]
+            dominant_ld2_size, ld2_size_mass = self.weighted_ld2_size_mass[pair].most_common(1)[0]
+            raw_ld2_total = sum(self.raw_ld2_size[pair].values())
+            raw_ld2_dominant_count = self.raw_ld2_size[pair].most_common(1)[0][1]
+            ld2_dominant_size_frac = (
+                raw_ld2_dominant_count / raw_ld2_total if raw_ld2_total else float("nan")
+            )
             records.append(
                 PairAccuracy(
                     workload=workload,
@@ -223,10 +248,14 @@ class WorkloadAccumulator:
                     load2_pc=load2_pc,
                     raw_observations=sum(self.raw_delta[pair].values()),
                     raw_unique_deltas=len(self.raw_delta[pair]),
+                    raw_unique_ld2_sizes=len(self.raw_ld2_size[pair]),
                     delta_accuracy=delta_mass / weight_sum,
                     dominant_delta=dominant_delta,
-                    size_accuracy=size_mass / weight_sum,
-                    dominant_size=dominant_size,
+                    ld2_dominant_size_frac=ld2_dominant_size_frac,
+                    ld1_size_accuracy=ld1_size_mass / weight_sum,
+                    dominant_ld1_size=dominant_ld1_size,
+                    size_accuracy=ld2_size_mass / weight_sum,
+                    dominant_size=dominant_ld2_size,
                     dynamic_weight=self.dynamic_weight[pair],
                 )
             )
@@ -246,8 +275,10 @@ def compute_workload_pairs(
             print(f"  skip {workload}/{cluster_id}: no SimPoint weight", flush=True)
             continue
         df = load_simpoint_frame(csv_path)
-        totals, delta_counts, size_counts = pair_distributions(df)
-        accumulator.add_simpoint(weight, totals, delta_counts, size_counts)
+        totals, delta_counts, ld1_size_counts, ld2_size_counts = pair_distributions(df)
+        accumulator.add_simpoint(
+            weight, totals, delta_counts, ld1_size_counts, ld2_size_counts
+        )
     return accumulator.finalize(workload)
 
 
@@ -261,11 +292,16 @@ class WorkloadReport:
     workload: str
     num_pairs: int
     single_delta_frac: float
+    same_ld2_size_frac: float
+    mean_ld2_dominant_size_frac: float
     delta_highly_predictable_frac: float
     delta_predictable_or_better_frac: float
+    ld1_size_highly_predictable_frac: float
+    ld1_size_predictable_or_better_frac: float
     size_highly_predictable_frac: float
     size_predictable_or_better_frac: float
     dynamic_delta_predictable_or_better_frac: float
+    dynamic_ld1_size_predictable_or_better_frac: float
     dynamic_size_predictable_or_better_frac: float
 
 
@@ -287,19 +323,33 @@ def dynamic_weighted_fraction_at_least(
 
 def summarize_workload(workload: str, pairs: list[PairAccuracy]) -> WorkloadReport:
     delta_acc = [p.delta_accuracy for p in pairs]
+    ld1_size_acc = [p.ld1_size_accuracy for p in pairs]
     size_acc = [p.size_accuracy for p in pairs]
     dyn_weights = [p.dynamic_weight for p in pairs]
     single_delta = sum(1 for p in pairs if p.raw_unique_deltas == 1)
+    same_ld2_size = sum(1 for p in pairs if p.raw_unique_ld2_sizes == 1)
+    ld2_dom_fracs = [p.ld2_dominant_size_frac for p in pairs]
     return WorkloadReport(
         workload=workload,
         num_pairs=len(pairs),
         single_delta_frac=single_delta / len(pairs) if pairs else float("nan"),
+        same_ld2_size_frac=same_ld2_size / len(pairs) if pairs else float("nan"),
+        mean_ld2_dominant_size_frac=sum(ld2_dom_fracs) / len(ld2_dom_fracs) if ld2_dom_fracs else float("nan"),
         delta_highly_predictable_frac=fraction_at_least(delta_acc, HIGHLY_PREDICTABLE_THRESHOLD),
         delta_predictable_or_better_frac=fraction_at_least(delta_acc, PREDICTABLE_THRESHOLD),
+        ld1_size_highly_predictable_frac=fraction_at_least(
+            ld1_size_acc, HIGHLY_PREDICTABLE_THRESHOLD
+        ),
+        ld1_size_predictable_or_better_frac=fraction_at_least(
+            ld1_size_acc, PREDICTABLE_THRESHOLD
+        ),
         size_highly_predictable_frac=fraction_at_least(size_acc, HIGHLY_PREDICTABLE_THRESHOLD),
         size_predictable_or_better_frac=fraction_at_least(size_acc, PREDICTABLE_THRESHOLD),
         dynamic_delta_predictable_or_better_frac=dynamic_weighted_fraction_at_least(
             delta_acc, dyn_weights, PREDICTABLE_THRESHOLD
+        ),
+        dynamic_ld1_size_predictable_or_better_frac=dynamic_weighted_fraction_at_least(
+            ld1_size_acc, dyn_weights, PREDICTABLE_THRESHOLD
         ),
         dynamic_size_predictable_or_better_frac=dynamic_weighted_fraction_at_least(
             size_acc, dyn_weights, PREDICTABLE_THRESHOLD
@@ -314,12 +364,20 @@ def suite_average(reports: list[WorkloadReport]) -> WorkloadReport:
         workload="Suite average",
         num_pairs=sum(r.num_pairs for r in reports),
         single_delta_frac=sum(r.single_delta_frac for r in reports) / n,
+        same_ld2_size_frac=sum(r.same_ld2_size_frac for r in reports) / n,
+        mean_ld2_dominant_size_frac=sum(r.mean_ld2_dominant_size_frac for r in reports) / n,
         delta_highly_predictable_frac=sum(r.delta_highly_predictable_frac for r in reports) / n,
         delta_predictable_or_better_frac=sum(r.delta_predictable_or_better_frac for r in reports) / n,
+        ld1_size_highly_predictable_frac=sum(r.ld1_size_highly_predictable_frac for r in reports) / n,
+        ld1_size_predictable_or_better_frac=sum(r.ld1_size_predictable_or_better_frac for r in reports) / n,
         size_highly_predictable_frac=sum(r.size_highly_predictable_frac for r in reports) / n,
         size_predictable_or_better_frac=sum(r.size_predictable_or_better_frac for r in reports) / n,
         dynamic_delta_predictable_or_better_frac=sum(
             r.dynamic_delta_predictable_or_better_frac for r in reports
+        )
+        / n,
+        dynamic_ld1_size_predictable_or_better_frac=sum(
+            r.dynamic_ld1_size_predictable_or_better_frac for r in reports
         )
         / n,
         dynamic_size_predictable_or_better_frac=sum(
@@ -345,12 +403,17 @@ def write_pair_summary_csv(output_dir: Path, pairs: list[PairAccuracy]) -> Path:
                 "load2_pc",
                 "raw_observations",
                 "raw_unique_deltas",
+                "raw_unique_ld2_sizes",
                 "delta_accuracy",
                 "dominant_delta",
                 "delta_class",
+                "ld2_dominant_size_frac",
+                "ld1_size_accuracy",
+                "dominant_ld1_size",
+                "ld1_size_class",
                 "size_accuracy",
                 "dominant_size",
-                "size_class",
+                "ld2_size_class",
                 "dynamic_weight",
             ]
         )
@@ -362,9 +425,14 @@ def write_pair_summary_csv(output_dir: Path, pairs: list[PairAccuracy]) -> Path:
                     p.load2_pc,
                     p.raw_observations,
                     p.raw_unique_deltas,
+                    p.raw_unique_ld2_sizes,
                     f"{p.delta_accuracy:.6f}",
                     p.dominant_delta,
                     classify(p.delta_accuracy),
+                    f"{p.ld2_dominant_size_frac:.6f}",
+                    f"{p.ld1_size_accuracy:.6f}",
+                    p.dominant_ld1_size,
+                    classify(p.ld1_size_accuracy),
                     f"{p.size_accuracy:.6f}",
                     p.dominant_size,
                     classify(p.size_accuracy),
@@ -384,11 +452,16 @@ def write_workload_report_csv(output_dir: Path, reports: list[WorkloadReport]) -
                 "display_name",
                 "num_pairs",
                 "single_delta_frac",
+                "same_ld2_size_frac",
+                "mean_ld2_dominant_size_frac",
                 "delta_highly_predictable_frac",
                 "delta_predictable_or_better_frac",
+                "ld1_size_highly_predictable_frac",
+                "ld1_size_predictable_or_better_frac",
                 "size_highly_predictable_frac",
                 "size_predictable_or_better_frac",
                 "dynamic_delta_predictable_or_better_frac",
+                "dynamic_ld1_size_predictable_or_better_frac",
                 "dynamic_size_predictable_or_better_frac",
             ]
         )
@@ -399,11 +472,16 @@ def write_workload_report_csv(output_dir: Path, reports: list[WorkloadReport]) -
                     rename_workload(r.workload) if r.workload != "Suite average" else r.workload,
                     r.num_pairs,
                     f"{r.single_delta_frac:.4f}",
+                    f"{r.same_ld2_size_frac:.4f}",
+                    f"{r.mean_ld2_dominant_size_frac:.4f}",
                     f"{r.delta_highly_predictable_frac:.4f}",
                     f"{r.delta_predictable_or_better_frac:.4f}",
+                    f"{r.ld1_size_highly_predictable_frac:.4f}",
+                    f"{r.ld1_size_predictable_or_better_frac:.4f}",
                     f"{r.size_highly_predictable_frac:.4f}",
                     f"{r.size_predictable_or_better_frac:.4f}",
                     f"{r.dynamic_delta_predictable_or_better_frac:.4f}",
+                    f"{r.dynamic_ld1_size_predictable_or_better_frac:.4f}",
                     f"{r.dynamic_size_predictable_or_better_frac:.4f}",
                 ]
             )
@@ -433,13 +511,15 @@ def write_computation_log(output_dir: Path, reports: list[WorkloadReport]) -> Pa
                 f"predictable-or-better: {r.delta_predictable_or_better_frac:.1%}\n"
             )
             fh.write(
-                "  LD2 size       -- highly predictable: "
-                f"{r.size_highly_predictable_frac:.1%}  "
-                f"predictable-or-better: {r.size_predictable_or_better_frac:.1%}\n"
+                "  LD2 mem size   -- same size on every dynamic instance: "
+                f"{r.same_ld2_size_frac:.1%}  "
+                f"avg dominant-size share: {r.mean_ld2_dominant_size_frac:.1%}  "
+                f"highly predictable: {r.size_highly_predictable_frac:.1%}\n"
             )
             fh.write(
                 "  dynamic-weighted, predictable-or-better -- "
                 f"offset delta: {r.dynamic_delta_predictable_or_better_frac:.1%}  "
+                f"LD1 size: {r.dynamic_ld1_size_predictable_or_better_frac:.1%}  "
                 f"LD2 size: {r.dynamic_size_predictable_or_better_frac:.1%}\n\n"
             )
     return path
@@ -599,11 +679,14 @@ def _backend_stalls_tight_x_limits(ax, x_min: float, x_max: float) -> None:
     ax.margins(x=0)
 
 
-def plot_per_app_single_offset_delta(
+def plot_per_app_fraction_bar(
     reports: list[WorkloadReport],
+    *,
+    fraction_attr: str,
+    ylabel: str,
     output_path: Path,
 ) -> None:
-    """Per-app bar chart: fraction of fusible PC pairs with exactly one offset delta."""
+    """Per-app bar chart of a WorkloadReport fraction field (0-1 scaled to %)."""
     import matplotlib.pyplot as plt
     import matplotlib.ticker as mticker
 
@@ -616,7 +699,9 @@ def plot_per_app_single_offset_delta(
     suite = next(r for r in reports if r.workload == "Suite average")
 
     display_apps = [rename_workload(r.workload) for r in ordered] + ["Average"]
-    pct_values = [r.single_delta_frac * 100.0 for r in ordered] + [suite.single_delta_frac * 100.0]
+    pct_values = [getattr(r, fraction_attr) * 100.0 for r in ordered] + [
+        getattr(suite, fraction_attr) * 100.0
+    ]
     x = list(range(len(display_apps)))
 
     fig, ax = plt.subplots(figsize=BACKEND_STALLS_FIGSIZE)
@@ -657,7 +742,7 @@ def plot_per_app_single_offset_delta(
     _backend_stalls_tight_x_limits(ax, x[0], x[-1])
 
     ax.set_ylabel(
-        "Fusible PC pairs with exactly\none offset delta (%)",
+        ylabel,
         fontsize=axis_font,
         fontfamily=FONT_FAMILY,
         labelpad=BACKEND_STALLS_Y_LABEL_PAD,
@@ -689,6 +774,37 @@ def plot_per_app_single_offset_delta(
             dpi=300,
         )
     plt.close(fig)
+
+
+def plot_per_app_single_offset_delta(
+    reports: list[WorkloadReport],
+    output_path: Path,
+) -> None:
+    """Per-app bar chart: fraction of fusible PC pairs with exactly one offset delta."""
+    plot_per_app_fraction_bar(
+        reports,
+        fraction_attr="single_delta_frac",
+        ylabel="Fusible PC pairs with exactly\none offset delta (%)",
+        output_path=output_path,
+    )
+
+
+def plot_per_app_ld2_dominant_size_share(
+    reports: list[WorkloadReport],
+    output_path: Path,
+) -> None:
+    """Per-app bar chart: mean dominant LD2 mem size share across static pairs."""
+    plot_per_app_fraction_bar(
+        reports,
+        fraction_attr="mean_ld2_dominant_size_frac",
+        ylabel=(
+            "% of times a specific LD2\n"
+            "memory access size occurs\n"
+            "  across all dynamic instances\n"
+            "  of a fusible load pair"
+        ),
+        output_path=output_path,
+    )
 
 
 def plot_unique_delta_histogram(pairs: list[PairAccuracy], output_path: Path) -> None:
@@ -814,8 +930,7 @@ def main(argv: list[str] | None = None) -> None:
         reports.append(report)
         print(
             f"  {workload:14s}  pairs={report.num_pairs:6d}  "
-            f"delta highly-predictable={report.delta_highly_predictable_frac:.1%}  "
-            f"size highly-predictable={report.size_highly_predictable_frac:.1%}",
+            f"avg LD2 dominant-size share={report.mean_ld2_dominant_size_frac:.1%}",
             flush=True,
         )
 
@@ -833,12 +948,23 @@ def main(argv: list[str] | None = None) -> None:
         reports,
         output_dir / "offset_delta_predictability_by_app",
     )
+    plot_per_app_ld2_dominant_size_share(
+        reports,
+        output_dir / "ld2_dominant_mem_size_share_by_app",
+    )
     if args.with_cdf:
         plot_accuracy_cdf(
             all_pairs,
             "delta_accuracy",
             "Majority offset-delta prediction accuracy",
             output_dir / "offset_delta_predictability_cdf",
+            optimistic=not args.pessimistic_cdf,
+        )
+        plot_accuracy_cdf(
+            all_pairs,
+            "ld1_size_accuracy",
+            "Majority LD1 size prediction accuracy",
+            output_dir / "ld1_size_predictability_cdf",
             optimistic=not args.pessimistic_cdf,
         )
         plot_accuracy_cdf(
@@ -852,11 +978,12 @@ def main(argv: list[str] | None = None) -> None:
 
     suite = reports[-1]
     print("\nSuite average (arithmetic mean across applications):")
-    print(f"  offset delta highly predictable: {suite.delta_highly_predictable_frac:.1%}")
-    print(f"  LD2 size highly predictable:      {suite.size_highly_predictable_frac:.1%}")
+    print(f"  single invariant offset delta:   {suite.single_delta_frac:.1%}")
+    print(f"  avg LD2 dominant-size share:     {suite.mean_ld2_dominant_size_frac:.1%}")
     print(
         "  dynamic-weighted predictable-or-better -- "
         f"offset delta: {suite.dynamic_delta_predictable_or_better_frac:.1%}  "
+        f"LD1 size: {suite.dynamic_ld1_size_predictable_or_better_frac:.1%}  "
         f"LD2 size: {suite.dynamic_size_predictable_or_better_frac:.1%}"
     )
     print("\nOutputs:")
@@ -865,12 +992,14 @@ def main(argv: list[str] | None = None) -> None:
         "fusion_predictability_summary.csv",
         "fusion_predictability_computation_log.txt",
         "offset_delta_predictability_by_app.png",
+        "ld2_dominant_mem_size_share_by_app.png",
         "unique_offset_delta_histogram.png",
     ):
         print(f"  - {output_dir / name}")
     if args.with_cdf:
         for name in (
             "offset_delta_predictability_cdf.png",
+            "ld1_size_predictability_cdf.png",
             "ld2_size_predictability_cdf.png",
         ):
             print(f"  - {output_dir / name}")
