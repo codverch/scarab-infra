@@ -51,6 +51,7 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
     FONT_FAMILY,
+    HELIOS_COLOR,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     SIMPOINT_WORKLOADS,
@@ -58,6 +59,8 @@ from plot_ipc import (  # noqa: E402
     load_simpoint_trace_weights,
     rename_workload,
 )
+
+DISTANCE_MISPRED_COLOR = "#A81423"  # backend-stalls red; distinct enough from HELIOS_COLOR
 
 DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
 DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "helios_coverage_causes"
@@ -83,8 +86,8 @@ Y_AXIS_LABEL = (
 
 # (field, color) — bottom-to-top stack order.
 BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
-    ("committed_frac", "#008080"),
-    ("head_evicted_frac", "#0047AB"),
+    ("committed_frac", HELIOS_COLOR),
+    ("head_evicted_frac", DISTANCE_MISPRED_COLOR),
     ("deadlock_frac", "#D5D5D4"),
     ("addr_mismatch_frac", "#FFD700"),
     ("distance_invalid_frac", "#984EA3"),
