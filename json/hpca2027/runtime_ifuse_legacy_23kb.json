@@ -1,0 +1,55 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "runtime-ifuse-legacy-23kb",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/scarab/src",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline/simpoint_traces",
+  "workload_db": "baseline.json",
+  "top_simpoint": false,
+  "_comment": "Pre-refactor iFuse with Jul-23 23kb knobs: TT 128x4, FCT 256 rows, APT 32x4, threshold 1000, 48-bit PC tags.",
+  "simulations": [
+    {
+      "suite": "datacenter",
+      "subsuite": "datacenter",
+      "workload": [
+        "appworld",
+        "bfs",
+        "clickhouse",
+        "core_bench",
+        "dfs",
+        "duckdb",
+        "pagerank",
+        "rocksdb",
+        "terminal_bench"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "ifuse_legacy_23kb": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_training_table_sets 128 --ifuse_training_table_pc_tag_bits 48 --ifuse_fct_hash_bits 8 --ifuse_apt_sets 32 --ifuse_aci_sets 32",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "ifuse_legacy_23kb",
+    "configs": [],
+    "counters": ["IPC"],
+    "average": false
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 16384
+  }
+}
