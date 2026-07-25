@@ -62,14 +62,14 @@ WORKLOAD_COLORS: dict[str, str] = {
     "appworld": "#E98300",
     "core_bench": "#C74632",
     "terminal_bench": "#620059",
-    "duckdb": "#7F2D48",
+    "duckdb": "#9475BD",
     "rocksdb": "#FEC51D",
     "clickhouse": "#795548",
 }
 LEGEND_EDGE_WIDTH = 1.2
 LEGEND_FRAME_WIDTH = 1.0
 LEGEND_FRAME_COLOR = "#000000"
-PLOT_FIGSIZE = (10.0, 5.2)
+PLOT_FIGSIZE = (10.0, 4.2)
 
 
 @dataclass
@@ -436,6 +436,8 @@ def plot_cdf(
     ax.set_xscale("log")
     ax.set_xlim(1.0, xmax * 1.05)
     ax.set_ylim(0.0, 1.0)
+    ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    ax.set_yticklabels(["0", "20", "40", "60", "80", "100"])
     ax.set_xlabel(
         "Distance in micro-ops between fusible load pairs (log scale)",
         fontsize=PLOT_LABEL_FONT,
