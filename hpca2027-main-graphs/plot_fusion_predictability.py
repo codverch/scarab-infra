@@ -100,7 +100,7 @@ HIGHLY_PREDICTABLE_THRESHOLD = 0.95
 PREDICTABLE_THRESHOLD = 0.80
 
 # Styling aligned with hpca2027-characterization/plot_topdown_backend_stalls.py
-PREDICTABILITY_BAR_COLOR = "#FEC51D"
+PREDICTABILITY_BAR_COLOR = "#017E7C"
 BACKEND_STALLS_BAR_WIDTH = 0.40
 BACKEND_STALLS_BAR_EDGE_WIDTH = 3.0
 BACKEND_STALLS_AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
@@ -138,6 +138,7 @@ class PairAccuracy:
     raw_unique_ld2_sizes: int
     delta_accuracy: float
     dominant_delta: int
+    dominant_offset_delta_frac: float
     ld2_dominant_size_frac: float
     ld1_size_accuracy: float
     dominant_ld1_size: int
@@ -238,8 +239,13 @@ class WorkloadAccumulator:
             dominant_ld2_size, ld2_size_mass = self.weighted_ld2_size_mass[pair].most_common(1)[0]
             raw_ld2_total = sum(self.raw_ld2_size[pair].values())
             raw_ld2_dominant_count = self.raw_ld2_size[pair].most_common(1)[0][1]
+            raw_delta_total = sum(self.raw_delta[pair].values())
+            raw_dominant_delta_count = self.raw_delta[pair].most_common(1)[0][1]
             ld2_dominant_size_frac = (
                 raw_ld2_dominant_count / raw_ld2_total if raw_ld2_total else float("nan")
+            )
+            dominant_offset_delta_frac = (
+                raw_dominant_delta_count / raw_delta_total if raw_delta_total else float("nan")
             )
             records.append(
                 PairAccuracy(
@@ -251,6 +257,7 @@ class WorkloadAccumulator:
                     raw_unique_ld2_sizes=len(self.raw_ld2_size[pair]),
                     delta_accuracy=delta_mass / weight_sum,
                     dominant_delta=dominant_delta,
+                    dominant_offset_delta_frac=dominant_offset_delta_frac,
                     ld2_dominant_size_frac=ld2_dominant_size_frac,
                     ld1_size_accuracy=ld1_size_mass / weight_sum,
                     dominant_ld1_size=dominant_ld1_size,
@@ -292,6 +299,7 @@ class WorkloadReport:
     workload: str
     num_pairs: int
     single_delta_frac: float
+    mean_dominant_offset_delta_frac: float
     same_ld2_size_frac: float
     mean_ld2_dominant_size_frac: float
     delta_highly_predictable_frac: float
@@ -329,10 +337,14 @@ def summarize_workload(workload: str, pairs: list[PairAccuracy]) -> WorkloadRepo
     single_delta = sum(1 for p in pairs if p.raw_unique_deltas == 1)
     same_ld2_size = sum(1 for p in pairs if p.raw_unique_ld2_sizes == 1)
     ld2_dom_fracs = [p.ld2_dominant_size_frac for p in pairs]
+    delta_dom_fracs = [p.dominant_offset_delta_frac for p in pairs]
     return WorkloadReport(
         workload=workload,
         num_pairs=len(pairs),
         single_delta_frac=single_delta / len(pairs) if pairs else float("nan"),
+        mean_dominant_offset_delta_frac=(
+            sum(delta_dom_fracs) / len(delta_dom_fracs) if delta_dom_fracs else float("nan")
+        ),
         same_ld2_size_frac=same_ld2_size / len(pairs) if pairs else float("nan"),
         mean_ld2_dominant_size_frac=sum(ld2_dom_fracs) / len(ld2_dom_fracs) if ld2_dom_fracs else float("nan"),
         delta_highly_predictable_frac=fraction_at_least(delta_acc, HIGHLY_PREDICTABLE_THRESHOLD),
@@ -364,6 +376,7 @@ def suite_average(reports: list[WorkloadReport]) -> WorkloadReport:
         workload="Suite average",
         num_pairs=sum(r.num_pairs for r in reports),
         single_delta_frac=sum(r.single_delta_frac for r in reports) / n,
+        mean_dominant_offset_delta_frac=sum(r.mean_dominant_offset_delta_frac for r in reports) / n,
         same_ld2_size_frac=sum(r.same_ld2_size_frac for r in reports) / n,
         mean_ld2_dominant_size_frac=sum(r.mean_ld2_dominant_size_frac for r in reports) / n,
         delta_highly_predictable_frac=sum(r.delta_highly_predictable_frac for r in reports) / n,
@@ -406,6 +419,7 @@ def write_pair_summary_csv(output_dir: Path, pairs: list[PairAccuracy]) -> Path:
                 "raw_unique_ld2_sizes",
                 "delta_accuracy",
                 "dominant_delta",
+                "dominant_offset_delta_frac",
                 "delta_class",
                 "ld2_dominant_size_frac",
                 "ld1_size_accuracy",
@@ -428,6 +442,7 @@ def write_pair_summary_csv(output_dir: Path, pairs: list[PairAccuracy]) -> Path:
                     p.raw_unique_ld2_sizes,
                     f"{p.delta_accuracy:.6f}",
                     p.dominant_delta,
+                    f"{p.dominant_offset_delta_frac:.6f}",
                     classify(p.delta_accuracy),
                     f"{p.ld2_dominant_size_frac:.6f}",
                     f"{p.ld1_size_accuracy:.6f}",
@@ -452,6 +467,7 @@ def write_workload_report_csv(output_dir: Path, reports: list[WorkloadReport]) -
                 "display_name",
                 "num_pairs",
                 "single_delta_frac",
+                "mean_dominant_offset_delta_frac",
                 "same_ld2_size_frac",
                 "mean_ld2_dominant_size_frac",
                 "delta_highly_predictable_frac",
@@ -472,6 +488,7 @@ def write_workload_report_csv(output_dir: Path, reports: list[WorkloadReport]) -
                     rename_workload(r.workload) if r.workload != "Suite average" else r.workload,
                     r.num_pairs,
                     f"{r.single_delta_frac:.4f}",
+                    f"{r.mean_dominant_offset_delta_frac:.4f}",
                     f"{r.same_ld2_size_frac:.4f}",
                     f"{r.mean_ld2_dominant_size_frac:.4f}",
                     f"{r.delta_highly_predictable_frac:.4f}",
@@ -780,11 +797,16 @@ def plot_per_app_single_offset_delta(
     reports: list[WorkloadReport],
     output_path: Path,
 ) -> None:
-    """Per-app bar chart: fraction of fusible PC pairs with exactly one offset delta."""
+    """Per-app bar chart: mean dominant cache-block offset-delta share across static pairs."""
     plot_per_app_fraction_bar(
         reports,
-        fraction_attr="single_delta_frac",
-        ylabel="Fusible PC pairs with exactly\none offset delta (%)",
+        fraction_attr="mean_dominant_offset_delta_frac",
+        ylabel=(
+            "% of times a specific cache block\n"
+            "offset delta occurs across all\n"
+            "dynamic instances of a fusible\n"
+            "load pair"
+        ),
         output_path=output_path,
     )
 
@@ -800,8 +822,8 @@ def plot_per_app_ld2_dominant_size_share(
         ylabel=(
             "% of times a specific LD2\n"
             "memory access size occurs\n"
-            "  across all dynamic instances\n"
-            "  of a fusible load pair"
+            "across all dynamic instances\n"
+            "of a fusible load pair"
         ),
         output_path=output_path,
     )
@@ -978,7 +1000,7 @@ def main(argv: list[str] | None = None) -> None:
 
     suite = reports[-1]
     print("\nSuite average (arithmetic mean across applications):")
-    print(f"  single invariant offset delta:   {suite.single_delta_frac:.1%}")
+    print(f"  mean dominant offset-delta share: {suite.mean_dominant_offset_delta_frac:.1%}")
     print(f"  avg LD2 dominant-size share:     {suite.mean_ld2_dominant_size_frac:.1%}")
     print(
         "  dynamic-weighted predictable-or-better -- "
