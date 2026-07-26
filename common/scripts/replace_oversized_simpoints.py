@@ -5,7 +5,9 @@ import sys
 import os
 from pathlib import Path
 
-INSTRUCTION_THRESHOLD = 15_000_000
+# hpca2027 datacenter DB traces use a 40M-instruction segment size (see
+# run_simpoint_trace.py cluster_then_trace), so raise the ceiling accordingly.
+INSTRUCTION_THRESHOLD = 60_000_000
 
 
 def load_opt_p(filepath):

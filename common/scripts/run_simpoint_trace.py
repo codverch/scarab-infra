@@ -248,9 +248,11 @@ def cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, si
     # 2. trace segments of the workload
     # 3. drraw2trace
     # 4. minimize traces
-    chunk_size = 10000000
-    seg_size = 10000000
-    warmup_chunks = 5
+    # hpca2027 datacenter DB traces: segments sized so each simpoint's own
+    # (non-warmup) chunk alone exceeds the 30M-committed-instruction floor.
+    chunk_size = 40000000
+    seg_size = 40000000
+    warmup_chunks = 1
     try:
         os.makedirs(os.path.join(simpoint_home, workload, "fingerprint"), exist_ok=True)
         os.makedirs(os.path.join(simpoint_home, workload, "traces_simp"), exist_ok=True)
