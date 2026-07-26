@@ -268,7 +268,11 @@ def cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, si
         # Complex/hot-loop-heavy binaries (e.g. DuckDB) hit this; simpler ones
         # (bfs, db_bench) mostly didn't, which is why this wasn't caught before.
         fp_cmd = f"{dynamorio_home}/bin64/drrun -disable_traces -max_bb_instrs 256 -opt_cleancall 2 -c $tmpdir/libfpg.so -no_use_bb_pc -segment_size {seg_size} -output {workload_home}/fingerprint/bbfp -pcmap_output {workload_home}/fingerprint/pcmap -- {bincmd}"
-        subprocess.run([fp_cmd], check=True, capture_output=True, text=True, shell=True)
+        # libfpg.so dr_printf's one debug line per new basic block; with a low
+        # -max_bb_instrs that's a huge volume of stdout (and can include
+        # non-UTF-8 bytes), which crashes capture_output=True's text decode.
+        # None of it is needed -- only the exit code and the bbfp files matter.
+        subprocess.run([fp_cmd], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, shell=True)
         end_time = time.perf_counter()
 
         fingerprint_dir = os.path.join(workload_home, "fingerprint")
