@@ -27,39 +27,44 @@ DESCRIPTOR_JSON="${INFRA_DIR}/json/hpca2027/helios.json"
 TRACES_DIR="/dev/shm/baseline/simpoint_traces"
 SCARAB_PATH="/users/deepmish/scarab"
 BUILDS_DIR="${INFRA_DIR}/scarab_builds"
-WARMUP=20000000
-INST_LIMIT=30000000
+WARMUP=50000000
+INST_LIMIT=70000000
 
 HELIOS_APPS=(
-  apsp bc bfs community connected_components dfs
-  haystack leveldb pagerank sssp_ego_fb triangle_counting
+  apsp_synth bc_synth bfs_web-google community_web_google connected_components_web_google dfs_web-google
+  haystack_rag leveldb_ycsb pagerank_web-google sssp_ego-facebook triangle_counting_web_google
 )
 
 declare -A HELIOS_T=(
-  [apsp]=300 [bc]=300 [bfs]=300 [community]=300 [connected_components]=300
-  [dfs]=300 [haystack]=1000 [leveldb]=4800 [pagerank]=300
-  [sssp_ego_fb]=300 [triangle_counting]=300
+  [apsp_synth]=300 [bc_synth]=300 [bfs_web-google]=300 [community_web_google]=300
+  [connected_components_web_google]=300 [dfs_web-google]=300 [haystack_rag]=1000
+  [leveldb_ycsb]=4800 [pagerank_web-google]=300 [sssp_ego-facebook]=300
+  [triangle_counting_web_google]=300
 )
 declare -A HELIOS_W=(
-  [apsp]=64 [bc]=64 [bfs]=64 [community]=64 [connected_components]=64
-  [dfs]=64 [haystack]=64 [leveldb]=64 [pagerank]=64
-  [sssp_ego_fb]=64 [triangle_counting]=64
+  [apsp_synth]=64 [bc_synth]=64 [bfs_web-google]=64 [community_web_google]=64
+  [connected_components_web_google]=64 [dfs_web-google]=64 [haystack_rag]=64
+  [leveldb_ycsb]=64 [pagerank_web-google]=64 [sssp_ego-facebook]=64
+  [triangle_counting_web_google]=64
 )
 declare -A HELIOS_I=(
-  [apsp]=1 [bc]=1 [bfs]=1 [community]=1 [connected_components]=1
-  [dfs]=1 [haystack]=1 [leveldb]=1 [pagerank]=1
-  [sssp_ego_fb]=1 [triangle_counting]=1
+  [apsp_synth]=1 [bc_synth]=1 [bfs_web-google]=1 [community_web_google]=1
+  [connected_components_web_google]=1 [dfs_web-google]=1 [haystack_rag]=1
+  [leveldb_ycsb]=1 [pagerank_web-google]=1 [sssp_ego-facebook]=1
+  [triangle_counting_web_google]=1
 )
 declare -A HELIOS_D=(
-  [apsp]=10 [bc]=10 [bfs]=10 [community]=10 [connected_components]=10
-  [dfs]=10 [haystack]=10 [leveldb]=10 [pagerank]=10
-  [sssp_ego_fb]=10 [triangle_counting]=10
+  [apsp_synth]=10 [bc_synth]=10 [bfs_web-google]=10 [community_web_google]=10
+  [connected_components_web_google]=10 [dfs_web-google]=10 [haystack_rag]=10
+  [leveldb_ycsb]=10 [pagerank_web-google]=10 [sssp_ego-facebook]=10
+  [triangle_counting_web_google]=10
 )
 # stores-off for every app
 declare -A HELIOS_STORES=(
-  [apsp]=0 [bc]=0 [bfs]=0 [community]=0 [connected_components]=0
-  [dfs]=0 [haystack]=0 [leveldb]=0 [pagerank]=0
-  [sssp_ego_fb]=0 [triangle_counting]=0
+  [apsp_synth]=0 [bc_synth]=0 [bfs_web-google]=0 [community_web_google]=0
+  [connected_components_web_google]=0 [dfs_web-google]=0 [haystack_rag]=0
+  [leveldb_ycsb]=0 [pagerank_web-google]=0 [sssp_ego-facebook]=0
+  [triangle_counting_web_google]=0
 )
 
 helios_label_for_app() {
@@ -142,7 +147,7 @@ write_helios_descriptor() {
   if [[ -n "${app}" ]]; then
     apps_for_json=("${app}")
     knobs="$(helios_knobs_for_app "${app}")"
-    comment="Helios per-app: ${app} $(helios_label_for_app "${app}"). 20M warmup + 10M sim. binary=${binary}."
+    comment="Helios per-app: ${app} $(helios_label_for_app "${app}"). 50M warmup + 20M sim. binary=${binary}."
   else
     apps_for_json=("${HELIOS_APPS[@]}")
     knobs="$(helios_knobs_for_app "terminal_bench")"

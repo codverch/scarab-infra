@@ -16,26 +16,26 @@
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
-        "apsp",
-        "bc",
-        "bfs",
-        "community",
-        "connected_components",
-        "dfs",
-        "haystack",
-        "leveldb",
-        "pagerank",
-        "sssp_ego_fb",
-        "triangle_counting"
+        "apsp_synth",
+        "bc_synth",
+        "bfs_web-google",
+        "community_web_google",
+        "connected_components_web_google",
+        "dfs_web-google",
+        "haystack_rag",
+        "leveldb_ycsb",
+        "pagerank_web-google",
+        "sssp_ego-facebook",
+        "triangle_counting_web_google"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
-      "warmup": 20000000
+      "warmup": 50000000
     }
   ],
   "configurations": {
     "fullblock_tt1000": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 9 --ifuse_pc_tag_bits 48 --ifuse_training_insert_threshold 1000 --ifuse_training_table_block_tag_bits 64 --ifuse_training_table_block_evict_on_mismatch 0",
+      "params": "--icache_size 32768 --inst_limit 70000000 --full_warmup 50000000 --power_intf_on 1 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 9 --ifuse_pc_tag_bits 48 --ifuse_training_insert_threshold 1000 --ifuse_training_table_block_tag_bits 64 --ifuse_training_table_block_evict_on_mismatch 0",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
