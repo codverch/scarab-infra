@@ -262,7 +262,12 @@ def cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, si
         if client_bincmd:
             subprocess.Popen("exec " + client_bincmd, stdout=subprocess.PIPE, shell=True)
         start_time = time.perf_counter()
-        fp_cmd = f"{dynamorio_home}/bin64/drrun -max_bb_instrs 4095 -opt_cleancall 2 -c $tmpdir/libfpg.so -no_use_bb_pc -segment_size {seg_size} -output {workload_home}/fingerprint/bbfp -pcmap_output {workload_home}/fingerprint/pcmap -- {bincmd}"
+        # -disable_traces: DynamoRIO's own hot-path trace formation can hand the
+        # bb-build callback a block libfpg.so has never seen registered as a
+        # plain basic block, tripping its `!for_trace` bookkeeping assertion.
+        # Complex/hot-loop-heavy binaries (e.g. DuckDB) hit this; simpler ones
+        # (bfs, db_bench) mostly didn't, which is why this wasn't caught before.
+        fp_cmd = f"{dynamorio_home}/bin64/drrun -disable_traces -max_bb_instrs 256 -opt_cleancall 2 -c $tmpdir/libfpg.so -no_use_bb_pc -segment_size {seg_size} -output {workload_home}/fingerprint/bbfp -pcmap_output {workload_home}/fingerprint/pcmap -- {bincmd}"
         subprocess.run([fp_cmd], check=True, capture_output=True, text=True, shell=True)
         end_time = time.perf_counter()
 
@@ -278,17 +283,52 @@ def cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, si
         bbfp_files = glob.glob(os.path.join(f"{workload_home}/fingerprint", "bbfp.*"))
         bbfp_files = [f for f in bbfp_files if not f.endswith('.inscount')]
         num_bbfp = len(bbfp_files)
-        if num_bbfp == 1:
-            bbfp_file = bbfp_files[0]
-            clustering_cmd = f"/bin/bash /usr/local/bin/run_clustering.sh {bbfp_file} {workload_home}"
-            if clustering_userk != None:
-                clustering_cmd = f"{clustering_cmd} {clustering_userk}"
-            subprocess.run([clustering_cmd], check=True, shell=True, stdin=open(os.devnull, 'r'))
-        else:
+        if num_bbfp == 0:
             trace_clustering_info["err"] = "There are multiple or no bbfp files. This simpoint flow would not work."
             with open(os.path.join(workload_home, "trace_clustering_info.json"), "w") as json_file:
                 json.dump(trace_clustering_info, json_file, indent=2, separators=(",", ":"))
             exit(1)
+        elif num_bbfp == 1:
+            bbfp_file = bbfp_files[0]
+        else:
+            # libfpg.so writes one bbfp.<thread_id> file per DynamoRIO-instrumented
+            # thread that actually executed code. Apps with many background
+            # threads (DuckDB's task scheduler, ClickHouse's background pools)
+            # routinely produce dozens of these instead of a single stream.
+            # Merge them into one bbfp + matching .inscount (each source file's
+            # lines correspond 1:1 with its own .inscount rows), ordered by
+            # mtime as a chronological-order proxy, so clustering sees one
+            # unified fingerprint instead of erroring out.
+            print(f"merging {num_bbfp} per-thread bbfp files..")
+            bbfp_files.sort(key=os.path.getmtime)
+            merged_bbfp = os.path.join(fingerprint_dir, "bbfp")
+            merged_inscount = os.path.join(fingerprint_dir, "bbfp.inscount")
+            seg_no = 0
+            with open(merged_bbfp, "w") as out_fp, open(merged_inscount, "w") as out_ic:
+                out_ic.write("segment,total_instrs_in_seg\n")
+                for bf in bbfp_files:
+                    ic_file = bf + ".inscount"
+                    with open(bf) as f:
+                        lines = [l for l in f.read().splitlines() if l]
+                    counts = []
+                    if os.path.isfile(ic_file):
+                        with open(ic_file) as f:
+                            ic_lines = f.read().splitlines()[1:]
+                        counts = [int(l.split(",")[1]) for l in ic_lines if l]
+                    for i, line in enumerate(lines):
+                        seg_no += 1
+                        out_fp.write(line + "\n")
+                        out_ic.write(f"{seg_no},{counts[i] if i < len(counts) else 0}\n")
+                    os.remove(bf)
+                    if os.path.isfile(ic_file):
+                        os.remove(ic_file)
+            print(f"merged into {seg_no} segments: {merged_bbfp}")
+            bbfp_file = merged_bbfp
+
+        clustering_cmd = f"/bin/bash /usr/local/bin/run_clustering.sh {bbfp_file} {workload_home}"
+        if clustering_userk != None:
+            clustering_cmd = f"{clustering_cmd} {clustering_userk}"
+        subprocess.run([clustering_cmd], check=True, shell=True, stdin=open(os.devnull, 'r'))
 
         print("adjusting oversized simpoints..")
         replace_cmd = f"python3 /usr/local/bin/replace_oversized_simpoints.py {workload_home}"
@@ -325,9 +365,9 @@ def cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, si
             roi_length = roi_end - roi_start
 
             if roi_start == 0:
-                trace_cmd = f"{dynamorio_home}/bin64/drrun -max_bb_instrs 4095 -opt_cleancall 2 -t drcachesim -jobs 40 -outdir {seg_dir} -offline -count_fetched_instrs -trace_for_instrs {roi_length} -- {bincmd}"
+                trace_cmd = f"{dynamorio_home}/bin64/drrun -disable_traces -max_bb_instrs 256 -opt_cleancall 2 -t drcachesim -jobs 40 -outdir {seg_dir} -offline -count_fetched_instrs -trace_for_instrs {roi_length} -- {bincmd}"
             else:
-                trace_cmd = f"{dynamorio_home}/bin64/drrun -max_bb_instrs 4095 -opt_cleancall 2 -t drcachesim -jobs 40 -outdir {seg_dir} -offline -count_fetched_instrs -trace_after_instrs {roi_start} -trace_for_instrs {roi_length} -- {bincmd}"
+                trace_cmd = f"{dynamorio_home}/bin64/drrun -disable_traces -max_bb_instrs 256 -opt_cleancall 2 -t drcachesim -jobs 40 -outdir {seg_dir} -offline -count_fetched_instrs -trace_after_instrs {roi_start} -trace_for_instrs {roi_length} -- {bincmd}"
 
             process = subprocess.Popen("exec " + trace_cmd, stdout=subprocess.DEVNULL, shell=True)
             cluster_tracing_processes.add(process)
