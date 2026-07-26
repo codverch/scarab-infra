@@ -6,21 +6,37 @@ INCLUDE+ ./common/Dockerfile.common
 USER root
 
 # AppWorld (StonyBrookNLP/appworld) requires Python 3.11+; Ubuntu 20.04's
-# default python3 is 3.8, so install 3.11 from deadsnakes alongside it
-# without disturbing the python3/python2 toolchain Dockerfile.common already
-# set up for scarab-infra's own scripts.
+# default python3 is 3.8. Build 3.11 from the official source tarball rather
+# than the deadsnakes PPA: PPA installs need a launchpad keyserver round-trip
+# for the signing key, which is unreliable from a sandboxed build network
+# (observed: add-apt-repository silently added the source but apt never
+# fetched its Packages index, only InRelease, so python3.11 was "not found").
+# A source build only needs a plain HTTPS download from python.org.
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y \
-    software-properties-common \
- && add-apt-repository -y ppa:deadsnakes/ppa \
- && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    python3.11 \
-    python3.11-venv \
-    python3.11-dev \
+    build-essential \
+    zlib1g-dev \
+    libncurses5-dev \
+    libgdbm-dev \
+    libnss3-dev \
+    libssl-dev \
+    libreadline-dev \
+    libffi-dev \
+    libsqlite3-dev \
+    libbz2-dev \
+    liblzma-dev \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR $tmpdir
 
-RUN python3.11 -m venv $tmpdir/appworld_venv && \
+RUN cd $tmpdir && \
+    wget -nc https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz && \
+    tar xzf Python-3.11.9.tgz && \
+    cd Python-3.11.9 && \
+    ./configure --prefix=$tmpdir/python3.11 --with-ensurepip=install && \
+    make -j$(nproc) && \
+    make install
+
+RUN $tmpdir/python3.11/bin/python3.11 -m venv $tmpdir/appworld_venv && \
     $tmpdir/appworld_venv/bin/pip install --upgrade pip && \
     $tmpdir/appworld_venv/bin/pip install appworld==0.1.3.post1
 
