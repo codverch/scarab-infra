@@ -41,8 +41,6 @@ from plot_fusion_fraction import (  # noqa: E402
     stat_count_from_csv,
 )
 from plot_ipc import (  # noqa: E402
-    AVERAGE_SEPARATOR_COLOR,
-    BAR_EDGE_WIDTH,
     DEFAULT_HELIOS_CONFIG,
     DEFAULT_HELIOS_DIR,
     DEFAULT_IDEAL_CONFIG,
@@ -53,7 +51,7 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
     FONT_FAMILY,
-    IPC_AXIS_LABEL_FONT,
+    HELIOS_COLOR,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     SIMPOINT_WORKLOADS,
@@ -61,6 +59,8 @@ from plot_ipc import (  # noqa: E402
     load_simpoint_trace_weights,
     rename_workload,
 )
+
+DISTANCE_MISPRED_COLOR = "#A81423"  # backend-stalls red; distinct enough from HELIOS_COLOR
 
 DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
 DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "helios_coverage_causes"
@@ -71,8 +71,12 @@ COMMITTED_STAT = HELIOS_FUSED_STAT
 IDEAL_FUSED_STAT = "IDEAL_FUSION_FUSED_LOADS_count"
 
 BAR_WIDTH = 0.40
-FIGSIZE = (28.0, 10.0)
-END_PAD = 0.45
+FIGSIZE = (24.0, 8.0)
+BAR_EDGE_WIDTH = 3.0
+AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
+AVERAGE_SEPARATOR_WIDTH = 3.5
+AXIS_FONT = IPC_TICK_FONT
+Y_LABEL_PAD = 20
 OUTPUT_DPI = 300
 Y_AXIS_LABEL = (
     "Breakdown of how Helios\n"
@@ -82,8 +86,8 @@ Y_AXIS_LABEL = (
 
 # (field, color) — bottom-to-top stack order.
 BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
-    ("committed_frac", "#075c56"),
-    ("head_evicted_frac", "#8C1515"),
+    ("committed_frac", HELIOS_COLOR),
+    ("head_evicted_frac", DISTANCE_MISPRED_COLOR),
     ("deadlock_frac", "#D5D5D4"),
     ("addr_mismatch_frac", "#FFD700"),
     ("distance_invalid_frac", "#984EA3"),
@@ -108,6 +112,27 @@ REJECT_STATS: tuple[tuple[str, str], ...] = (
     ("serializing_frac", "HELIOS_REJECT_SERIALIZING_count"),
     ("store_hazard_frac", "HELIOS_REJECT_STORE_HAZARD_count"),
 )
+
+
+def _apply_plot_style() -> None:
+    plt.rcParams.update(
+        {
+            "font.family": FONT_FAMILY,
+            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
+            "axes.labelsize": AXIS_FONT,
+            "xtick.labelsize": AXIS_FONT,
+            "ytick.labelsize": AXIS_FONT,
+            "legend.fontsize": IPC_LEGEND_FONT,
+        }
+    )
+
+
+def _tight_x_limits(ax, x_min: float, x_max: float) -> None:
+    left_pad = 0.12
+    right_pad = 0.12
+    half_span = BAR_WIDTH / 2.0
+    ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
+    ax.margins(x=0)
 
 
 def legend_label(field: str) -> str:
@@ -396,7 +421,7 @@ def _style_legend(ax, active_segments: list[tuple[str, str]]) -> None:
         fancybox=False,
         shadow=False,
         loc="lower center",
-        bbox_to_anchor=(0.5, 1.06),
+        bbox_to_anchor=(0.5, 1.12),
         bbox_transform=ax.transAxes,
         borderaxespad=0.0,
         fontsize=IPC_LEGEND_FONT,
@@ -419,16 +444,7 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
     x = np.arange(len(display_apps))
     active_segments = _visible_segments(rows)
 
-    plt.rcParams.update(
-        {
-            "font.family": FONT_FAMILY,
-            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "axes.labelsize": IPC_AXIS_LABEL_FONT,
-            "xtick.labelsize": IPC_TICK_FONT,
-            "ytick.labelsize": IPC_TICK_FONT,
-            "legend.fontsize": IPC_LEGEND_FONT,
-        }
-    )
+    _apply_plot_style()
     fig, ax = plt.subplots(figsize=FIGSIZE)
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
@@ -442,7 +458,7 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
             bottom=bottoms,
             color=color,
             edgecolor="black",
-            linewidth=0.8,
+            linewidth=BAR_EDGE_WIDTH,
             label=legend_label(field),
             zorder=3,
         )
@@ -453,8 +469,7 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
             x=len(display_apps) - 1.5,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
-            alpha=0.9,
-            linewidth=2.5,
+            linewidth=AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
@@ -463,31 +478,32 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
         display_apps,
         rotation=45,
         ha="right",
-        fontsize=IPC_TICK_FONT,
+        fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
     )
     for label in ax.get_xticklabels():
+        label.set_fontsize(AXIS_FONT)
+        label.set_fontfamily(FONT_FAMILY)
         if label.get_text() == "Average":
             label.set_weight("bold")
 
-    half_span = BAR_WIDTH / 2.0
-    ax.set_xlim(x[0] - half_span - 0.12 - END_PAD, x[-1] + half_span + 0.10 + END_PAD)
-    ax.margins(x=0)
+    _tight_x_limits(ax, x[0], x[-1])
 
     ax.set_ylabel(
         Y_AXIS_LABEL,
-        fontsize=IPC_AXIS_LABEL_FONT,
+        fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
+        labelpad=Y_LABEL_PAD,
     )
     ax.set_ylim(0.0, 105.0)
     ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
-    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
+    ax.tick_params(axis="both", labelsize=AXIS_FONT)
     for label in ax.get_yticklabels():
+        label.set_fontsize(AXIS_FONT)
         label.set_fontfamily(FONT_FAMILY)
 
-    plt.subplots_adjust(top=0.66, bottom=0.28, left=0.08, right=0.99)
+    plt.subplots_adjust(top=0.70, bottom=0.32, left=0.10, right=0.99)
     _style_legend(ax, active_segments)
 
     for spine in ax.spines.values():
@@ -501,13 +517,13 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
             output_dir / f"{stem}.png",
             dpi=OUTPUT_DPI,
             bbox_inches="tight",
-            pad_inches=0.05,
+            pad_inches=0.08,
         )
         fig.savefig(
             output_dir / f"{stem}.pdf",
             dpi=OUTPUT_DPI,
             bbox_inches="tight",
-            pad_inches=0.05,
+            pad_inches=0.08,
         )
     plt.close(fig)
 

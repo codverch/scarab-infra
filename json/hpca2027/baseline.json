@@ -17,15 +17,17 @@
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
-        "appworld",
+        "apsp",
+        "bc",
         "bfs",
-        "clickhouse",
-        "core_bench",
+        "community",
+        "connected_components",
         "dfs",
-        "duckdb",
+        "haystack",
+        "leveldb",
         "pagerank",
-        "rocksdb",
-        "terminal_bench"
+        "sssp_ego_fb",
+        "triangle_counting"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
@@ -34,8 +36,9 @@
   ],
   "configurations": {
     "baseline": {
+      "_comment": "No-fusion baseline: Scarab built from origin/hpca2027-baseline (no iFuse code).",
       "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1",
-      "binary": "scarab_current",
+      "binary": "scarab_cb2ec6957",
       "slurm_options": "",
       "memory_overhead_mb": 0
     }

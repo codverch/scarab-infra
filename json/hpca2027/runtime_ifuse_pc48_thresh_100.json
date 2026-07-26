@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "ideal-fusion-pass1",
+  "experiment": "runtime-ifuse-pc48-thresh-100",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -10,7 +10,7 @@
   "traces_dir": "/dev/shm/baseline/simpoint_traces",
   "workload_db": "baseline.json",
   "top_simpoint": false,
-  "_comment": "20M warmup + 10M measured simulation (inst_limit=30,000,000, full_warmup=20,000,000, descriptor warmup=20,000,000).",
+  "_comment": "48-bit PC tags (--ifuse_pc_tag_bits 48) shared across RLB, TT, FCT, APT. Training threshold 100 only.",
   "simulations": [
     {
       "suite": "datacenter",
@@ -34,8 +34,8 @@
     }
   ],
   "configurations": {
-    "pass1": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --ideal_fusion_pass 1 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{workload}/{cluster_id}.csv",
+    "pc48_thresh_100": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_fct_hash_bits 9 --ifuse_pc_tag_bits 48 --ifuse_training_insert_threshold 100",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
@@ -45,7 +45,7 @@
     "configs": null
   },
   "visualize": {
-    "baseline": "pass1",
+    "baseline": "pc48_thresh_100",
     "configs": [],
     "counters": [
       "IPC"
@@ -55,22 +55,5 @@
   "mem": {
     "collection_baseline": null,
     "fallback_mb": 16384
-  },
-  "perf_analyze": {
-    "baseline": "pass1",
-    "counters": [
-      "IPC"
-    ],
-    "stat_groups": [
-      "bp",
-      "fetch",
-      "core"
-    ],
-    "compare_all_stats": false,
-    "drift_top_workloads": 4,
-    "drift_top_simpoints": 5,
-    "prompt_budget_tokens": 12000,
-    "threshold_pct": 2.0,
-    "analyzer_cli_cmd": "codex"
   }
 }

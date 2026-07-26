@@ -16,15 +16,17 @@
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
-        "appworld",
+        "apsp",
+        "bc",
         "bfs",
-        "clickhouse",
-        "core_bench",
+        "community",
+        "connected_components",
         "dfs",
-        "duckdb",
+        "haystack",
+        "leveldb",
         "pagerank",
-        "rocksdb",
-        "terminal_bench"
+        "sssp_ego_fb",
+        "triangle_counting"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
@@ -34,7 +36,7 @@
   "configurations": {
     "runtime_ifuse": {
       "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 9",
-      "binary": "scarab_current",
+      "binary": "scarab_22394a154",
       "slurm_options": "",
       "memory_overhead_mb": 0
     }

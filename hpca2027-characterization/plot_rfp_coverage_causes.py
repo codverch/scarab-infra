@@ -46,9 +46,8 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
     FONT_FAMILY,
-    IPC_AXIS_LABEL_FONT,
-    IPC_LEGEND_FONT,
     IPC_TICK_FONT,
+    RFP_COLOR,
     SIMPOINT_WORKLOADS,
     find_simpoint_dir,
     load_simpoint_trace_weights,
@@ -61,28 +60,29 @@ DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "rfp_coverage_causes"
 RFP_STAT = "rfp.stat.0.csv"
 
 BAR_WIDTH = 0.40
-BAR_OUTLINE_WIDTH = 2.5
-LOAD_BEAT_PLOT_THRESHOLD = 0.005  # hide negligible load-beat slices (<0.5%)
-FIGSIZE = (28.0, 10.0)
-END_PAD = 0.45
+FIGSIZE = (24.0, 8.0)
+AVERAGE_SEPARATOR_WIDTH = 3.5
+AXIS_FONT = IPC_TICK_FONT
+LEGEND_FONT = 28
+Y_LABEL_PAD = 20
 OUTPUT_DPI = 300
+LOAD_BEAT_PLOT_THRESHOLD = 0.005  # hide negligible load-beat slices (<0.5%)
 Y_AXIS_LABEL = (
     "Breakdown of how RFP\n"
     "handles memory\n"
     "loads (%)"
 )
 
-RFP_CLR_COVERED = "#4B0082"
-RFP_CLR_LOW_CONFIDENCE = "#D5D5D4"
-RFP_CLR_PREFETCH_NOT_USEFUL = "#B83A4B"
+LOW_CONFIDENCE_COLOR = "#A81423"  # backend-stalls red; distinct from RFP_COLOR
+RFP_CLR_PREFETCH_NOT_USEFUL = "#D5D5D4"
 RFP_CLR_WRONG_ADDRESS = "#FFD92F"
 
 # (field, color) — bottom-to-top stack order.
 BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
-    ("covered_frac", RFP_CLR_COVERED),
+    ("covered_frac", RFP_COLOR),
     ("prefetch_not_useful_frac", RFP_CLR_PREFETCH_NOT_USEFUL),
     ("wrong_address_frac", RFP_CLR_WRONG_ADDRESS),
-    ("low_confidence_frac", RFP_CLR_LOW_CONFIDENCE),
+    ("low_confidence_frac", LOW_CONFIDENCE_COLOR),
 )
 
 BREAKDOWN_CATEGORIES: dict[str, str] = {
@@ -95,6 +95,31 @@ BREAKDOWN_CATEGORIES: dict[str, str] = {
 
 def legend_label(field: str) -> str:
     return BREAKDOWN_CATEGORIES.get(field, field)
+
+
+def _apply_plot_style() -> None:
+    plt.rcParams.update(
+        {
+            "font.family": FONT_FAMILY,
+            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
+            "axes.labelsize": AXIS_FONT,
+            "xtick.labelsize": AXIS_FONT,
+            "ytick.labelsize": AXIS_FONT,
+            "legend.fontsize": LEGEND_FONT,
+            "text.color": "black",
+            "axes.labelcolor": "black",
+            "xtick.color": "black",
+            "ytick.color": "black",
+        }
+    )
+
+
+def _tight_x_limits(ax, x_min: float, x_max: float) -> None:
+    left_pad = 0.12
+    right_pad = 0.12
+    half_span = BAR_WIDTH / 2.0
+    ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
+    ax.margins(x=0)
 
 
 @dataclass
@@ -420,27 +445,31 @@ def _legend_handles(active_segments: list[tuple[str, str]]) -> list:
 
 
 def _style_legend(ax, active_segments: list[tuple[str, str]]) -> None:
-    ncol = 2 if len(active_segments) <= 4 else 3
+    ncol = 2 if len(active_segments) > 1 else 1
     legend = ax.legend(
         handles=_legend_handles(active_segments),
         frameon=True,
         fancybox=False,
         shadow=False,
         loc="lower center",
-        bbox_to_anchor=(0.5, 1.06),
+        bbox_to_anchor=(0.5, 1.12),
         bbox_transform=ax.transAxes,
-        borderaxespad=0.4,
-        fontsize=IPC_LEGEND_FONT,
+        borderaxespad=0.0,
+        fontsize=LEGEND_FONT,
         edgecolor="black",
         ncol=ncol,
-        handlelength=1.4,
-        handleheight=1.1,
-        columnspacing=1.2,
+        handlelength=1.2,
+        handleheight=0.9,
+        columnspacing=1.0,
         framealpha=1.0,
     )
     legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
     legend.get_frame().set_facecolor("white")
     legend.get_frame().set_alpha(1.0)
+    for text in legend.get_texts():
+        text.set_color("black")
+        text.set_fontfamily(FONT_FAMILY)
+        text.set_fontsize(LEGEND_FONT)
 
 
 def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
@@ -448,21 +477,6 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
     rows = results + [avg]
     display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
     x = np.arange(len(display_apps))
-
-    plt.rcParams.update(
-        {
-            "font.family": FONT_FAMILY,
-            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "axes.labelsize": IPC_AXIS_LABEL_FONT,
-            "xtick.labelsize": IPC_TICK_FONT,
-            "ytick.labelsize": IPC_TICK_FONT,
-            "legend.fontsize": IPC_LEGEND_FONT,
-        }
-    )
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
-
-    from matplotlib.patches import Rectangle
 
     plot_rows = [
         WorkloadBreakdown(
@@ -474,6 +488,10 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
     ]
     active_segments = _visible_segments(plot_rows)
 
+    _apply_plot_style()
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
+
     bottoms = np.zeros(len(plot_rows))
     for field, color in active_segments:
         values = np.array([getattr(r.breakdown, field) * 100.0 for r in plot_rows])
@@ -483,37 +501,19 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
             BAR_WIDTH,
             bottom=bottoms,
             color=color,
-            edgecolor="none",
-            linewidth=0,
+            edgecolor="black",
+            linewidth=BAR_EDGE_WIDTH,
             label=legend_label(field),
             zorder=3,
         )
         bottoms += values
-
-    half_span = BAR_WIDTH / 2.0
-    for xi, total_height in zip(x, bottoms):
-        if total_height <= 0:
-            continue
-        ax.add_patch(
-            Rectangle(
-                (xi - half_span, 0.0),
-                BAR_WIDTH,
-                total_height,
-                fill=False,
-                edgecolor="black",
-                linewidth=BAR_OUTLINE_WIDTH,
-                clip_on=False,
-                zorder=4,
-            )
-        )
 
     if len(display_apps) > 1:
         ax.axvline(
             x=len(display_apps) - 1.5,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
-            alpha=0.9,
-            linewidth=2.5,
+            linewidth=AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
@@ -522,31 +522,36 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
         display_apps,
         rotation=45,
         ha="right",
-        fontsize=IPC_TICK_FONT,
+        fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
+        color="black",
     )
     for label in ax.get_xticklabels():
+        label.set_fontsize(AXIS_FONT)
+        label.set_fontfamily(FONT_FAMILY)
+        label.set_color("black")
         if label.get_text() == "Average":
             label.set_weight("bold")
 
-    half_span = BAR_WIDTH / 2.0
-    ax.set_xlim(x[0] - half_span - 0.12 - END_PAD, x[-1] + half_span + 0.10 + END_PAD)
-    ax.margins(x=0)
+    _tight_x_limits(ax, x[0], x[-1])
 
     ax.set_ylabel(
         Y_AXIS_LABEL,
-        fontsize=IPC_AXIS_LABEL_FONT,
+        fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
+        color="black",
+        labelpad=Y_LABEL_PAD,
     )
     ax.set_ylim(0.0, 105.0)
     ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
-    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
+    ax.tick_params(axis="both", labelsize=AXIS_FONT, colors="black")
     for label in ax.get_yticklabels():
+        label.set_fontsize(AXIS_FONT)
         label.set_fontfamily(FONT_FAMILY)
+        label.set_color("black")
 
-    plt.subplots_adjust(top=0.66, bottom=0.28, left=0.08, right=0.99)
+    plt.subplots_adjust(top=0.70, bottom=0.32, left=0.10, right=0.99)
     _style_legend(ax, active_segments)
 
     for spine in ax.spines.values():
@@ -560,13 +565,13 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
             output_dir / f"{stem}.png",
             dpi=OUTPUT_DPI,
             bbox_inches="tight",
-            pad_inches=0.05,
+            pad_inches=0.08,
         )
         fig.savefig(
             output_dir / f"{stem}.pdf",
             dpi=OUTPUT_DPI,
             bbox_inches="tight",
-            pad_inches=0.05,
+            pad_inches=0.08,
         )
     plt.close(fig)
 

@@ -56,7 +56,7 @@ except ImportError:
 
 GAP_WORKLOADS = ["bfs", "dfs", "pagerank"]
 AGENTIC_WORKLOADS = ["appworld", "core_bench", "terminal_bench"]
-DATABASE_WORKLOADS = ["leveldb", "clickhouse"]
+DATABASE_WORKLOADS = ["duckdb", "rocksdb", "clickhouse"]
 
 WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("GAP", tuple(GAP_WORKLOADS)),
@@ -65,19 +65,20 @@ WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 SIMPOINT_WORKLOADS = GAP_WORKLOADS + AGENTIC_WORKLOADS + DATABASE_WORKLOADS
 
-HELIOS_COLOR = "#009900"
-RFP_COLOR = "#720072"
+HELIOS_COLOR = "#E98300"
+RFP_COLOR = "#620059"
 IFUSE_COLOR = "#FFE600"
 BASELINE_COLOR = "#808080"
-IDEAL_FUSION_COLOR = "#000000"
+IDEAL_FUSION_COLOR = "#FEC51D"
 AVERAGE_SEPARATOR_COLOR = "#4A4A4A"
 SMALL_BAR_THRESHOLD = 0.5
-BAR_WIDTH = 0.18
+BAR_LABEL_GAP = 1.2
+BAR_WIDTH = 0.24
 BAR_EDGE_WIDTH = 2.5
 FONT_FAMILY = "Noto Serif"
 IPC_TICK_FONT = 42
 IPC_AXIS_LABEL_FONT = IPC_TICK_FONT
-IPC_LEGEND_FONT = 36
+IPC_LEGEND_FONT = 32
 IPC_AXIS_FONT = 32
 
 # Backward-compatible aliases used by other hpca2027-main-graphs scripts.
@@ -575,43 +576,56 @@ def _annotate_ipc_bar_labels(
     values: list[float],
     *,
     fontsize: int = IPC_AXIS_FONT,
+    small_values_only: bool = False,
+    label_lane: int = 0,
+    n_label_lanes: int = 1,
 ) -> None:
-    """Label bar speedups; tiny positive values use a downward arrow and black text."""
+    """Label bar speedups; tiny values use a downward arrow and black text."""
+    lane_step = 5.0
+    lane_base = 4.0
+    small_fontsize = max(18, fontsize - 10)
     for patch, val in zip(container.patches, values, strict=True):
-        if math.isnan(val) or abs(val) < 1e-9:
+        if math.isnan(val):
             continue
         x = patch.get_x() + patch.get_width() / 2.0
-        if 0 <= val < SMALL_BAR_THRESHOLD:
-            arrow_top = 5.5
+        if val < SMALL_BAR_THRESHOLD:
+            bar_top = patch.get_height()
+            arrow_target = max(bar_top + 0.08, 0.12)
+            arrow_top = lane_base + label_lane * lane_step
             ax.annotate(
                 "",
-                xy=(x, 0),
+                xy=(x, arrow_target),
                 xytext=(x, arrow_top),
                 arrowprops=dict(
                     arrowstyle="->",
                     color="black",
                     lw=1.5,
                     mutation_scale=12,
+                    shrinkA=0,
+                    shrinkB=2,
                 ),
                 zorder=10,
             )
             ax.text(
                 x,
-                arrow_top + 0.4,
+                arrow_top,
                 f"{val:+.1f}",
                 ha="center",
                 va="bottom",
-                fontsize=fontsize,
+                fontsize=small_fontsize,
                 fontfamily=FONT_FAMILY,
                 color="black",
-                zorder=10,
+                zorder=11,
             )
+            continue
+
+        if small_values_only:
             continue
 
         height = patch.get_height()
         ax.text(
             x,
-            height,
+            height + BAR_LABEL_GAP,
             f"{val:+.1f}",
             ha="center",
             va="bottom",
@@ -719,8 +733,9 @@ def plot_speedup_bars(
             if show_bar_labels:
                 _annotate_ipc_bar_labels(ax, container, pct_vals, fontsize=IPC_AXIS_FONT)
 
+        separator_x = len(display_apps) - 1.5 if len(display_apps) > 1 else float(len(display_apps) - 1)
+
         if len(display_apps) > 1:
-            separator_x = len(display_apps) - 1.5
             ax.axvline(
                 x=separator_x,
                 color=AVERAGE_SEPARATOR_COLOR,
@@ -764,11 +779,13 @@ def plot_speedup_bars(
             fancybox=False,
             shadow=False,
             loc="upper left",
+            bbox_to_anchor=(0.01, 0.96),
+            bbox_transform=ax.transAxes,
             fontsize=IPC_LEGEND_FONT,
             edgecolor="black",
-            ncol=2,
-            handlelength=1.1,
-            handleheight=1.1,
+            ncol=len(series),
+            handlelength=0.9,
+            handleheight=0.9,
             framealpha=1.0,
         )
         legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
@@ -781,7 +798,7 @@ def plot_speedup_bars(
             spine.set_linewidth(2.5)
 
         plt.tight_layout()
-        plt.subplots_adjust(top=1.12, bottom=0.28)
+        plt.subplots_adjust(top=0.95, bottom=0.28, right=0.99)
 
         out = output_dir / stem
         fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.05, dpi=300)
@@ -830,12 +847,30 @@ def main() -> None:
     )
     parser.add_argument("--exclude-workloads", nargs="*", default=[])
     parser.add_argument(
+        "--schemes",
+        nargs="*",
+        default=None,
+        metavar="SCHEME",
+        help=(
+            "IPC series to plot (subset of: helios, rfp, ifuse, ideal_fusion). "
+            "Default: all series."
+        ),
+    )
+    parser.add_argument(
         "--optional-configs",
         nargs="*",
         default=["helios"],
         help="Configs that may have missing simpoints without excluding the app.",
     )
     args = parser.parse_args()
+
+    scheme_keys = tuple(args.schemes) if args.schemes else tuple(key for key, _, _ in IPC_SERIES)
+    unknown = [key for key in scheme_keys if key not in {k for k, _, _ in IPC_SERIES}]
+    if unknown:
+        raise SystemExit(f"Unknown scheme(s): {', '.join(unknown)}")
+    active_series = tuple(entry for entry in IPC_SERIES if entry[0] in scheme_keys)
+    if not active_series:
+        raise SystemExit("No schemes selected for plotting.")
 
     sim_root = args.simulations_root
     baseline_dir = args.baseline_dir or DEFAULT_BASELINE_DIR
@@ -900,14 +935,18 @@ def main() -> None:
         "ifuse": ifuse_ipc,
         "ideal_fusion": ideal_ipc,
     }
-    directories = {
+    all_directories = {
         "baseline": (baseline_dir, args.baseline_config),
         "helios": (helios_dir, args.helios_config),
         "rfp": (rfp_dir, args.rfp_config),
         "ifuse": (ifuse_dir, args.ifuse_config),
         "ideal_fusion": (ideal_dir, args.ideal_fusion_config),
     }
-    config_by_label = {label: cfg for label, (_d, cfg) in directories.items()}
+    directories = {
+        key: all_directories[key]
+        for key in ("baseline", *scheme_keys)
+    }
+    config_by_label = {label: cfg for label, (_d, cfg) in all_directories.items()}
 
     complete_apps, reference_by_workload = check_simpoint_coverage(
         directories,
@@ -919,9 +958,9 @@ def main() -> None:
         optional_configs=set(args.optional_configs),
     )
     if not complete_apps:
+        scheme_list = ", ".join(scheme_keys)
         raise SystemExit(
-            "No apps have complete simpoint files across baseline, helios, rfp, "
-            "ifuse, and ideal fusion."
+            f"No apps have complete simpoint files across baseline and: {scheme_list}."
         )
 
     optional_configs = set(args.optional_configs)
@@ -929,11 +968,11 @@ def main() -> None:
 
     baseline_pairs: dict[str, list[tuple[str, float, float]]] = {}
     series_pairs: dict[str, dict[str, list[tuple[str, float, float]]]] = {
-        key: {} for key, _, _ in IPC_SERIES
+        key: {} for key, _, _ in active_series
     }
     baseline_avg: list[float] = []
-    series_avg: dict[str, list[float]] = {key: [] for key, _, _ in IPC_SERIES}
-    series_normalized: dict[str, list[float]] = {key: [] for key, _, _ in IPC_SERIES}
+    series_avg: dict[str, list[float]] = {key: [] for key, _, _ in active_series}
+    series_normalized: dict[str, list[float]] = {key: [] for key, _, _ in active_series}
 
     for workload in apps:
         ref = reference_by_workload[workload]
@@ -945,7 +984,7 @@ def main() -> None:
         b_avg = weighted_avg(bp)
         baseline_avg.append(b_avg)
 
-        for key, _, _ in IPC_SERIES:
+        for key, _, _ in active_series:
             pairs = collect_trace_pairs(
                 ipc_by_label[key],
                 sp_weights,
@@ -986,15 +1025,16 @@ def main() -> None:
         series_pairs,
         series_avg,
         series_normalized,
+        series=active_series,
     )
     print(f"Detailed computation log written to: {output_dir / 'ipc_computation_log.txt'}")
 
     header = f"{'App':<20} {'Baseline':>10}"
-    for _key, label, _color in IPC_SERIES:
+    for _key, label, _color in active_series:
         header += f" {label:>12}"
     print("\nSummary of Weighted Average IPCs (Normalized to Baseline):\n")
     print(header)
-    print("-" * (32 + 13 * len(IPC_SERIES)))
+    print("-" * (32 + 13 * len(active_series)))
 
     summary_rows: list[dict[str, str | float]] = []
     for idx, workload in enumerate(apps):
@@ -1004,7 +1044,7 @@ def main() -> None:
         }
         norm_parts: list[str] = []
         line = f"{workload:<20} {1.0:>10.2f}"
-        for key, label, _color in IPC_SERIES:
+        for key, label, _color in active_series:
             norm = series_normalized[key][idx]
             row[f"{key}_ipc"] = series_avg[key][idx]
             row[f"{key}_speedup"] = norm
@@ -1024,7 +1064,7 @@ def main() -> None:
         summary_rows.append(row)
 
     avg_row: dict[str, str | float] = {"workload": "arithmetic_mean", "baseline_ipc": ""}
-    for key, _, _ in IPC_SERIES:
+    for key, _, _ in active_series:
         values = [val for val in series_normalized[key] if not math.isnan(val)]
         avg = sum(values) / len(values) if values else float("nan")
         avg_row[f"{key}_ipc"] = ""
@@ -1032,7 +1072,7 @@ def main() -> None:
     summary_rows.append(avg_row)
 
     write_summary_csv(output_dir / "ipc_summary.csv", summary_rows)
-    plot_speedup_bars(apps, series_normalized, output_dir)
+    plot_speedup_bars(apps, series_normalized, output_dir, series=active_series)
 
     print("\nIPC comparison plots saved as:")
     print(f"  - {output_dir / 'ipc-labeled.png'}")

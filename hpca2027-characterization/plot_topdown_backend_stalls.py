@@ -32,14 +32,13 @@ if str(MAIN_GRAPHS) not in sys.path:
     sys.path.insert(0, str(MAIN_GRAPHS))
 
 from plot_ipc import (  # noqa: E402
-    AVERAGE_SEPARATOR_COLOR,
-    BAR_EDGE_WIDTH,
     FONT_FAMILY,
-    IPC_AXIS_LABEL_FONT,
     IPC_TICK_FONT,
     SIMPOINT_WORKLOADS,
     rename_workload,
 )
+
+AXIS_FONT = IPC_TICK_FONT
 
 
 WORKLOAD_LABELS = {
@@ -434,10 +433,15 @@ def write_simpoint_csv(rows: list[dict[str, float]], path: Path) -> None:
 
 
 # Plot styling (aligned with hpca2027-main-graphs/plot_ipc.py)
-CARNEGIE_RED = "#C41230"
+STANFORD_RED = "#8C1515"
+CMU_RED = "#C41230"
+BAR_COLOR = "#A81423"  # 50/50 blend of Stanford and CMU cardinal reds
+AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
+AVERAGE_SEPARATOR_WIDTH = 3.5
 BAR_WIDTH = 0.40
 FIGSIZE = (24.0, 6.5)
-END_PAD = 0.45
+BAR_EDGE_WIDTH = 3.0
+Y_LABEL_PAD = 20
 DEFAULT_SCARAB_ROOT = Path("/users/deepmish/scarab")
 DEFAULT_SIM_ROOT = DEFAULT_SCARAB_ROOT / "src" / "simulations" / "baseline"
 DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
@@ -452,16 +456,16 @@ def _apply_plot_style() -> None:
         {
             "font.family": FONT_FAMILY,
             "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "axes.labelsize": IPC_AXIS_LABEL_FONT,
-            "xtick.labelsize": IPC_TICK_FONT,
-            "ytick.labelsize": IPC_TICK_FONT,
+            "axes.labelsize": AXIS_FONT,
+            "xtick.labelsize": AXIS_FONT,
+            "ytick.labelsize": AXIS_FONT,
         }
     )
 
 
 def _tight_x_limits(ax, x_min: float, x_max: float) -> None:
     left_pad = 0.12
-    right_pad = 0.10
+    right_pad = 0.12
     half_span = BAR_WIDTH / 2.0
     ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
     ax.margins(x=0)
@@ -518,7 +522,7 @@ def plot(
         x,
         values,
         BAR_WIDTH,
-        color=CARNEGIE_RED,
+        color=BAR_COLOR,
         edgecolor="black",
         linewidth=BAR_EDGE_WIDTH,
         zorder=3,
@@ -529,8 +533,7 @@ def plot(
             x=len(display_apps) - 1.5,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
-            alpha=0.9,
-            linewidth=2.5,
+            linewidth=AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
@@ -539,30 +542,31 @@ def plot(
         display_apps,
         rotation=45,
         ha="right",
-        fontsize=IPC_TICK_FONT,
+        fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
     )
     for label in ax.get_xticklabels():
+        label.set_fontsize(AXIS_FONT)
+        label.set_fontfamily(FONT_FAMILY)
         if label.get_text() == "Average":
             label.set_weight("bold")
 
     _tight_x_limits(ax, x[0], x[-1])
-    xmin, xmax = ax.get_xlim()
-    ax.set_xlim(xmin - END_PAD, xmax + END_PAD)
 
     ax.set_ylabel(
         "Backend bound stalls (%)",
-        fontsize=IPC_AXIS_LABEL_FONT,
+        fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
+        labelpad=Y_LABEL_PAD,
     )
     y_max = max(values) if values else 100.0
     ymax = min(100.0, max(10.0, (int(y_max / 10) + 1) * 10))
     ax.set_ylim(0.0, ymax * 1.08)
     ax.yaxis.set_major_locator(mticker.MultipleLocator(10))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
-    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
+    ax.tick_params(axis="both", labelsize=AXIS_FONT)
     for label in ax.get_yticklabels():
+        label.set_fontsize(AXIS_FONT)
         label.set_fontfamily(FONT_FAMILY)
 
     for spine in ax.spines.values():
@@ -570,11 +574,10 @@ def plot(
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
-    plt.tight_layout()
-    plt.subplots_adjust(top=1.12, bottom=0.28)
-    fig.savefig(out_png, bbox_inches="tight", dpi=300)
+    plt.subplots_adjust(top=0.98, bottom=0.32, left=0.10)
+    fig.savefig(out_png, bbox_inches="tight", pad_inches=0.08, dpi=300)
     if out_pdf:
-        fig.savefig(out_pdf, bbox_inches="tight", dpi=300)
+        fig.savefig(out_pdf, bbox_inches="tight", pad_inches=0.08, dpi=300)
     plt.close(fig)
 
 
