@@ -1,366 +1,253 @@
 #!/usr/bin/env python3
-"""Assemble per-app tuned RFP results into a single deliverable directory."""
+"""Package per-app tuned RFP results into scarab/src/rfp-final-results/."""
 
 from __future__ import annotations
 
 import csv
 import json
-import math
-import shutil
-import sys
-from dataclasses import dataclass
+import os
 from pathlib import Path
 
-GRAPH_DIR = Path(__file__).resolve().parent
-if str(GRAPH_DIR) not in sys.path:
-    sys.path.insert(0, str(GRAPH_DIR))
+SCARAB_SRC = Path("/users/deepmish/scarab/src")
+SIM_ROOT = SCARAB_SRC / "simulations"
+BASELINE_ROOT = SCARAB_SRC / "simulations-confidence-1" / "baseline"
+OUT = SCARAB_SRC / "rfp-final-results"
 
-from plot_ipc import (  # noqa: E402
-    DEFAULT_TRACE_ROOT,
-    find_simpoint_dir,
-    ipc_from_sim_dir,
-    load_simpoint_trace_weights,
-    rename_workload,
+COMMON = (
+    "--rfp_pt_num_sets 512 --rfp_pt_num_ways 8 "
+    "--rfp_pat_num_sets 64 --rfp_pat_num_ways 4"
 )
 
-WORKLOADS = [
-    "appworld",
-    "bfs",
-    "clickhouse",
-    "core_bench",
-    "dfs",
-    "duckdb",
-    "pagerank",
-    "rocksdb",
-    "terminal_bench",
-]
-
-BASELINE_ROOT = Path("/users/deepmish/scarab/src/simulations-confidence-1")
-SIM_ROOT = Path("/users/deepmish/scarab/src/simulations")
-OUT_ROOT = Path("/users/deepmish/scarab/src/rfp-final-results")
-
-# Per-app tuned confidence (24KB PT/PAT for all RFP configs).
-APP_CONFIG: dict[str, dict[str, object]] = {
+# Per-app best config: graph apps use 16b signed stride tuning; others use prob_shift=2.
+APP_CONFIG: dict[str, dict] = {
     "bfs": {
-        "config": "rfp_prob_p22",
+        "config": "rfp_p3_s16",
+        "prob_shift": 3,
+        "stride_bits": 16,
+        "stride_signed": 1,
         "sim_root": SIM_ROOT,
-        "rfp_prob_shift": 22,
-        "rfp_conf_max": 1,
-        "note": "Ultra-conservative P(conf++)=1/2^22 to avoid IPC loss on graph traversal",
     },
     "dfs": {
-        "config": "rfp_prob_p22",
+        "config": "rfp_p0_s16",
+        "prob_shift": 0,
+        "stride_bits": 16,
+        "stride_signed": 1,
         "sim_root": SIM_ROOT,
-        "rfp_prob_shift": 22,
-        "rfp_conf_max": 1,
-        "note": "Same as bfs",
+    },
+    "pagerank": {
+        "config": "rfp_p1_s16",
+        "prob_shift": 1,
+        "stride_bits": 16,
+        "stride_signed": 1,
+        "sim_root": SIM_ROOT,
+    },
+    "appworld": {
+        "config": "rfp_prob_p2",
+        "prob_shift": 2,
+        "stride_bits": 5,
+        "stride_signed": 1,
+        "sim_root": SIM_ROOT,
+    },
+    "clickhouse": {
+        "config": "rfp_prob_p2",
+        "prob_shift": 2,
+        "stride_bits": 5,
+        "stride_signed": 1,
+        "sim_root": SIM_ROOT,
+    },
+    "core_bench": {
+        "config": "rfp_prob_p2",
+        "prob_shift": 2,
+        "stride_bits": 5,
+        "stride_signed": 1,
+        "sim_root": SIM_ROOT,
+    },
+    "duckdb": {
+        "config": "rfp_prob_p2",
+        "prob_shift": 2,
+        "stride_bits": 5,
+        "stride_signed": 1,
+        "sim_root": SIM_ROOT,
+    },
+    "rocksdb": {
+        "config": "rfp_prob_p2",
+        "prob_shift": 2,
+        "stride_bits": 5,
+        "stride_signed": 1,
+        "sim_root": SIM_ROOT,
+    },
+    "terminal_bench": {
+        "config": "rfp_prob_p2",
+        "prob_shift": 2,
+        "stride_bits": 5,
+        "stride_signed": 1,
+        "sim_root": SIM_ROOT,
     },
 }
-DEFAULT_TUNED = {
-    "config": "rfp_prob_p2",
-    "sim_root": SIM_ROOT,
-    "rfp_prob_shift": 2,
-    "rfp_conf_max": 1,
-    "note": "P(conf++)=1/4 — best IPC/coverage tradeoff from prob-shift sweep",
-}
-for wl in WORKLOADS:
-    APP_CONFIG.setdefault(wl, DEFAULT_TUNED)
+
+APPS = list(APP_CONFIG.keys())
 
 
-@dataclass
-class AppSummary:
-    workload: str
-    config: str
-    rfp_prob_shift: int
-    rfp_conf_max: int
-    ipc_baseline: float
-    ipc_rfp: float
-    speedup_pct: float
-    injected_pct: float | None
-    useful_pct: float | None
-    simpoints: int
+def _params(entry: dict) -> str:
+    return (
+        f"--rfp_prob_shift {entry['prob_shift']} "
+        f"--rfp_conf_max 1 "
+        f"--rfp_stride_signed {entry['stride_signed']} "
+        f"--rfp_stride_bits {entry['stride_bits']} "
+        f"{COMMON}"
+    )
 
 
-def stat_pct(rfp_csv: Path, num: str, den: str = "RFP_ALL_LOADS_count") -> float | None:
-    vals: dict[str, float] = {}
-    with rfp_csv.open(newline="") as fh:
-        reader = csv.reader(fh)
-        next(reader, None)
-        for row in reader:
-            if len(row) < 3:
-                continue
-            vals[row[0].strip()] = float(row[2].strip())
-    if den not in vals or vals[den] <= 0 or num not in vals:
-        return None
-    return 100.0 * vals[num] / vals[den]
-
-
-def weighted_metric(
-    sim_root: Path,
-    config: str,
-    workload: str,
-    sp_weights: dict,
-    fn,
-) -> tuple[float | None, int]:
-    total = 0.0
-    wsum = 0.0
-    count = 0
-    for (wl, cid), w in sp_weights.items():
-        if wl != workload or w <= 0:
-            continue
-        sim = find_simpoint_dir(
-            sim_root, config, wl, cid, suite="datacenter", subsuite="datacenter"
-        )
-        if sim is None:
-            continue
-        v = fn(sim)
-        if v is None:
-            continue
-        total += w * v
-        wsum += w
-        count += 1
-    if wsum <= 0:
-        return None, count
-    return total / wsum, count
-
-
-def geomean_speedup(pcts: list[float]) -> float:
-    if not pcts:
-        return 0.0
-    return (math.exp(sum(math.log(1.0 + p / 100.0) for p in pcts) / len(pcts)) - 1.0) * 100.0
-
-
-def link_simpoint(src: Path, dst: Path) -> None:
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    if dst.exists() or dst.is_symlink():
-        dst.unlink()
-    dst.symlink_to(src.resolve())
-
-
-def iter_simpoints(sim_root: Path, config: str, workload: str) -> list[str]:
-    wl_dir = sim_root / config / workload
+def _simpoint_dirs(root: Path, wl: str) -> list[tuple[str, Path]]:
+    wl_dir = root / wl
     if not wl_dir.is_dir():
         return []
-    return sorted(p.name for p in wl_dir.iterdir() if p.is_dir())
+    out = []
+    for cid in sorted(wl_dir.iterdir(), key=lambda p: int(p.name) if p.name.isdigit() else p.name):
+        if cid.is_dir():
+            out.append((cid.name, cid))
+    return out
+
+
+def _symlink_tree(src: Path, dst: Path) -> None:
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    if dst.is_symlink() or dst.exists():
+        dst.unlink(missing_ok=True)
+    os.symlink(src.resolve(), dst)
 
 
 def main() -> None:
-    sp_weights = load_simpoint_trace_weights(DEFAULT_TRACE_ROOT, WORKLOADS)
+    if OUT.exists():
+        import shutil
 
-    if OUT_ROOT.exists():
-        shutil.rmtree(OUT_ROOT)
-    out_sim = OUT_ROOT / "simulations"
-    out_baseline = out_sim / "baseline"
-    out_rfp = out_sim / "rfp_tuned"
-    out_baseline.mkdir(parents=True)
-    out_rfp.mkdir(parents=True)
+        shutil.rmtree(OUT)
+    OUT.mkdir(parents=True)
 
-    summaries: list[AppSummary] = []
+    configs_out: dict = {"apps": {}, "baseline": "simulations-confidence-1/baseline"}
+    summary_rows: list[dict] = []
 
-    for wl in WORKLOADS:
-        cfg_info = APP_CONFIG[wl]
-        config = str(cfg_info["config"])
-        rfp_root = Path(cfg_info["sim_root"])
+    for wl in APPS:
+        entry = APP_CONFIG[wl]
+        cfg = entry["config"]
+        sim_root = entry["sim_root"]
+        app_dir = OUT / wl
+        baseline_dir = app_dir / "baseline"
+        rfp_dir = app_dir / "rfp"
 
-        cluster_ids = iter_simpoints(BASELINE_ROOT, "baseline", wl)
-        if not cluster_ids:
-            raise SystemExit(f"No baseline simpoints for {wl}")
+        bl_sps = _simpoint_dirs(BASELINE_ROOT, wl)
+        rfp_sps = _simpoint_dirs(sim_root / cfg, wl)
 
-        for cid in cluster_ids:
-            base_sim = find_simpoint_dir(
-                BASELINE_ROOT,
-                "baseline",
-                wl,
-                cid,
-                suite="datacenter",
-                subsuite="datacenter",
-            )
-            rfp_sim = find_simpoint_dir(
-                rfp_root, config, wl, cid, suite="datacenter", subsuite="datacenter"
-            )
-            if base_sim is None or rfp_sim is None:
-                raise SystemExit(f"Missing simpoint {wl}/{cid} base={base_sim} rfp={rfp_sim}")
+        if not bl_sps:
+            print(f"WARN: no baseline simpoints for {wl}")
+        if not rfp_sps:
+            print(f"WARN: no RFP simpoints for {wl} ({cfg})")
 
-            link_simpoint(base_sim, out_baseline / wl / cid)
-            link_simpoint(rfp_sim, out_rfp / wl / cid)
+        for cid, src in bl_sps:
+            _symlink_tree(src, baseline_dir / cid)
+        for cid, src in rfp_sps:
+            _symlink_tree(src, rfp_dir / cid)
 
-        # Restrict weights to simpoints we actually ran.
-        wl_weights = {
-            (w, c): sp_weights[(w, c)]
-            for (w, c) in sp_weights
-            if w == wl and c in cluster_ids
+        configs_out["apps"][wl] = {
+            "config": cfg,
+            "prob_shift": entry["prob_shift"],
+            "rfp_conf_max": 1,
+            "rfp_stride_bits": entry["stride_bits"],
+            "rfp_stride_signed": entry["stride_signed"],
+            "params": _params(entry),
+            "sim_root": str(sim_root.relative_to(SCARAB_SRC)),
+            "baseline_simpoints": len(bl_sps),
+            "rfp_simpoints": len(rfp_sps),
         }
-        base_ipc, n = weighted_metric(
-            BASELINE_ROOT, "baseline", wl, wl_weights, ipc_from_sim_dir
-        )
-        rfp_ipc, _ = weighted_metric(rfp_root, config, wl, wl_weights, ipc_from_sim_dir)
-        inj, _ = weighted_metric(
-            rfp_root,
-            config,
-            wl,
-            wl_weights,
-            lambda s: stat_pct(s / "rfp.stat.0.csv", "RFP_PREFETCH_INJECTED_count"),
-        )
-        use, _ = weighted_metric(
-            rfp_root,
-            config,
-            wl,
-            wl_weights,
-            lambda s: stat_pct(s / "rfp.stat.0.csv", "RFP_PREFETCH_USEFUL_count"),
-        )
-        if base_ipc is None or rfp_ipc is None:
-            raise SystemExit(f"Missing IPC for {wl}")
-
-        summaries.append(
-            AppSummary(
-                workload=wl,
-                config=config,
-                rfp_prob_shift=int(cfg_info["rfp_prob_shift"]),
-                rfp_conf_max=int(cfg_info["rfp_conf_max"]),
-                ipc_baseline=base_ipc,
-                ipc_rfp=rfp_ipc,
-                speedup_pct=(rfp_ipc / base_ipc - 1.0) * 100.0,
-                injected_pct=inj,
-                useful_pct=use,
-                simpoints=n,
-            )
-        )
-
-    # Write configs.json
-    configs_doc = {
-        "experiment": "rfp-final-tuned",
-        "architecture": "golden_cove",
-        "pt_pat_storage": "24KB (512x8 PT, 64x4 PAT)",
-        "baseline_source": str(BASELINE_ROOT / "baseline"),
-        "per_app_config": {
-            wl: {
-                "config_name": APP_CONFIG[wl]["config"],
-                "rfp_prob_shift": APP_CONFIG[wl]["rfp_prob_shift"],
-                "rfp_conf_max": APP_CONFIG[wl]["rfp_conf_max"],
-                "p_conf_increment": f"1/2^{APP_CONFIG[wl]['rfp_prob_shift']}",
-                "note": APP_CONFIG[wl]["note"],
+        summary_rows.append(
+            {
+                "workload": wl,
+                "config": cfg,
+                "prob_shift": entry["prob_shift"],
+                "stride_bits": entry["stride_bits"],
+                "baseline_sps": len(bl_sps),
+                "rfp_sps": len(rfp_sps),
             }
-            for wl in WORKLOADS
-        },
-        "degraded_apps_tuning": {
-            "bfs": "rfp_prob_shift=22 (was -0.3% at default); now 0.0%",
-            "dfs": "rfp_prob_shift=22 (was -0.4% at default); now 0.0%",
-        },
-    }
-    (OUT_ROOT / "configs.json").write_text(json.dumps(configs_doc, indent=2) + "\n")
+        )
 
-    # summary.csv
-    csv_path = OUT_ROOT / "summary.csv"
-    with csv_path.open("w", newline="") as fh:
-        w = csv.writer(fh)
-        w.writerow(
-            [
+    with open(OUT / "configs.json", "w") as f:
+        json.dump(configs_out, f, indent=2)
+
+    with open(OUT / "summary.csv", "w", newline="") as f:
+        w = csv.DictWriter(
+            f,
+            fieldnames=[
                 "workload",
-                "display_name",
                 "config",
-                "rfp_prob_shift",
-                "rfp_conf_max",
-                "ipc_baseline",
-                "ipc_rfp",
-                "speedup_pct",
-                "injected_pct",
-                "useful_pct",
-                "simpoints",
-            ]
+                "prob_shift",
+                "stride_bits",
+                "baseline_sps",
+                "rfp_sps",
+            ],
         )
-        for s in summaries:
-            w.writerow(
-                [
-                    s.workload,
-                    rename_workload(s.workload),
-                    s.config,
-                    s.rfp_prob_shift,
-                    s.rfp_conf_max,
-                    f"{s.ipc_baseline:.6f}",
-                    f"{s.ipc_rfp:.6f}",
-                    f"{s.speedup_pct:.4f}",
-                    f"{s.injected_pct:.4f}" if s.injected_pct is not None else "",
-                    f"{s.useful_pct:.4f}" if s.useful_pct is not None else "",
-                    s.simpoints,
-                ]
-            )
-        w.writerow([])
-        w.writerow(
-            [
-                "OVERALL_GEOMEAN",
-                "",
-                "per-app tuned",
-                "",
-                "",
-                "",
-                "",
-                f"{geomean_speedup([s.speedup_pct for s in summaries]):.4f}",
-                "",
-                "",
-                sum(s.simpoints for s in summaries),
-            ]
-        )
+        w.writeheader()
+        w.writerows(summary_rows)
 
-    readme = OUT_ROOT / "README.md"
-    readme.write_text(
-        f"""# RFP Final Tuned Results
+    readme = """# RFP Final Results Package
 
-Per-app confidence tuning so **all 9 apps have non-negative IPC** vs baseline.
+Per-app tuned RFP prefetcher results (9 workloads). Each app folder contains
+`baseline/` and `rfp/` simpoint symlinks into the source simulation trees.
 
 ## Layout
 
 ```
-simulations/
-  baseline/<workload>/<cluster_id>/   # no RFP (rfp_on=0)
-  rfp_tuned/<workload>/<cluster_id>/  # per-app best confidence config
-configs.json                          # per-app parameters
-summary.csv                           # IPC + prefetch funnel summary
+rfp-final-results/
+  <app>/
+    baseline/<simpoint_id>/   -> simulations-confidence-1/baseline/<app>/<id>
+    rfp/<simpoint_id>/        -> per-app best RFP config (see below)
+  configs.json
+  summary.csv
 ```
 
-## Tuning strategy
+## Baseline
 
-| Apps | `rfp_prob_shift` | P(conf++) | Why |
-|------|------------------|-----------|-----|
-| **bfs, dfs** | 22 | 1/4,194,304 | Graph traversals showed ~0.3% IPC loss at default; ultra-conservative training eliminates overhead |
-| **all others** | 2 | 1/4 | Best balance from prob-shift sweep (+0.8% to +8% IPC) |
+All workloads use `simulations-confidence-1/baseline/<app>/<simpoint_id>/`.
 
-All configs use **24KB** RFP storage (`--rfp_pt_num_sets 512 --rfp_pt_num_ways 8 --rfp_pat_num_sets 64 --rfp_pat_num_ways 4`).
+## Per-app RFP configs
 
-## Results summary
+| App | Config | prob_shift | stride_bits | stride_signed | conf_max |
+|-----|--------|------------|-------------|---------------|----------|
+| bfs | rfp_p3_s16 | 3 | 16 | signed (1) | 1 |
+| dfs | rfp_p0_s16 | 0 | 16 | signed (1) | 1 |
+| pagerank | rfp_p1_s16 | 1 | 16 | signed (1) | 1 |
+| appworld | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |
+| clickhouse | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |
+| core_bench | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |
+| duckdb | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |
+| rocksdb | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |
+| terminal_bench | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |
 
-| App | Speedup vs baseline | Injected | Useful |
-|-----|---------------------|----------|--------|
-"""
-        + "\n".join(
-            f"| {rename_workload(s.workload)} | {s.speedup_pct:+.2f}% | "
-            f"{s.injected_pct:.1f}% | {s.useful_pct:.1f}% |"
-            for s in summaries
-        )
-        + f"""
+Graph workloads (bfs, dfs, pagerank) use 16-bit signed stride after per-app tuning
+(`rfp-graph-stride` / `rfp-graph-stride2` sweeps). Other apps use the original
+`rfp_prob_p2` config from the confidence-1 storage sweep.
 
-**Overall geomean speedup: {geomean_speedup([s.speedup_pct for s in summaries]):+.2f}%**
+## Common Scarab flags (all apps)
 
-## Reproduce
-
-```bash
-python {Path(__file__).resolve()}
+```
+--rfp_pt_num_sets 512 --rfp_pt_num_ways 8 --rfp_pat_num_sets 64 --rfp_pat_num_ways 4
 ```
 
-Source simulations (not copied, symlinked):
-- Baseline: `{BASELINE_ROOT / "baseline"}`
-- bfs/dfs tuned: `{SIM_ROOT / "rfp_prob_p22"}`
-- Other apps: `{SIM_ROOT / "rfp_prob_p2"}`
-"""
-    )
+## Full CLI example (BFS)
 
-    gm = geomean_speedup([s.speedup_pct for s in summaries])
-    print(f"Packaged {OUT_ROOT}")
-    print(f"Overall geomean speedup: {gm:+.2f}%")
-    for s in summaries:
-        flag = "OK" if s.speedup_pct >= 0 else "NEG"
+```
+--rfp_prob_shift 3 --rfp_conf_max 1 --rfp_stride_signed 1 --rfp_stride_bits 16 \\
+--rfp_pt_num_sets 512 --rfp_pt_num_ways 8 --rfp_pat_num_sets 64 --rfp_pat_num_ways 4
+```
+
+See `configs.json` for per-app `params` strings and simpoint counts.
+"""
+    (OUT / "README.md").write_text(readme)
+
+    print(f"Packaged {len(APPS)} apps -> {OUT}")
+    for row in summary_rows:
         print(
-            f"  [{flag}] {rename_workload(s.workload):14s} {s.speedup_pct:+6.2f}%  "
-            f"shift={s.rfp_prob_shift}  inj={s.injected_pct:.1f}%"
+            f"  {row['workload']:16s} {row['config']:14s} "
+            f"p{row['prob_shift']} s{row['stride_bits']}b  "
+            f"bl={row['baseline_sps']} rfp={row['rfp_sps']}"
         )
 
 
