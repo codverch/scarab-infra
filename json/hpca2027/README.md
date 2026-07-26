@@ -19,8 +19,10 @@ cd ~/scarab-infra
 python3 -m scripts.register_local_traces \
   --traces-dir /dev/shm/baseline/simpoint_traces \
   --warmup 20000000 \
-  --workloads appworld bfs clickhouse core_bench dfs duckdb pagerank rocksdb terminal_bench
+  --workloads apsp bc bfs community connected_components dfs haystack leveldb pagerank sssp_ego_fb triangle_counting
 ```
+
+Traces source: [deepanjalimishra99/new-crono-traces](https://huggingface.co/datasets/deepanjalimishra99/new-crono-traces) (CRONO graph suite + haystack RAG + leveldb YCSB).
 
 ## Run simulations
 
@@ -59,17 +61,10 @@ Rebuild Scarab only when source or the workload Dockerfile changed:
 
 ### Helios per-app configs (stores-off, `architecture: in` → `PARAMS.in`)
 
-| App | Config |
-|-----|--------|
-| `terminal_bench` | `T100/W64/I1/D10/stores-off` |
-| `bfs` | `T300/W64/I1/D10/stores-off` |
-| `dfs` | `T300/W64/I1/D10/stores-off` |
-| `pagerank` | `T300/W64/I1/D10/stores-off` |
-| `core_bench` | `T1000/W64/I1/D10/stores-off` |
-| `appworld` | `T10000/W64/I1/D10/stores-off` |
-| `rocksdb` | `T4800/W64/I1/D10/stores-off` |
-| `duckdb` | `T30000/W64/I1/D10/stores-off` |
-| `clickhouse` | `T300/W64/I10/D10/stores-off` |
+Helios knobs in `helios.sh` currently cover the original agentic/DB apps only. The
+new CRONO graph workloads (`bfs`, `dfs`, `pagerank`, `sssp_ego_fb`, `community`,
+`connected_components`, `triangle_counting`, `bc`, `apsp`) use the same graph-style
+`T300/W64/I1/D10/stores-off` defaults when run via `helios.sh`.
 
 ## Ideal fusion workflow
 

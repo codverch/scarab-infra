@@ -4,15 +4,9 @@
 # Notation: T=threshold  W=window  I=increment  D=decrement  stores-on/off
 #
 # Per-app knobs (stores-off for all):
-#   terminal_bench  T100/W64/I1/D10/stores-off
-#   bfs             T300/W64/I1/D10/stores-off
-#   dfs             T300/W64/I1/D10/stores-off
-#   pagerank        T300/W64/I1/D10/stores-off
-#   core_bench      T1000/W64/I1/D10/stores-off
-#   appworld        T10000/W64/I1/D10/stores-off
-#   rocksdb         T4800/W64/I1/D10/stores-off
-#   duckdb          T30000/W64/I1/D10/stores-off
-#   clickhouse      T300/W64/I10/D10/stores-off
+#   Graph / CRONO apps  T300/W64/I1/D10/stores-off
+#   haystack            T1000/W64/I1/D10/stores-off
+#   leveldb             T4800/W64/I1/D10/stores-off
 #
 # Efficiency: pin descriptor binary to a hash-named cache entry so each
 # ./sci --sim skips rebuild_scarab (which fires on scarab_current + dirty tree).
@@ -37,35 +31,35 @@ WARMUP=20000000
 INST_LIMIT=30000000
 
 HELIOS_APPS=(
-  terminal_bench bfs dfs pagerank core_bench
-  appworld rocksdb duckdb clickhouse
+  apsp bc bfs community connected_components dfs
+  haystack leveldb pagerank sssp_ego_fb triangle_counting
 )
 
 declare -A HELIOS_T=(
-  [terminal_bench]=100 [bfs]=300 [dfs]=300 [pagerank]=300
-  [core_bench]=1000 [appworld]=10000 [rocksdb]=4800
-  [duckdb]=30000 [clickhouse]=300
+  [apsp]=300 [bc]=300 [bfs]=300 [community]=300 [connected_components]=300
+  [dfs]=300 [haystack]=1000 [leveldb]=4800 [pagerank]=300
+  [sssp_ego_fb]=300 [triangle_counting]=300
 )
 declare -A HELIOS_W=(
-  [terminal_bench]=64 [bfs]=64 [dfs]=64 [pagerank]=64
-  [core_bench]=64 [appworld]=64 [rocksdb]=64
-  [duckdb]=64 [clickhouse]=64
+  [apsp]=64 [bc]=64 [bfs]=64 [community]=64 [connected_components]=64
+  [dfs]=64 [haystack]=64 [leveldb]=64 [pagerank]=64
+  [sssp_ego_fb]=64 [triangle_counting]=64
 )
 declare -A HELIOS_I=(
-  [terminal_bench]=1 [bfs]=1 [dfs]=1 [pagerank]=1
-  [core_bench]=1 [appworld]=1 [rocksdb]=1
-  [duckdb]=1 [clickhouse]=10
+  [apsp]=1 [bc]=1 [bfs]=1 [community]=1 [connected_components]=1
+  [dfs]=1 [haystack]=1 [leveldb]=1 [pagerank]=1
+  [sssp_ego_fb]=1 [triangle_counting]=1
 )
 declare -A HELIOS_D=(
-  [terminal_bench]=10 [bfs]=10 [dfs]=10 [pagerank]=10
-  [core_bench]=10 [appworld]=10 [rocksdb]=10
-  [duckdb]=10 [clickhouse]=10
+  [apsp]=10 [bc]=10 [bfs]=10 [community]=10 [connected_components]=10
+  [dfs]=10 [haystack]=10 [leveldb]=10 [pagerank]=10
+  [sssp_ego_fb]=10 [triangle_counting]=10
 )
 # stores-off for every app
 declare -A HELIOS_STORES=(
-  [terminal_bench]=0 [bfs]=0 [dfs]=0 [pagerank]=0
-  [core_bench]=0 [appworld]=0 [rocksdb]=0
-  [duckdb]=0 [clickhouse]=0
+  [apsp]=0 [bc]=0 [bfs]=0 [community]=0 [connected_components]=0
+  [dfs]=0 [haystack]=0 [leveldb]=0 [pagerank]=0
+  [sssp_ego_fb]=0 [triangle_counting]=0
 )
 
 helios_label_for_app() {

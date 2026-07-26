@@ -16,15 +16,17 @@
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
-        "appworld",
+        "apsp",
+        "bc",
         "bfs",
-        "clickhouse",
-        "core_bench",
+        "community",
+        "connected_components",
         "dfs",
-        "duckdb",
+        "haystack",
+        "leveldb",
         "pagerank",
-        "rocksdb",
-        "terminal_bench"
+        "sssp_ego_fb",
+        "triangle_counting"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
@@ -45,7 +47,9 @@
   "visualize": {
     "baseline": "ifuse_legacy_23kb",
     "configs": [],
-    "counters": ["IPC"],
+    "counters": [
+      "IPC"
+    ],
     "average": false
   },
   "mem": {
