@@ -2720,7 +2720,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":20000000,
+            "warmup":50000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -2749,7 +2749,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":20000000,
+            "warmup":50000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -2905,7 +2905,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":20000000,
+            "warmup":50000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -2939,7 +2939,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":100000000,
-            "warmup":20000000,
+            "warmup":50000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3056,7 +3056,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":20000000,
+            "warmup":50000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3154,7 +3154,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":20000000,
+            "warmup":50000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3463,7 +3463,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":100000000,
-            "warmup":20000000,
+            "warmup":50000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3608,7 +3608,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":20000000,
+            "warmup":50000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3642,7 +3642,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":20000000,
+            "warmup":50000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -3901,7 +3901,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":20000000,
+            "warmup":50000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -4155,7 +4155,7 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":20000000,
+            "warmup":50000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
@@ -4175,6 +4175,365 @@
             "cluster_id":0,
             "segment_id":2,
             "weight":0.333333
+          }
+        ]
+      },
+      "apsp_synth":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":30000000,
+            "warmup":50000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":1,
+            "segment_id":0,
+            "weight":0.333333
+          },
+          {
+            "cluster_id":2,
+            "segment_id":1,
+            "weight":0.333333
+          },
+          {
+            "cluster_id":0,
+            "segment_id":2,
+            "weight":0.333333
+          }
+        ]
+      },
+      "bc_synth":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":30000000,
+            "warmup":50000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":1,
+            "segment_id":0,
+            "weight":0.333333
+          },
+          {
+            "cluster_id":2,
+            "segment_id":1,
+            "weight":0.333333
+          },
+          {
+            "cluster_id":0,
+            "segment_id":2,
+            "weight":0.333333
+          }
+        ]
+      },
+      "bfs_web-google":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":30000000,
+            "warmup":50000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":60,
+            "segment_id":0,
+            "weight":0.184211
+          },
+          {
+            "cluster_id":12,
+            "segment_id":1,
+            "weight":0.118421
+          },
+          {
+            "cluster_id":18,
+            "segment_id":2,
+            "weight":0.513158
+          },
+          {
+            "cluster_id":1,
+            "segment_id":4,
+            "weight":0.184211
+          }
+        ]
+      },
+      "community_web_google":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":30000000,
+            "warmup":50000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":0,
+            "segment_id":0,
+            "weight":0.0152963
+          },
+          {
+            "cluster_id":18,
+            "segment_id":1,
+            "weight":0.260036
+          },
+          {
+            "cluster_id":42,
+            "segment_id":2,
+            "weight":0.602297
+          },
+          {
+            "cluster_id":4,
+            "segment_id":3,
+            "weight":0.12237
+          }
+        ]
+      },
+      "connected_components_web_google":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":30000000,
+            "warmup":50000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":0,
+            "segment_id":0,
+            "weight":0.0152621
+          },
+          {
+            "cluster_id":18,
+            "segment_id":1,
+            "weight":0.259455
+          },
+          {
+            "cluster_id":42,
+            "segment_id":2,
+            "weight":0.603187
+          },
+          {
+            "cluster_id":4,
+            "segment_id":3,
+            "weight":0.122096
+          }
+        ]
+      },
+      "dfs_web-google":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":30000000,
+            "warmup":50000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":29,
+            "segment_id":0,
+            "weight":0.131579
+          },
+          {
+            "cluster_id":33,
+            "segment_id":1,
+            "weight":0.157895
+          },
+          {
+            "cluster_id":57,
+            "segment_id":2,
+            "weight":0.197368
+          },
+          {
+            "cluster_id":8,
+            "segment_id":3,
+            "weight":0.513158
+          }
+        ]
+      },
+      "haystack_rag":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":100000000,
+            "warmup":50000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":21,
+            "segment_id":0,
+            "weight":0.0392614
+          },
+          {
+            "cluster_id":1,
+            "segment_id":1,
+            "weight":0.117784
+          },
+          {
+            "cluster_id":4,
+            "segment_id":2,
+            "weight":0.314091
+          },
+          {
+            "cluster_id":13,
+            "segment_id":3,
+            "weight":0.528863
+          }
+        ]
+      },
+      "leveldb_ycsb":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":100000000,
+            "warmup":50000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":25,
+            "segment_id":0,
+            "weight":0.246029
+          },
+          {
+            "cluster_id":4,
+            "segment_id":1,
+            "weight":0.17222
+          },
+          {
+            "cluster_id":8,
+            "segment_id":2,
+            "weight":0.188106
+          },
+          {
+            "cluster_id":26,
+            "segment_id":3,
+            "weight":0.393646
+          }
+        ]
+      },
+      "pagerank_web-google":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":30000000,
+            "warmup":50000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":38,
+            "segment_id":0,
+            "weight":0.118258
+          },
+          {
+            "cluster_id":6,
+            "segment_id":1,
+            "weight":0.144537
+          },
+          {
+            "cluster_id":25,
+            "segment_id":2,
+            "weight":0.0656987
+          },
+          {
+            "cluster_id":76,
+            "segment_id":3,
+            "weight":0.671506
+          }
+        ]
+      },
+      "sssp_ego-facebook":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":30000000,
+            "warmup":50000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":21,
+            "segment_id":1,
+            "weight":0.394653
+          },
+          {
+            "cluster_id":0,
+            "segment_id":2,
+            "weight":0.00646972
+          },
+          {
+            "cluster_id":155,
+            "segment_id":4,
+            "weight":0.598877
+          }
+        ]
+      },
+      "triangle_counting_web_google":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":30000000,
+            "warmup":50000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":0,
+            "segment_id":0,
+            "weight":0.0152909
+          },
+          {
+            "cluster_id":18,
+            "segment_id":1,
+            "weight":0.259945
+          },
+          {
+            "cluster_id":42,
+            "segment_id":2,
+            "weight":0.602436
+          },
+          {
+            "cluster_id":4,
+            "segment_id":3,
+            "weight":0.122327
           }
         ]
       }

@@ -6,9 +6,9 @@ Traces under `/dev/shm/baseline/simpoint_traces`.
 
 | Setting | Value |
 |---------|-------|
-| Descriptor `warmup` | `20,000,000` |
-| Scarab `full_warmup` | `20,000,000` |
-| Scarab `inst_limit` | `30,000,000` (20M warmup + 10M measured) |
+| Descriptor `warmup` | `50,000,000` |
+| Scarab `full_warmup` | `50,000,000` |
+| Scarab `inst_limit` | `70,000,000` (50M warmup + 20M measured) |
 
 Each run simulates from instruction 1 of the simpoint zip (no leading segment skip), up to `inst_limit` or EOF.
 
@@ -56,8 +56,8 @@ cd ~/scarab-infra
 cd ~/scarab-infra
 python3 -m scripts.register_local_traces \
   --traces-dir /dev/shm/baseline/simpoint_traces \
-  --warmup 20000000 \
-  --workloads apsp bc bfs community connected_components dfs haystack leveldb pagerank sssp_ego_fb triangle_counting
+  --warmup 50000000 \
+  --workloads apsp_synth bc_synth bfs_web-google community_web_google connected_components_web_google dfs_web-google haystack_rag leveldb_ycsb pagerank_web-google sssp_ego-facebook triangle_counting_web_google
 ```
 
 Traces source: [deepanjalimishra99/new-crono-traces](https://huggingface.co/datasets/deepanjalimishra99/new-crono-traces) (CRONO graph suite + haystack RAG + leveldb YCSB).
@@ -100,8 +100,9 @@ Rebuild Scarab only when source or the workload Dockerfile changed:
 ### Helios per-app configs (stores-off, `architecture: in` → `PARAMS.in`)
 
 Helios knobs in `helios.sh` currently cover the original agentic/DB apps only. The
-new CRONO graph workloads (`bfs`, `dfs`, `pagerank`, `sssp_ego_fb`, `community`,
-`connected_components`, `triangle_counting`, `bc`, `apsp`) use the same graph-style
+new CRONO graph workloads (`bfs_web-google`, `dfs_web-google`, `pagerank_web-google`,
+`sssp_ego-facebook`, `community_web_google`, `connected_components_web_google`,
+`triangle_counting_web_google`, `bc_synth`, `apsp_synth`) use the same graph-style
 `T300/W64/I1/D10/stores-off` defaults when run via `helios.sh`.
 
 ## Ideal fusion workflow

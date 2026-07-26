@@ -16,24 +16,26 @@
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
-        "appworld",
-        "bfs",
-        "dfs",
-        "pagerank",
-        "core_bench",
-        "terminal_bench",
-        "duckdb",
-        "rocksdb",
-        "clickhouse"
+        "apsp_synth",
+        "bc_synth",
+        "bfs_web-google",
+        "community_web_google",
+        "connected_components_web_google",
+        "dfs_web-google",
+        "haystack_rag",
+        "leveldb_ycsb",
+        "pagerank_web-google",
+        "sssp_ego-facebook",
+        "triangle_counting_web_google"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
-      "warmup": 20000000
+      "warmup": 50000000
     }
   ],
   "configurations": {
     "pass1": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --ideal_fusion_pass 1 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{workload}/{cluster_id}.csv",
+      "params": "--icache_size 32768 --inst_limit 70000000 --full_warmup 50000000 --power_intf_on 1 --ideal_fusion_pass 1 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{workload}/{cluster_id}.csv",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
