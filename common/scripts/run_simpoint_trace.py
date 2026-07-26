@@ -242,7 +242,7 @@ def trace_then_cluster(workload, suite, simpoint_home, bincmd, client_bincmd, si
     except Exception as e:
         raise e
 
-def cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, simpoint_mode, drio_args, clustering_userk, manual_trace=False):
+def cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, simpoint_mode, drio_args, clustering_userk, manual_trace=False, segment_size=None):
     # 1. collect fingerprints
     # 2. clustering
     # 2. trace segments of the workload
@@ -250,8 +250,12 @@ def cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, si
     # 4. minimize traces
     # hpca2027 datacenter DB traces: segments sized so each simpoint's own
     # (non-warmup) chunk alone exceeds the 30M-committed-instruction floor.
-    chunk_size = 40000000
-    seg_size = 40000000
+    # segment_size (optional, per-workload override) sets the size in dynamic
+    # instructions of both the measured region and the warmup region (1
+    # warmup chunk == 1 segment), e.g. for I-Fuse traces that need ~100M
+    # instruction measured segments.
+    chunk_size = int(segment_size) if segment_size else 40000000
+    seg_size = int(segment_size) if segment_size else 40000000
     warmup_chunks = 1
     try:
         os.makedirs(os.path.join(simpoint_home, workload, "fingerprint"), exist_ok=True)
@@ -642,6 +646,7 @@ if __name__ == "__main__":
     parser.add_argument('-dr', '--drio_args', required=False, default=None, help='Dynamorio arguments. Usage: --drio_args "-exit_after_tracing 1520000000000"')
     parser.add_argument('-userk', '--clustering_userk', required=False, default=None, help='maxk will use the user provided value if specified. If not specified, maxk will be calculated as the square root of the number of segments.')
     parser.add_argument('-man', '--manual_trace', required=False, default=None, help='manual trace. Usage --manual_trace True')
+    parser.add_argument('-segsize', '--segment_size', required=False, default=None, help='Override the default segment size (in dynamic instructions) used for fingerprinting/clustering/tracing in cluster_then_trace mode. Usage: --segment_size 100000000')
 
     # Parse the command-line arguments
     args = parser.parse_args()
@@ -657,12 +662,13 @@ if __name__ == "__main__":
     drio_args = args.drio_args
     clustering_userk = args.clustering_userk
     manual_trace = args.manual_trace
+    segment_size = args.segment_size
 
     try:
         print("running run_simpoint_trace.py...")
         print(simpoint_mode)
         if simpoint_mode == "1": # clustering then tracing
-            cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, simpoint_mode, drio_args, clustering_userk, manual_trace)
+            cluster_then_trace(workload, suite, simpoint_home, bincmd, client_bincmd, simpoint_mode, drio_args, clustering_userk, manual_trace, segment_size)
         elif simpoint_mode == "2": # trace then post-process
             trace_then_cluster(workload, suite, simpoint_home, bincmd, client_bincmd, simpoint_mode, drio_args, clustering_userk)
         elif simpoint_mode == "3": # trace each timestep

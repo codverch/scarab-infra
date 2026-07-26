@@ -1710,7 +1710,7 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
     except Exception as e:
         raise e
 
-def generate_single_trace_run_command(user, workload, image_name, trace_name, binary_cmd, client_bincmd, simpoint_mode, drio_args, clustering_k):
+def generate_single_trace_run_command(user, workload, image_name, trace_name, binary_cmd, client_bincmd, simpoint_mode, drio_args, clustering_k, segment_size=None):
     command = ""
     if simpoint_mode == "cluster_then_trace":
         mode = 1
@@ -1725,15 +1725,17 @@ def generate_single_trace_run_command(user, workload, image_name, trace_name, bi
         command = f"{command} --drio_args {drio_args}"
     if clustering_k != None:
         command = f"{command} -userk {clustering_k}"
+    if segment_size != None:
+        command = f"{command} --segment_size {segment_size}"
     return command
 
 def write_trace_docker_command_to_file(user, local_uid, local_gid, docker_container_name, githash,
                                        workload, image_name, trace_name, traces_dir, docker_home,
                                        env_vars, binary_cmd, client_bincmd, simpoint_mode, drio_args,
-                                       clustering_k, filename, infra_dir, application_dir, slurm = False):
+                                       clustering_k, filename, infra_dir, application_dir, slurm = False, segment_size=None):
     try:
         trace_cmd = generate_single_trace_run_command(user, workload, image_name, trace_name, binary_cmd, client_bincmd,
-                                                      simpoint_mode, drio_args, clustering_k)
+                                                      simpoint_mode, drio_args, clustering_k, segment_size)
         with open(filename, "w") as f:
             f.write("#!/bin/bash\n")
             f.write(f"echo \"Tracing {workload}\"\n")

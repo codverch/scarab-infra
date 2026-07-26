@@ -391,7 +391,7 @@ def run_tracing(user, descriptor_data, workload_db_path, infra_dir, dbg_lvl = 2)
     tmp_files = set()
     log_files = set()
 
-    def run_single_trace(workload, image_name, trace_name, env_vars, binary_cmd, client_bincmd, trace_type, drio_args, clustering_k, infra_dir, application_dir):
+    def run_single_trace(workload, image_name, trace_name, env_vars, binary_cmd, client_bincmd, trace_type, drio_args, clustering_k, infra_dir, application_dir, segment_size=None):
         try:
             if trace_type == "cluster_then_trace":
                 simpoint_mode = "cluster_then_trace"
@@ -407,7 +407,7 @@ def run_tracing(user, descriptor_data, workload_db_path, infra_dir, dbg_lvl = 2)
             write_trace_docker_command_to_file(user, local_uid, local_gid, docker_container_name, githash,
                                                workload, image_name, trace_name, traces_dir, docker_home,
                                                env_vars, binary_cmd, client_bincmd, simpoint_mode, drio_args,
-                                               clustering_k, filename, infra_dir, application_dir)
+                                               clustering_k, filename, infra_dir, application_dir, segment_size=segment_size)
             tmp_files.add(filename)
             command = '/bin/bash ' + filename
             subprocess.run(["mkdir", "-p", f"{docker_home}/simpoint_flow/{trace_name}/{workload}"], check=True, capture_output=True, text=True)
@@ -452,9 +452,10 @@ def run_tracing(user, descriptor_data, workload_db_path, infra_dir, dbg_lvl = 2)
             trace_type = config["trace_type"]
             drio_args = config["dynamorio_args"]
             clustering_k = config["clustering_k"]
+            segment_size = config.get("segment_size")
 
             run_single_trace(workload, image_name, trace_name, env_vars, binary_cmd, client_bincmd,
-                             trace_type, drio_args, clustering_k, infra_dir, application_dir)
+                             trace_type, drio_args, clustering_k, infra_dir, application_dir, segment_size)
 
         print("Wait processes...")
         for p in processes:
