@@ -6,7 +6,10 @@ INCLUDE+ ./common/Dockerfile.common
 # TODO: Install required packages
 USER root
 
-RUN git clone https://github.com/facebook/rocksdb.git
+# Pin to a release that only requires C++17 (main now requires C++20, which
+# this image's GCC 9 toolchain does not support).
+RUN git clone https://github.com/facebook/rocksdb.git && \
+    cd rocksdb && git checkout v9.7.3
 
 #Build rocksdb and dbbench
 RUN apt update && apt upgrade -y
