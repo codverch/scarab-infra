@@ -1,19 +1,25 @@
 #!/bin/bash
-# McPAT/CACTI for --power_intf_on 1. Prefer binaries staged under scarab_stage
-# (always inside the root_dir bind-mount). Fall back to root_dir/toolchain/bin/.
-_power_bin() {
-  local name="$1"
-  local candidate
-  for candidate in \
-    "$HOME"/scarab_stage/*/scarab/bin/"$name" \
-    "$HOME/toolchain/bin/$name"; do
+# McPAT/CACTI for --power_intf_on 1.
+# Containers must see MCPAT_BIN/CACTI_BIN. Prefer $HOME/toolchain/bin (bind-mounted
+# from the host toolchain). Fall back to binaries staged under scarab_stage.
+if [ -x "$HOME/toolchain/bin/mcpat" ]; then
+  export MCPAT_BIN="$HOME/toolchain/bin/mcpat"
+elif [ -z "${MCPAT_BIN:-}" ] || [ ! -x "${MCPAT_BIN}" ]; then
+  for candidate in "$HOME"/scarab_stage/*/scarab/bin/mcpat; do
     if [ -x "$candidate" ]; then
-      echo "$candidate"
-      return 0
+      export MCPAT_BIN="$candidate"
+      break
     fi
   done
-  return 1
-}
+fi
 
-mcpat="$(_power_bin mcpat)" && export MCPAT_BIN="$mcpat"
-cacti="$(_power_bin cacti)" && export CACTI_BIN="$cacti"
+if [ -x "$HOME/toolchain/bin/cacti" ]; then
+  export CACTI_BIN="$HOME/toolchain/bin/cacti"
+elif [ -z "${CACTI_BIN:-}" ] || [ ! -x "${CACTI_BIN}" ]; then
+  for candidate in "$HOME"/scarab_stage/*/scarab/bin/cacti; do
+    if [ -x "$candidate" ]; then
+      export CACTI_BIN="$candidate"
+      break
+    fi
+  done
+fi

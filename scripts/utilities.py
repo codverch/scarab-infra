@@ -1442,12 +1442,35 @@ def prepare_simulation(user, scarab_path, scarab_build, docker_home, experiment_
         if os.path.isdir(f"{scarab_path}/bin/power"):
             os.system(f"mkdir -p {scarab_stage_dir}/scarab/bin/power")
             os.system(f"cp {scarab_path}/bin/power/*  {scarab_stage_dir}/scarab/bin/power/ ")
-        mcpat_src = os.environ.get("MCPAT_BIN", f"{infra_dir}/../toolchain/bin/mcpat")
-        cacti_src = os.environ.get("CACTI_BIN", f"{infra_dir}/../toolchain/bin/cacti")
+        # Prefer focal-built binaries (glibc 2.31) so they run inside Ubuntu
+        # focal containers. Host toolchain builds often need newer glibc.
+        focal_power_bin = f"{infra_dir}/docker_bin/focal"
+        host_toolchain_bin = f"{infra_dir}/../toolchain/bin"
+        mcpat_src = (
+            f"{focal_power_bin}/mcpat"
+            if os.path.isfile(f"{focal_power_bin}/mcpat")
+            else os.environ.get("MCPAT_BIN", f"{host_toolchain_bin}/mcpat")
+        )
+        cacti_src = (
+            f"{focal_power_bin}/cacti"
+            if os.path.isfile(f"{focal_power_bin}/cacti")
+            else os.environ.get("CACTI_BIN", f"{host_toolchain_bin}/cacti")
+        )
         if os.path.isfile(mcpat_src):
             os.system(f"cp {mcpat_src} {scarab_stage_dir}/scarab/bin/mcpat")
+            os.system(f"chmod +x {scarab_stage_dir}/scarab/bin/mcpat")
         if os.path.isfile(cacti_src):
             os.system(f"cp {cacti_src} {scarab_stage_dir}/scarab/bin/cacti")
+            os.system(f"chmod +x {scarab_stage_dir}/scarab/bin/cacti")
+        # Also install into host toolchain so MCPAT_BIN=$HOME/toolchain/bin/*
+        # works once /users/.../toolchain is bind-mounted into the container.
+        if os.path.isdir(host_toolchain_bin):
+            if os.path.isfile(mcpat_src):
+                os.system(f"cp {mcpat_src} {host_toolchain_bin}/mcpat")
+                os.system(f"chmod +x {host_toolchain_bin}/mcpat")
+            if os.path.isfile(cacti_src):
+                os.system(f"cp {cacti_src} {host_toolchain_bin}/cacti")
+                os.system(f"chmod +x {host_toolchain_bin}/cacti")
 
         return scarab_githash, image_tag_list
     except subprocess.CalledProcessError as e:
@@ -1653,6 +1676,17 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
             f.write(f"cd {infra_dir}\n")
             f.write(f"python -m scripts.prepare_docker_image --docker-prefix {docker_prefix} --githash {githash} \n")
             f.write(f"cd -\n")
+            # root_dir/toolchain is often a symlink to $HOME/toolchain outside the
+            # docker_home bind-mount; mount the real toolchain so MCPAT_BIN paths work.
+            host_toolchain = os.path.realpath(f"{infra_dir}/../toolchain")
+            toolchain_mount = ""
+            if os.path.isdir(host_toolchain):
+                toolchain_mount = (
+                    f"--mount type=bind,source={host_toolchain},"
+                    f"target=/home/{user}/toolchain,readonly=false "
+                )
+            mcpat_env = f"-e MCPAT_BIN=/home/{user}/toolchain/bin/mcpat "
+            cacti_env = f"-e CACTI_BIN=/home/{user}/toolchain/bin/cacti "
             if slurm:
                 f.write("SLURM_CGROUP=$(cat /proc/self/cgroup | cut -d: -f3 | head -n 1)\n")
                 f.write("echo $SLURM_CGROUP\n")
@@ -1663,6 +1697,8 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
                 -e group_id={local_gid} \
                 -e username={user} \
                 -e HOME=/home/{user} \
+                {mcpat_env}\
+                {cacti_env}\
                 -e APP_GROUPNAME={docker_prefix} \
                 -e APPNAME={workload} \
                 -dit \
@@ -1670,6 +1706,7 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
                 --name $CONTAINER_NAME \
                 --mount type=bind,source={traces_dir},target=/simpoint_traces,readonly=true \
                 --mount type=bind,source={docker_home},target=/home/{user},readonly=false \
+                {toolchain_mount}\
                 --mount type=bind,source={application_dir},target=/tmp_home/application,readonly=false \
                 --mount type=bind,source=/dev/shm/baseline,target=/dev/shm/baseline,readonly=false \
                 {docker_prefix}:{githash} \
@@ -1680,6 +1717,8 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
                 -e group_id={local_gid} \
                 -e username={user} \
                 -e HOME=/home/{user} \
+                {mcpat_env}\
+                {cacti_env}\
                 -e APP_GROUPNAME={docker_prefix} \
                 -e APPNAME={workload} \
                 -dit \
@@ -1687,6 +1726,7 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
                 --name $CONTAINER_NAME \
                 --mount type=bind,source={traces_dir},target=/simpoint_traces,readonly=true \
                 --mount type=bind,source={docker_home},target=/home/{user},readonly=false \
+                {toolchain_mount}\
                 --mount type=bind,source={application_dir},target=/tmp_home/application,readonly=false \
                 --mount type=bind,source=/dev/shm/baseline,target=/dev/shm/baseline,readonly=false \
                 {docker_prefix}:{githash} \
@@ -1706,7 +1746,7 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
                 f.write(f"docker cp {infra_dir}/common/scripts/run_exec_single_simpoint.sh $CONTAINER_NAME:/usr/local/bin\n")
                 f.write("docker exec --privileged $CONTAINER_NAME /bin/bash -c \"echo 0 | sudo tee /proc/sys/kernel/randomize_va_space\"\n")
             f.write("docker exec --privileged $CONTAINER_NAME /bin/bash -c '/usr/local/bin/root_entrypoint.sh'\n")
-            f.write(f"docker exec --user={user} $CONTAINER_NAME /bin/bash -c \"source /usr/local/bin/user_entrypoint.sh && {scarab_cmd}\" || echo \"Scarab error detected\"\n")
+            f.write(f"docker exec --user={user} $CONTAINER_NAME /bin/bash -c \"source /usr/local/bin/user_entrypoint.sh && echo MCPAT_BIN=\\$MCPAT_BIN CACTI_BIN=\\$CACTI_BIN && {scarab_cmd}\" || echo \"Scarab error detected\"\n")
             f.write("cleanup_container\n")
             f.write("echo \"Completed Simulation\"\n")
             f.write(f"sync {docker_home}/simulations/{experiment_name}/logs")
@@ -2859,14 +2899,29 @@ def check_sp_failed (descriptor_data, config_key, suite, subsuite, workload, exp
     if len(list(filter(lambda x: x.endswith('.csv'), os.listdir(experiment_dir)))) == 0:
         return True
 
-    # Power runs can emit stats CSVs then abort if McPAT/CACTI are missing.
+    # Power runs can emit stats CSVs then abort if McPAT/CACTI are missing
+    # or point at a host binary that cannot run in the focal container.
     sim_log = Path(experiment_dir) / "sim.log"
     if sim_log.is_file():
         log_text = sim_log.read_text(errors="replace")
         if "Error running McPAT" in log_text or "ASSERT FAILED" in log_text:
-            mcpat_out = Path(experiment_dir) / "mcpat.out"
-            if not mcpat_out.is_file() or mcpat_out.stat().st_size == 0:
-                return True
+            return True
+        if "GLIBC_" in log_text or "GLIBCXX_" in log_text:
+            return True
+
+    configs = descriptor_data.get("configurations") or {}
+    power_enabled = any(
+        isinstance(cfg, dict) and "power_intf_on 1" in str(cfg.get("params", ""))
+        for cfg in configs.values()
+    )
+    if power_enabled:
+        mcpat_out = Path(experiment_dir) / "mcpat.out"
+        if not mcpat_out.is_file() or mcpat_out.stat().st_size == 0:
+            return True
+        # Reject GLIBC error dumps that look like "success" only because the file is non-empty.
+        mcpat_head = mcpat_out.read_text(errors="replace")[:512]
+        if "GLIBC_" in mcpat_head or "not found" in mcpat_head or "Error running" in mcpat_head:
+            return True
 
     # Success case
     return False
