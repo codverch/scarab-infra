@@ -1442,7 +1442,7 @@ def prepare_simulation(user, scarab_path, scarab_build, docker_home, experiment_
         if os.path.isdir(f"{scarab_path}/bin/power"):
             os.system(f"mkdir -p {scarab_stage_dir}/scarab/bin/power")
             os.system(f"cp {scarab_path}/bin/power/*  {scarab_stage_dir}/scarab/bin/power/ ")
-        mcpat_src = os.environ.get("MCPAT_BIN", f"{infra_dir}/../mcpat/mcpat")
+        mcpat_src = os.environ.get("MCPAT_BIN", f"{infra_dir}/../toolchain/bin/mcpat")
         cacti_src = os.environ.get("CACTI_BIN", f"{infra_dir}/../toolchain/bin/cacti")
         if os.path.isfile(mcpat_src):
             os.system(f"cp {mcpat_src} {scarab_stage_dir}/scarab/bin/mcpat")
@@ -2858,6 +2858,15 @@ def check_sp_failed (descriptor_data, config_key, suite, subsuite, workload, exp
     # Failed case; CSV files not generated. Ignoring .csv.warmup files.
     if len(list(filter(lambda x: x.endswith('.csv'), os.listdir(experiment_dir)))) == 0:
         return True
+
+    # Power runs can emit stats CSVs then abort if McPAT/CACTI are missing.
+    sim_log = Path(experiment_dir) / "sim.log"
+    if sim_log.is_file():
+        log_text = sim_log.read_text(errors="replace")
+        if "Error running McPAT" in log_text or "ASSERT FAILED" in log_text:
+            mcpat_out = Path(experiment_dir) / "mcpat.out"
+            if not mcpat_out.is_file() or mcpat_out.stat().st_size == 0:
+                return True
 
     # Success case
     return False

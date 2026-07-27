@@ -15,7 +15,19 @@
     {
       "suite": "datacenter",
       "subsuite": "datacenter",
-      "workload": ["bfs", "dfs"],
+      "workload": [
+        "appworld",
+        "bfs-web-google",
+        "clickhouse",
+        "corebench",
+        "dfs-web-google",
+        "duckdb",
+        "leveldb",
+        "pagerank-gnutella31",
+        "rocksdb",
+        "sssp-ego-facebook",
+        "terminal_bench"
+      ],
       "cluster_id": null,
       "simulation_type": "memtrace",
       "warmup": 20000000
@@ -59,7 +71,19 @@
       "memory_overhead_mb": 0
     }
   },
-  "collect_stats": { "configs": null },
-  "visualize": { "baseline": "rfp_p21_s5", "configs": [], "counters": ["IPC"], "average": false },
-  "mem": { "collection_baseline": null, "fallback_mb": 16384 }
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "rfp_p21_s5",
+    "configs": [],
+    "counters": [
+      "IPC"
+    ],
+    "average": false
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 16384
+  }
 }

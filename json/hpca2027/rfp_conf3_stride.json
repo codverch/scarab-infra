@@ -10,20 +10,22 @@
   "traces_dir": "/dev/shm/baseline/simpoint_traces",
   "workload_db": "baseline.json",
   "top_simpoint": false,
-  "_comment": "3-bit confidence (rfp_conf_max=3), unsigned byte stride: 5b (Table 1) vs 8b (§3.1 logical entry). 24KB PT/PAT, paper-default P(conf++)=1/16.",
+  "_comment": "3-bit confidence (rfp_conf_max=3), unsigned byte stride: 5b (Table 1) vs 8b (\u00a73.1 logical entry). 24KB PT/PAT, paper-default P(conf++)=1/16.",
   "simulations": [
     {
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
         "appworld",
-        "bfs",
+        "bfs-web-google",
         "clickhouse",
-        "core_bench",
-        "dfs",
+        "corebench",
+        "dfs-web-google",
         "duckdb",
-        "pagerank",
+        "leveldb",
+        "pagerank-gnutella31",
         "rocksdb",
+        "sssp-ego-facebook",
         "terminal_bench"
       ],
       "cluster_id": null,
@@ -45,7 +47,21 @@
       "memory_overhead_mb": 0
     }
   },
-  "collect_stats": { "configs": null },
-  "visualize": { "baseline": "rfp_conf3_unsigned_5b", "configs": ["rfp_conf3_unsigned_8b"], "counters": ["IPC"], "average": false },
-  "mem": { "collection_baseline": null, "fallback_mb": 16384 }
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "rfp_conf3_unsigned_5b",
+    "configs": [
+      "rfp_conf3_unsigned_8b"
+    ],
+    "counters": [
+      "IPC"
+    ],
+    "average": false
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 16384
+  }
 }
