@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "runtime-ifuse",
+  "experiment": "ifuse",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -10,32 +10,32 @@
   "traces_dir": "/dev/shm/baseline/simpoint_traces",
   "workload_db": "baseline.json",
   "top_simpoint": false,
-  "_comment": "50M warmup + 20M measured simulation (inst_limit=70,000,000, full_warmup=50,000,000, descriptor warmup=50,000,000).",
+  "_comment": "20M warmup + 10M measured simulation (inst_limit=30,000,000, full_warmup=20,000,000, descriptor warmup=20,000,000).",
   "simulations": [
     {
       "suite": "datacenter",
       "subsuite": "datacenter",
       "workload": [
-        "apsp_synth",
-        "bc_synth",
+        "appworld",
         "bfs_web-google",
-        "community_web_google",
-        "connected_components_web_google",
+        "clickhouse",
+        "core_bench",
         "dfs_web-google",
-        "haystack_rag",
-        "leveldb_ycsb",
-        "pagerank_web-google",
+        "duckdb",
+        "leveldb",
+        "pagerank_gnutella31",
+        "rocksdb",
         "sssp_ego-facebook",
-        "triangle_counting_web_google"
+        "terminal_bench"
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
-      "warmup": 50000000
+      "warmup": 20000000
     }
   ],
   "configurations": {
-    "runtime_ifuse": {
-      "params": "--icache_size 32768 --inst_limit 70000000 --full_warmup 50000000 --power_intf_on 1 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 9",
+    "ifuse": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/ifuse/scarab/bin --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 9",
       "binary": "scarab_22394a154",
       "slurm_options": "",
       "memory_overhead_mb": 0
@@ -45,7 +45,7 @@
     "configs": null
   },
   "visualize": {
-    "baseline": "runtime_ifuse",
+    "baseline": "ifuse",
     "configs": [],
     "counters": [
       "IPC",
@@ -66,7 +66,7 @@
     "fallback_mb": 16384
   },
   "perf_analyze": {
-    "baseline": "runtime_ifuse",
+    "baseline": "ifuse",
     "counters": [
       "IPC",
       "IFUSE_FUSED_LOADS",

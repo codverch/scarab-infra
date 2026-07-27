@@ -27,44 +27,51 @@ DESCRIPTOR_JSON="${INFRA_DIR}/json/hpca2027/helios.json"
 TRACES_DIR="/dev/shm/baseline/simpoint_traces"
 SCARAB_PATH="/users/deepmish/scarab"
 BUILDS_DIR="${INFRA_DIR}/scarab_builds"
-WARMUP=50000000
-INST_LIMIT=70000000
+WARMUP=20000000
+INST_LIMIT=30000000
 
 HELIOS_APPS=(
-  apsp_synth bc_synth bfs_web-google community_web_google connected_components_web_google dfs_web-google
-  haystack_rag leveldb_ycsb pagerank_web-google sssp_ego-facebook triangle_counting_web_google
+  appworld bfs_web-google clickhouse core_bench dfs_web-google duckdb leveldb
+  pagerank_gnutella31 rocksdb sssp_ego-facebook terminal_bench
 )
 
+# Trace trees on disk use hyphens; workloads_db keys use underscores in a few names.
+trace_dir_for_app() {
+  case "$1" in
+    bfs_web-google) echo bfs-web-google ;;
+    dfs_web-google) echo dfs-web-google ;;
+    core_bench) echo corebench ;;
+    pagerank_gnutella31) echo pagerank-gnutella31 ;;
+    sssp_ego-facebook) echo sssp-ego-facebook ;;
+    *) echo "$1" ;;
+  esac
+}
+
 declare -A HELIOS_T=(
-  [apsp_synth]=300 [bc_synth]=300 [bfs_web-google]=300 [community_web_google]=300
-  [connected_components_web_google]=300 [dfs_web-google]=300 [haystack_rag]=1000
-  [leveldb_ycsb]=4800 [pagerank_web-google]=300 [sssp_ego-facebook]=300
-  [triangle_counting_web_google]=300
+  [appworld]=10000 [bfs_web-google]=300 [clickhouse]=300 [core_bench]=1000
+  [dfs_web-google]=300 [duckdb]=30000 [leveldb]=4800 [pagerank_gnutella31]=300
+  [rocksdb]=4800 [sssp_ego-facebook]=300 [terminal_bench]=100
 )
 declare -A HELIOS_W=(
-  [apsp_synth]=64 [bc_synth]=64 [bfs_web-google]=64 [community_web_google]=64
-  [connected_components_web_google]=64 [dfs_web-google]=64 [haystack_rag]=64
-  [leveldb_ycsb]=64 [pagerank_web-google]=64 [sssp_ego-facebook]=64
-  [triangle_counting_web_google]=64
+  [appworld]=64 [bfs_web-google]=64 [clickhouse]=64 [core_bench]=64
+  [dfs_web-google]=64 [duckdb]=64 [leveldb]=64 [pagerank_gnutella31]=64
+  [rocksdb]=64 [sssp_ego-facebook]=64 [terminal_bench]=64
 )
 declare -A HELIOS_I=(
-  [apsp_synth]=1 [bc_synth]=1 [bfs_web-google]=1 [community_web_google]=1
-  [connected_components_web_google]=1 [dfs_web-google]=1 [haystack_rag]=1
-  [leveldb_ycsb]=1 [pagerank_web-google]=1 [sssp_ego-facebook]=1
-  [triangle_counting_web_google]=1
+  [appworld]=1 [bfs_web-google]=1 [clickhouse]=10 [core_bench]=1
+  [dfs_web-google]=1 [duckdb]=1 [leveldb]=1 [pagerank_gnutella31]=1
+  [rocksdb]=1 [sssp_ego-facebook]=1 [terminal_bench]=1
 )
 declare -A HELIOS_D=(
-  [apsp_synth]=10 [bc_synth]=10 [bfs_web-google]=10 [community_web_google]=10
-  [connected_components_web_google]=10 [dfs_web-google]=10 [haystack_rag]=10
-  [leveldb_ycsb]=10 [pagerank_web-google]=10 [sssp_ego-facebook]=10
-  [triangle_counting_web_google]=10
+  [appworld]=10 [bfs_web-google]=10 [clickhouse]=10 [core_bench]=10
+  [dfs_web-google]=10 [duckdb]=10 [leveldb]=10 [pagerank_gnutella31]=10
+  [rocksdb]=10 [sssp_ego-facebook]=10 [terminal_bench]=10
 )
 # stores-off for every app
 declare -A HELIOS_STORES=(
-  [apsp_synth]=0 [bc_synth]=0 [bfs_web-google]=0 [community_web_google]=0
-  [connected_components_web_google]=0 [dfs_web-google]=0 [haystack_rag]=0
-  [leveldb_ycsb]=0 [pagerank_web-google]=0 [sssp_ego-facebook]=0
-  [triangle_counting_web_google]=0
+  [appworld]=0 [bfs_web-google]=0 [clickhouse]=0 [core_bench]=0
+  [dfs_web-google]=0 [duckdb]=0 [leveldb]=0 [pagerank_gnutella31]=0
+  [rocksdb]=0 [sssp_ego-facebook]=0 [terminal_bench]=0
 )
 
 helios_label_for_app() {
@@ -170,21 +177,25 @@ workloads = [w for w in sys.argv[7].splitlines() if w]
 # Full per-app map (always documented).
 PER_APP = {
     "terminal_bench": "T100/W64/I1/D10/stores-off",
-    "bfs": "T300/W64/I1/D10/stores-off",
-    "dfs": "T300/W64/I1/D10/stores-off",
-    "pagerank": "T300/W64/I1/D10/stores-off",
+    "bfs_web-google": "T300/W64/I1/D10/stores-off",
+    "dfs_web-google": "T300/W64/I1/D10/stores-off",
+    "pagerank_gnutella31": "T300/W64/I1/D10/stores-off",
+    "sssp_ego-facebook": "T300/W64/I1/D10/stores-off",
     "core_bench": "T1000/W64/I1/D10/stores-off",
     "appworld": "T10000/W64/I1/D10/stores-off",
     "rocksdb": "T4800/W64/I1/D10/stores-off",
+    "leveldb": "T4800/W64/I1/D10/stores-off",
     "duckdb": "T30000/W64/I1/D10/stores-off",
     "clickhouse": "T300/W64/I10/D10/stores-off",
 }
 
 desc = json.loads(desc_path.read_text())
 desc["architecture"] = "in"
+experiment = desc["experiment"]
 common = (
     f"--icache_size 32768 --inst_limit {inst_limit} "
-    f"--full_warmup {warmup} --power_intf_on 1"
+    f"--full_warmup {warmup} --power_intf_on 1 "
+    f"--bindir {{root_dir}}/scarab_stage/{experiment}/scarab/bin"
 )
 desc["_comment"] = comment
 desc["helios_per_app"] = PER_APP
@@ -204,14 +215,15 @@ PY
 }
 
 discover_present_apps() {
-  local app
+  local app trace_dir
   PRESENT_APPS=()
   for app in "${HELIOS_APPS[@]}"; do
-    if [[ -d "${TRACES_DIR}/${app}" ]] && \
-       find "${TRACES_DIR}/${app}" -path '*/traces_simp/*' -name '*.zip' 2>/dev/null | grep -q .; then
+    trace_dir="$(trace_dir_for_app "${app}")"
+    if [[ -d "${TRACES_DIR}/${trace_dir}" ]] && \
+       find "${TRACES_DIR}/${trace_dir}" -path '*/traces_simp/*' -name '*.zip' 2>/dev/null | grep -q .; then
       PRESENT_APPS+=("${app}")
     else
-      echo "SKIP ${app}: no traces under ${TRACES_DIR}/${app}" >&2
+      echo "SKIP ${app}: no traces under ${TRACES_DIR}/${trace_dir}" >&2
     fi
   done
 }
@@ -222,10 +234,14 @@ register_traces() {
     echo "ERROR: no Helios apps with traces under ${TRACES_DIR}" >&2
     exit 1
   fi
+  local app trace_dirs=()
+  for app in "${PRESENT_APPS[@]}"; do
+    trace_dirs+=("$(trace_dir_for_app "${app}")")
+  done
   echo "Registering ${#PRESENT_APPS[@]} workload(s): ${PRESENT_APPS[*]}"
   python3 -m scripts.register_local_traces \
     --traces-dir "${TRACES_DIR}" \
-    --workloads "${PRESENT_APPS[@]}" \
+    --workloads "${trace_dirs[@]}" \
     --warmup "${WARMUP}"
 }
 

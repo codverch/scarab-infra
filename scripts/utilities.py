@@ -1437,8 +1437,11 @@ def prepare_simulation(user, scarab_path, scarab_build, docker_home, experiment_
         os.system(f"mkdir -p {scarab_stage_dir}/scarab/bin/scarab_globals")
         os.system(f"cp {scarab_path}/bin/scarab_launch.py  {scarab_stage_dir}/scarab/bin/scarab_launch.py ")
         os.system(f"cp {scarab_path}/bin/scarab_globals/*  {scarab_stage_dir}/scarab/bin/scarab_globals/ ")
-        os.system(f"mkdir -p {scarab_stage_dir}/scarab/bin/power")
-        os.system(f"cp -r {scarab_path}/bin/power/*  {scarab_stage_dir}/scarab/bin/power/")
+        # Required for --power_intf_on 1: power_intf.py/.pl are invoked by scarab via
+        # --bindir at runtime and are not part of scarab_globals.
+        if os.path.isdir(f"{scarab_path}/bin/power"):
+            os.system(f"mkdir -p {scarab_stage_dir}/scarab/bin/power")
+            os.system(f"cp {scarab_path}/bin/power/*  {scarab_stage_dir}/scarab/bin/power/ ")
         mcpat_src = os.environ.get("MCPAT_BIN", f"{infra_dir}/../mcpat/mcpat")
         cacti_src = os.environ.get("CACTI_BIN", f"{infra_dir}/../toolchain/bin/cacti")
         if os.path.isfile(mcpat_src):
