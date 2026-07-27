@@ -31,47 +31,40 @@ WARMUP=20000000
 INST_LIMIT=30000000
 
 HELIOS_APPS=(
-  appworld bfs_web-google clickhouse core_bench dfs_web-google duckdb leveldb
-  pagerank_gnutella31 rocksdb sssp_ego-facebook terminal_bench
+  appworld bfs-web-google clickhouse corebench dfs-web-google duckdb leveldb
+  pagerank-gnutella31 rocksdb sssp-ego-facebook terminal_bench
 )
 
-# Trace trees on disk use hyphens; workloads_db keys use underscores in a few names.
+# Workload / result dirs match simpoint_traces names 1:1.
 trace_dir_for_app() {
-  case "$1" in
-    bfs_web-google) echo bfs-web-google ;;
-    dfs_web-google) echo dfs-web-google ;;
-    core_bench) echo corebench ;;
-    pagerank_gnutella31) echo pagerank-gnutella31 ;;
-    sssp_ego-facebook) echo sssp-ego-facebook ;;
-    *) echo "$1" ;;
-  esac
+  echo "$1"
 }
 
 declare -A HELIOS_T=(
-  [appworld]=10000 [bfs_web-google]=300 [clickhouse]=300 [core_bench]=1000
-  [dfs_web-google]=300 [duckdb]=30000 [leveldb]=4800 [pagerank_gnutella31]=300
-  [rocksdb]=4800 [sssp_ego-facebook]=300 [terminal_bench]=100
+  [appworld]=10000 [bfs-web-google]=300 [clickhouse]=300 [corebench]=1000
+  [dfs-web-google]=300 [duckdb]=30000 [leveldb]=4800 [pagerank-gnutella31]=300
+  [rocksdb]=4800 [sssp-ego-facebook]=300 [terminal_bench]=100
 )
 declare -A HELIOS_W=(
-  [appworld]=64 [bfs_web-google]=64 [clickhouse]=64 [core_bench]=64
-  [dfs_web-google]=64 [duckdb]=64 [leveldb]=64 [pagerank_gnutella31]=64
-  [rocksdb]=64 [sssp_ego-facebook]=64 [terminal_bench]=64
+  [appworld]=64 [bfs-web-google]=64 [clickhouse]=64 [corebench]=64
+  [dfs-web-google]=64 [duckdb]=64 [leveldb]=64 [pagerank-gnutella31]=64
+  [rocksdb]=64 [sssp-ego-facebook]=64 [terminal_bench]=64
 )
 declare -A HELIOS_I=(
-  [appworld]=1 [bfs_web-google]=1 [clickhouse]=10 [core_bench]=1
-  [dfs_web-google]=1 [duckdb]=1 [leveldb]=1 [pagerank_gnutella31]=1
-  [rocksdb]=1 [sssp_ego-facebook]=1 [terminal_bench]=1
+  [appworld]=1 [bfs-web-google]=1 [clickhouse]=10 [corebench]=1
+  [dfs-web-google]=1 [duckdb]=1 [leveldb]=1 [pagerank-gnutella31]=1
+  [rocksdb]=1 [sssp-ego-facebook]=1 [terminal_bench]=1
 )
 declare -A HELIOS_D=(
-  [appworld]=10 [bfs_web-google]=10 [clickhouse]=10 [core_bench]=10
-  [dfs_web-google]=10 [duckdb]=10 [leveldb]=10 [pagerank_gnutella31]=10
-  [rocksdb]=10 [sssp_ego-facebook]=10 [terminal_bench]=10
+  [appworld]=10 [bfs-web-google]=10 [clickhouse]=10 [corebench]=10
+  [dfs-web-google]=10 [duckdb]=10 [leveldb]=10 [pagerank-gnutella31]=10
+  [rocksdb]=10 [sssp-ego-facebook]=10 [terminal_bench]=10
 )
 # stores-off for every app
 declare -A HELIOS_STORES=(
-  [appworld]=0 [bfs_web-google]=0 [clickhouse]=0 [core_bench]=0
-  [dfs_web-google]=0 [duckdb]=0 [leveldb]=0 [pagerank_gnutella31]=0
-  [rocksdb]=0 [sssp_ego-facebook]=0 [terminal_bench]=0
+  [appworld]=0 [bfs-web-google]=0 [clickhouse]=0 [corebench]=0
+  [dfs-web-google]=0 [duckdb]=0 [leveldb]=0 [pagerank-gnutella31]=0
+  [rocksdb]=0 [sssp-ego-facebook]=0 [terminal_bench]=0
 )
 
 helios_label_for_app() {
@@ -177,11 +170,11 @@ workloads = [w for w in sys.argv[7].splitlines() if w]
 # Full per-app map (always documented).
 PER_APP = {
     "terminal_bench": "T100/W64/I1/D10/stores-off",
-    "bfs_web-google": "T300/W64/I1/D10/stores-off",
-    "dfs_web-google": "T300/W64/I1/D10/stores-off",
-    "pagerank_gnutella31": "T300/W64/I1/D10/stores-off",
-    "sssp_ego-facebook": "T300/W64/I1/D10/stores-off",
-    "core_bench": "T1000/W64/I1/D10/stores-off",
+    "bfs-web-google": "T300/W64/I1/D10/stores-off",
+    "dfs-web-google": "T300/W64/I1/D10/stores-off",
+    "pagerank-gnutella31": "T300/W64/I1/D10/stores-off",
+    "sssp-ego-facebook": "T300/W64/I1/D10/stores-off",
+    "corebench": "T1000/W64/I1/D10/stores-off",
     "appworld": "T10000/W64/I1/D10/stores-off",
     "rocksdb": "T4800/W64/I1/D10/stores-off",
     "leveldb": "T4800/W64/I1/D10/stores-off",

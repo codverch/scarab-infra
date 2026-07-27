@@ -32,7 +32,8 @@ Traces live under `/dev/shm/baseline/simpoint_traces` (appworld, bfs-web-google,
 cd ~/scarab-infra
 ./sci --sim hpca2027/baseline
 ./sci --sim hpca2027/ideal-fusion-pass1
-./sci --sim hpca2027/ideal-fusion-pass2   # requires pass-1 candidates
+./sci --sim hpca2027/ideal-fusion          # pass 2 (fused); outputs under simulations/ideal-fusion/<app>/
+./sci --sim hpca2027/ideal-fusion-pass2    # alias for ideal-fusion.json
 ./sci --sim hpca2027/ifuse
 ./sci --sim hpca2027/rfp
 # Helios: per-app knobs — use the launcher (not bare ./sci --sim hpca2027/helios)
@@ -58,11 +59,15 @@ Rebuild Scarab only when source or the workload Dockerfile changed:
 
 ## Ideal fusion workflow
 
-Pass-1 writes candidates to tmpfs (not under `simulations/`):
+Pass-1 writes candidates to tmpfs (not under `simulations/`), using the same
+app directory names as `simpoint_traces/` (e.g. `bfs-web-google`, `corebench`):
 
 ```text
 /dev/shm/baseline/ideal_fusion_candidates/{app}/{simpoint}.csv
 ```
+
+Simulation outputs use the same names under `simulations/<experiment>/{app}/`.
+Do not remap these to underscored aliases in `workloads_db.json`.
 
 ## Descriptors
 
@@ -70,7 +75,8 @@ Pass-1 writes candidates to tmpfs (not under `simulations/`):
 |------|------------|-----------|
 | `baseline.json` | `baseline` | `baseline` |
 | `ideal-fusion-pass1.json` | `ideal-fusion-pass1` | `pass1` |
-| `ideal-fusion-pass2.json` | `ideal-fusion-pass2` | `pass2` |
+| `ideal-fusion.json` | `ideal-fusion` | `ideal-fusion` |
+| `ideal-fusion-pass2.json` | `ideal-fusion` | `ideal-fusion` (alias) |
 | `ifuse.json` | `ifuse` | `ifuse` |
 | `helios.json` | `helios` | `helios` |
 | `rfp.json` | `rfp` | `baseline` vs `rfp_{6,12,18,24}kb` |

@@ -32,6 +32,11 @@ from typing import Dict, List, Optional, Tuple
 DEFAULT_IMAGE_NAME = "allbench_traces"
 DEFAULT_TRACE_TYPE = "trace_then_cluster"
 
+# Keep workloads_db keys identical to on-disk simpoint_traces dir names
+# (e.g. bfs-web-google, corebench). Do not remap to underscored aliases —
+# that caused ideal_fusion_candidates/ and simulations/ to diverge from traces.
+HPCA2027_WORKLOAD_ALIASES: Dict[str, str] = {}
+
 
 def is_junk(name: str) -> bool:
     """macOS AppleDouble sidecar files / resource forks."""
@@ -173,8 +178,9 @@ def register_workload(
     trace_type: str,
     warmup: int,
     dry_run: bool,
+    workload_aliases: Optional[Dict[str, str]] = None,
 ) -> Optional[Tuple[str, dict]]:
-    workload = app_dir.name
+    workload = (workload_aliases or {}).get(app_dir.name, app_dir.name)
     trace_root = find_trace_root(app_dir)
     if trace_root is None:
         print(f"  [skip] {workload}: no simpoints/ directory found")
@@ -242,7 +248,11 @@ def main() -> int:
                         help="Optional subset of workload names to register (default: all found).")
     parser.add_argument("--dry-run", action="store_true",
                         help="Parse and report, but do not write the DB or create symlinks.")
+    parser.add_argument("--no-hpca2027-aliases", action="store_true",
+                        help="Deprecated no-op: workloads_db keys always match simpoint_traces dir names.")
     args = parser.parse_args()
+
+    workload_aliases: Dict[str, str] = dict(HPCA2027_WORKLOAD_ALIASES)
 
     traces_dir = Path(args.traces_dir).resolve()
     if not traces_dir.is_dir():
@@ -271,6 +281,7 @@ def main() -> int:
         result = register_workload(
             traces_dir, app_dir, args.suite, args.subsuite,
             args.image_name, args.trace_type, args.warmup, args.dry_run,
+            workload_aliases=workload_aliases,
         )
         if result:
             registered[result[0]] = result[1]

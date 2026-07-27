@@ -1,25 +1,35 @@
 #!/bin/bash
 # McPAT/CACTI for --power_intf_on 1.
-# Containers must see MCPAT_BIN/CACTI_BIN. Prefer $HOME/toolchain/bin (bind-mounted
-# from the host toolchain). Fall back to binaries staged under scarab_stage.
-if [ -x "$HOME/toolchain/bin/mcpat" ]; then
-  export MCPAT_BIN="$HOME/toolchain/bin/mcpat"
-elif [ -z "${MCPAT_BIN:-}" ] || [ ! -x "${MCPAT_BIN}" ]; then
-  for candidate in "$HOME"/scarab_stage/*/scarab/bin/mcpat; do
-    if [ -x "$candidate" ]; then
-      export MCPAT_BIN="$candidate"
-      break
+# Prefer docker-compatible builds, then $HOME/toolchain/bin (host bind-mount),
+# then staged scarab_stage binaries.
+_resolve_power_tool() {
+  local name="$1"
+  local candidate
+  for candidate in \
+    "/dev/shm/baseline/mcpat_build/${name}" \
+    "${HOME}/toolchain/bin/${name}" \
+    "/tmp_home/application/toolchain/bin/${name}"; do
+    if [ -x "${candidate}" ]; then
+      printf '%s' "${candidate}"
+      return 0
     fi
   done
+  for bindir in "${HOME}"/scarab_stage/*/scarab/bin; do
+    candidate="${bindir}/${name}"
+    if [ -x "${candidate}" ]; then
+      printf '%s' "${candidate}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+mcpat_path="$(_resolve_power_tool mcpat)" || true
+if [ -n "${mcpat_path}" ]; then
+  export MCPAT_BIN="${mcpat_path}"
 fi
 
-if [ -x "$HOME/toolchain/bin/cacti" ]; then
-  export CACTI_BIN="$HOME/toolchain/bin/cacti"
-elif [ -z "${CACTI_BIN:-}" ] || [ ! -x "${CACTI_BIN}" ]; then
-  for candidate in "$HOME"/scarab_stage/*/scarab/bin/cacti; do
-    if [ -x "$candidate" ]; then
-      export CACTI_BIN="$candidate"
-      break
-    fi
-  done
+cacti_path="$(_resolve_power_tool cacti)" || true
+if [ -n "${cacti_path}" ]; then
+  export CACTI_BIN="${cacti_path}"
 fi

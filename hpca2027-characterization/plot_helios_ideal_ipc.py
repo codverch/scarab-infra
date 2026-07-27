@@ -76,7 +76,7 @@ from plot_pgo_ifuse_results import SimpointKey  # noqa: E402
 # Match characterization backend-stalls figure (CD/CC omitted).
 WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("GAP", ("bc", "bfs", "dfs", "pagerank", "sssp_ego_fb")),
-    ("Agentic", ("appworld", "core_bench", "mlgym_fmnist", "terminal_bench")),
+    ("Agentic", ("appworld", "corebench", "mlgym_fmnist", "terminal_bench")),
     ("Database", ("duckdb", "leveldb", "rocksdb")),
 )
 SIMPOINT_WORKLOADS = [wl for _, members in WORKLOAD_GROUPS for wl in members]
@@ -88,7 +88,7 @@ SHORT_LABELS = {
     "pagerank": "PR",
     "sssp_ego_fb": "SSSP",
     "appworld": "AppWorld",
-    "core_bench": "CoreBench",
+    "corebench": "CoreBench",
     "mlgym_fmnist": "MLGym",
     "terminal_bench": "TerminalBench",
     "duckdb": "DuckDB",

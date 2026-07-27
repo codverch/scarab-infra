@@ -41,6 +41,31 @@ def simulation_scenario_dir(user, config_key):
     """Docker scenario root passed to run_*_single_simpoint.sh as SCENARIO."""
     return f"/home/{user}/simulations/{config_key}"
 
+def power_tool_env_flags(docker_home, experiment_name, application_dir):
+    """Docker -e flags for MCPAT_BIN/CACTI_BIN (prefer staged scarab bindir)."""
+    flags = []
+    candidates = [
+        (f"{docker_home}/scarab_stage/{experiment_name}/scarab/bin/mcpat",
+         f"{docker_home}/scarab_stage/{experiment_name}/scarab/bin/cacti"),
+        ("/dev/shm/baseline/mcpat_build/mcpat", "/dev/shm/baseline/mcpat_build/cacti"),
+        (os.path.join(application_dir, "toolchain/bin/mcpat"),
+         os.path.join(application_dir, "toolchain/bin/cacti")),
+    ]
+    mcpat_path = None
+    cacti_path = None
+    for mcpat_cand, cacti_cand in candidates:
+        if mcpat_path is None and os.path.isfile(mcpat_cand):
+            mcpat_path = mcpat_cand
+        if cacti_path is None and os.path.isfile(cacti_cand):
+            cacti_path = cacti_cand
+        if mcpat_path and cacti_path:
+            break
+    if mcpat_path:
+        flags.append(f"-e MCPAT_BIN={mcpat_path}")
+    if cacti_path:
+        flags.append(f"-e CACTI_BIN={cacti_path}")
+    return " ".join(flags)
+
 def get_docker_client():
     global _docker_client
     if docker is None:
@@ -1662,6 +1687,7 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
         scarab_cmd = generate_single_scarab_run_command(user, workload_home, experiment_name, config_key, config,
                                                         scarab_mode, seg_size, architecture, scarab_binary, cluster_id,
                                                         warmup, trace_warmup, trace_type, trace_file, env_vars, bincmd, client_bincmd)
+        power_env = power_tool_env_flags(docker_home, experiment_name, application_dir)
         with open(filename, "w") as f:
             f.write("#!/bin/bash\n")
             f.write(f"echo \"Running {config_key} {workload_home} {cluster_id} {scarab_mode}\"\n")
@@ -1704,6 +1730,7 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
                 -dit \
                 --rm \
                 --name $CONTAINER_NAME \
+                {power_env} \
                 --mount type=bind,source={traces_dir},target=/simpoint_traces,readonly=true \
                 --mount type=bind,source={docker_home},target=/home/{user},readonly=false \
                 {toolchain_mount}\
@@ -1724,6 +1751,7 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
                 -dit \
                 --rm \
                 --name $CONTAINER_NAME \
+                {power_env} \
                 --mount type=bind,source={traces_dir},target=/simpoint_traces,readonly=true \
                 --mount type=bind,source={docker_home},target=/home/{user},readonly=false \
                 {toolchain_mount}\

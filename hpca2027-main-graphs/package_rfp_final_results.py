@@ -55,7 +55,7 @@ APP_CONFIG: dict[str, dict] = {
         "stride_signed": 1,
         "sim_root": SIM_ROOT,
     },
-    "core_bench": {
+    "corebench": {
         "config": "rfp_prob_p2",
         "prob_shift": 2,
         "stride_bits": 5,
@@ -216,7 +216,7 @@ All workloads use `simulations-confidence-1/baseline/<app>/<simpoint_id>/`.
 | pagerank | rfp_p1_s16 | 1 | 16 | signed (1) | 1 |
 | appworld | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |
 | clickhouse | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |
-| core_bench | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |
+| corebench | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |
 | duckdb | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |
 | rocksdb | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |
 | terminal_bench | rfp_prob_p2 | 2 | 5 | signed (1) | 1 |

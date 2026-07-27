@@ -55,7 +55,7 @@ except ImportError:
 
 
 GAP_WORKLOADS = ["bfs", "dfs", "pagerank"]
-AGENTIC_WORKLOADS = ["appworld", "core_bench", "terminal_bench"]
+AGENTIC_WORKLOADS = ["appworld", "corebench", "terminal_bench"]
 DATABASE_WORKLOADS = ["duckdb", "rocksdb", "clickhouse"]
 
 WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -140,7 +140,7 @@ def rename_workload(workload: str) -> str:
         "pagerank": "PR",
         "sssp_ego_fb": "SSSP",
         "appworld": "AppWorld",
-        "core_bench": "CoreBench",
+        "corebench": "CoreBench",
         "terminal_bench": "TerminalBench",
         "leveldb": "LevelDB",
         "clickhouse": "ClickHouse",

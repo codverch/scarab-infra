@@ -23,7 +23,17 @@ SCARAB_BIN="${12}"
 SEGMENT_IDX="${13}"
 
 APP_NAME="${WORKLOAD_HOME##*/}"
-SIMHOME=$SCENARIO/$APP_NAME
+# Prefer on-disk simpoint_traces dir names for result/candidate paths.
+# Legacy underscore DB keys map onto hyphenated/compacted trace dirs.
+case "$APP_NAME" in
+  bfs_web-google) TRACE_DIR=bfs-web-google ;;
+  dfs_web-google) TRACE_DIR=dfs-web-google ;;
+  core_bench) TRACE_DIR=corebench ;;
+  pagerank_gnutella31) TRACE_DIR=pagerank-gnutella31 ;;
+  sssp_ego-facebook) TRACE_DIR=sssp-ego-facebook ;;
+  *) TRACE_DIR="$APP_NAME" ;;
+esac
+SIMHOME=$SCENARIO/$TRACE_DIR
 mkdir -p $SIMHOME
 OUTDIR=$SIMHOME
 
@@ -40,8 +50,9 @@ fi
 #   --ideal_fusion_log /home/<user>/ideal_fusion_candidates/{workload}/{cluster_id}.csv
 #   --ifuse_fct_preload_file {root_dir}/pgo-candidates/.../{workload}/{cluster_id}.csv
 # {root_dir} is the descriptor root_dir bind-mounted as $HOME inside the container.
+# {workload} expands to the simpoint_traces dir name (TRACE_DIR), not legacy aliases.
 SCARABPARAMS="${SCARABPARAMS//\{root_dir\}/$HOME}"
-SCARABPARAMS="${SCARABPARAMS//\{workload\}/$APP_NAME}"
+SCARABPARAMS="${SCARABPARAMS//\{workload\}/$TRACE_DIR}"
 SCARABPARAMS="${SCARABPARAMS//\{cluster_id\}/$CLUSTER_ID}"
 # Skip sims when a PGO FCT preload file is configured but absent for this simpoint.
 if [[ "$SCARABPARAMS" == *"--ifuse_fct_preload_file"* ]]; then
@@ -88,22 +99,27 @@ else
   # raw per-app trees (<app>/traces_simp/trace/<id>.zip) and workloads_db.json
   # persist. Searching the raw layout here lets sims run without re-registering.
   if [ ! -f "$TRACEFILE" ]; then
-    for _cand in \
-      "$trace_home/$APP_NAME/traces_simp/trace/$CLUSTER_ID.zip" \
-      "$trace_home/$APP_NAME/traces_simp/$CLUSTER_ID.zip"; do
-      if [ -f "$_cand" ]; then
-        TRACEFILE="$_cand"
-        break
-      fi
+    for _app in "$TRACE_DIR" "$APP_NAME"; do
+      for _cand in \
+        "$trace_home/$_app/traces_simp/trace/$CLUSTER_ID.zip" \
+        "$trace_home/$_app/traces_simp/$CLUSTER_ID.zip"; do
+        if [ -f "$_cand" ]; then
+          TRACEFILE="$_cand"
+          break 2
+        fi
+      done
     done
   fi
   # Last resort: raw tree nested under a single per-instance dir
   # (e.g. <app>/<app_instance>/traces_simp/trace/<id>.zip).
   if [ ! -f "$TRACEFILE" ]; then
-    _nested=$(ls "$trace_home/$APP_NAME"/*/traces_simp/trace/"$CLUSTER_ID.zip" 2>/dev/null | head -n 1)
-    if [ -n "$_nested" ]; then
-      TRACEFILE="$_nested"
-    fi
+    for _app in "$TRACE_DIR" "$APP_NAME"; do
+      _nested=$(ls "$trace_home/$_app"/*/traces_simp/trace/"$CLUSTER_ID.zip" 2>/dev/null | head -n 1)
+      if [ -n "$_nested" ]; then
+        TRACEFILE="$_nested"
+        break
+      fi
+    done
   fi
   # roi is initialized by original segment boundary without warmup (use segment index, not cluster id)
   roiStart=$(( SEGMENT_IDX * $SEGSIZE + 1 ))

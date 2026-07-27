@@ -60,7 +60,7 @@ WORKLOAD_COLORS: dict[str, str] = {
     "dfs": "#8F993E",
     "pagerank": "#016895",
     "appworld": "#E98300",
-    "core_bench": "#C74632",
+    "corebench": "#C74632",
     "terminal_bench": "#620059",
     "duckdb": "#9475BD",
     "rocksdb": "#FEC51D",

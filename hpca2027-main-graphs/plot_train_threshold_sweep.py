@@ -64,7 +64,7 @@ DISPLAY = {
     "bfs": "BFS",
     "community": "Community*",
     "connected_components": "CC*",
-    "core_bench": "CoreBench",
+    "corebench": "CoreBench",
     "dfs": "DFS",
     "duckdb": "DuckDB",
     "leveldb": "LevelDB",
@@ -86,7 +86,7 @@ APP_ORDER = [
     "leveldb",
     "rocksdb",
     "appworld",
-    "core_bench",
+    "corebench",
     "terminal_bench",
     "mlgym_fmnist",
 ]
@@ -532,7 +532,7 @@ def main() -> None:
         "--apps",
         nargs="+",
         default=None,
-        help="Only include these app names (e.g. appworld core_bench terminal_bench)",
+        help="Only include these app names (e.g. appworld corebench terminal_bench)",
     )
     p.add_argument(
         "--allow-unmatched-baseline",

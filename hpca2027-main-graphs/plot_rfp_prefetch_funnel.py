@@ -62,7 +62,7 @@ WORKLOADS = [
     "appworld",
     "bfs",
     "clickhouse",
-    "core_bench",
+    "corebench",
     "dfs",
     "duckdb",
     "pagerank",
