@@ -59,6 +59,7 @@ from plot_ipc import (  # noqa: E402
     IFUSE_COLOR,
     IPC_AXIS_FONT,
     IPC_AXIS_LABEL_FONT,
+    IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     RFP_COLOR,
     SIMPOINT_WORKLOADS,
@@ -629,6 +630,9 @@ def plot_mpki_bars(
     ]
     hi = max(finite) if finite else 1.0
     ax.set_ylim(0.0, hi * 1.12 + max(hi * 0.02, 0.0001))
+    import matplotlib.ticker as mticker
+
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(10))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(_format_y_tick))
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
@@ -638,22 +642,25 @@ def plot_mpki_bars(
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
+    plt.subplots_adjust(top=0.88, bottom=0.28, left=0.08, right=0.99)
+
     legend_handles = _legend_handles(include_helios=include_helios, include_rfp=include_rfp)
     legend = ax.legend(
         handles=legend_handles,
-        loc="upper left",
-        bbox_to_anchor=(0.02, 0.98),
-        bbox_transform=ax.transAxes,
-        ncol=len(legend_handles),
         frameon=True,
         fancybox=False,
         shadow=False,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.96),
+        bbox_transform=ax.transAxes,
+        borderaxespad=0.0,
+        fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
-        framealpha=1.0,
+        ncol=len(legend_handles),
         handlelength=1.4,
         handleheight=1.1,
         columnspacing=1.2,
-        borderaxespad=0.6,
+        framealpha=1.0,
     )
     legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
     legend.get_frame().set_facecolor("white")

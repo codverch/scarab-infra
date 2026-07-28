@@ -52,6 +52,8 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_IFUSE_COVERAGE_OUTPUT_DIR,
     DEFAULT_IPC_IFUSE_CONFIG,
     DEFAULT_IPC_IFUSE_DIR,
+    DEFAULT_RFP_CONFIG,
+    DEFAULT_RFP_DIR,
     DEFAULT_SIMULATIONS_ROOT,
     DEFAULT_SUBSUITE,
     DEFAULT_SUITE,
@@ -62,6 +64,7 @@ from plot_ipc import (  # noqa: E402
     IPC_AXIS_LABEL_FONT,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
+    RFP_COLOR,
     SIMPOINT_WORKLOADS,
     find_simpoint_dir,
     load_simpoint_trace_weights,
@@ -71,8 +74,11 @@ from plot_ipc import (  # noqa: E402
 
 IFUSE_STAT = "IFUSE_CORRECT_PREDICTIONS_count"
 IDEAL_STAT = "IDEAL_FUSION_FUSED_LOADS_count"
+ONPATH_MEM_LOADS_STAT = "ONPATH_MEM_LOADS_count"
+RFP_USEFUL_STAT = "RFP_PREFETCH_USEFUL_count"
 DENOMINATOR_FUSED_LOADS = "fused-loads"
 DENOMINATOR_CANDIDATES = "candidates"
+DENOMINATOR_ONPATH_MEM_LOADS = "onpath-mem-loads"
 
 WORKLOAD_CANDIDATE_ALIASES: dict[str, tuple[str, ...]] = {
     "core_bench": ("core_bench", "corebench"),
@@ -80,22 +86,27 @@ WORKLOAD_CANDIDATE_ALIASES: dict[str, tuple[str, ...]] = {
 
 SERIES: tuple[tuple[str, str, str], ...] = (
     ("helios", "Helios", HELIOS_COLOR),
+    ("rfp", "RFP", RFP_COLOR),
     ("ifuse", "I-Fuse", IFUSE_COLOR),
 )
 
-COVERAGE_BAR_WIDTH = 0.32
+COVERAGE_BAR_WIDTH = 0.26
+DEFAULT_FUSION_LOAD_MULTIPLIER = 2.0
 
 
 @dataclass
 class CoverageResult:
     workload: str
     helios_loads: float | None
+    rfp_useful: float | None
     ifuse_correct: float
     denominator_total: float
     helios_coverage_pct: float | None
+    rfp_coverage_pct: float | None
     ifuse_coverage_pct: float
     trace_count: int
     helios_trace_count: int
+    rfp_trace_count: int
 
 
 def stat_count_from_csv(stat_csv: Path, stat_name: str) -> float | None:
@@ -162,25 +173,31 @@ def load_candidate_row_count(
 def compute_workload_coverage(
     workload: str,
     helios_dir: Path | None,
+    rfp_dir: Path | None,
     ifuse_dir: Path,
     ideal_dir: Path,
     candidates_dir: Path | None,
     sp_weights: dict[tuple[str, str], float],
     *,
     helios_config: str,
+    rfp_config: str,
     ifuse_config: str,
     ideal_config: str,
     include_helios: bool,
+    include_rfp: bool,
     denominator: str,
+    fusion_load_multiplier: float,
     suite: str,
     subsuite: str,
 ) -> CoverageResult | None:
     weighted_helios = 0.0
+    weighted_rfp = 0.0
     weighted_ifuse = 0.0
     weighted_denominator = 0.0
     weight_sum = 0.0
     trace_count = 0
     helios_trace_count = 0
+    rfp_trace_count = 0
 
     for (wl, cluster_id), weight in sp_weights.items():
         if wl != workload or weight <= 0:
@@ -204,6 +221,17 @@ def compute_workload_coverage(
             if candidates_dir is None:
                 raise SystemExit("Candidate denominator requested without --candidates-dir")
             denominator_count = load_candidate_row_count(candidates_dir, workload, cluster_id)
+        elif denominator == DENOMINATOR_ONPATH_MEM_LOADS:
+            denominator_count = load_simpoint_counts(
+                ideal_dir,
+                ideal_config,
+                workload,
+                cluster_id,
+                stat_file="ideal_fusion.stat.0.csv",
+                stat_name=ONPATH_MEM_LOADS_STAT,
+                suite=suite,
+                subsuite=subsuite,
+            )
         else:
             denominator_count = load_simpoint_counts(
                 ideal_dir,
@@ -246,6 +274,22 @@ def compute_workload_coverage(
                 weighted_helios += weight * helios_loads
                 helios_trace_count += 1
 
+        rfp_useful: float | None = None
+        if include_rfp and rfp_dir is not None:
+            rfp_useful = load_simpoint_counts(
+                rfp_dir,
+                rfp_config,
+                workload,
+                cluster_id,
+                stat_file="rfp.stat.0.csv",
+                stat_name=RFP_USEFUL_STAT,
+                suite=suite,
+                subsuite=subsuite,
+            )
+            if rfp_useful is not None:
+                weighted_rfp += weight * rfp_useful
+                rfp_trace_count += 1
+
         weighted_ifuse += weight * ifuse_count
         weighted_denominator += weight * denominator_count
         weight_sum += weight
@@ -255,19 +299,28 @@ def compute_workload_coverage(
         return None
 
     helios_coverage = (
-        100.0 * weighted_helios / weighted_denominator
+        100.0 * weighted_helios * fusion_load_multiplier / weighted_denominator
         if include_helios and helios_trace_count > 0
         else None
     )
+    rfp_coverage = (
+        100.0 * weighted_rfp / weighted_denominator
+        if include_rfp and rfp_trace_count > 0
+        else None
+    )
+    ifuse_coverage = 100.0 * weighted_ifuse * fusion_load_multiplier / weighted_denominator
     return CoverageResult(
         workload=workload,
         helios_loads=weighted_helios if helios_trace_count > 0 else None,
+        rfp_useful=weighted_rfp if rfp_trace_count > 0 else None,
         ifuse_correct=weighted_ifuse,
         denominator_total=weighted_denominator,
         helios_coverage_pct=helios_coverage,
-        ifuse_coverage_pct=100.0 * weighted_ifuse / weighted_denominator,
+        rfp_coverage_pct=rfp_coverage,
+        ifuse_coverage_pct=ifuse_coverage,
         trace_count=trace_count,
         helios_trace_count=helios_trace_count,
+        rfp_trace_count=rfp_trace_count,
     )
 
 
@@ -276,12 +329,17 @@ def write_summary_csv(
     results: list[CoverageResult],
     *,
     include_helios: bool,
+    include_rfp: bool,
     denominator: str,
 ) -> None:
     denominator_field = (
         "weighted_ideal_fused"
         if denominator == DENOMINATOR_FUSED_LOADS
-        else "weighted_ideal_candidates"
+        else (
+            "weighted_ideal_candidates"
+            if denominator == DENOMINATOR_CANDIDATES
+            else "weighted_onpath_mem_loads"
+        )
     )
     fieldnames = [
         "workload",
@@ -296,6 +354,12 @@ def write_summary_csv(
             "helios_trace_count",
             "weighted_helios_loads",
             "helios_coverage_pct",
+        ]
+    if include_rfp:
+        fieldnames[3:3] = [
+            "rfp_trace_count",
+            "weighted_rfp_useful",
+            "rfp_coverage_pct",
         ]
 
     with path.open("w", newline="") as fh:
@@ -326,6 +390,20 @@ def write_summary_csv(
                         ),
                     }
                 )
+            if include_rfp:
+                row.update(
+                    {
+                        "rfp_trace_count": result.rfp_trace_count,
+                        "weighted_rfp_useful": (
+                            f"{result.rfp_useful:.1f}" if result.rfp_useful is not None else ""
+                        ),
+                        "rfp_coverage_pct": (
+                            f"{result.rfp_coverage_pct:.2f}"
+                            if result.rfp_coverage_pct is not None
+                            else ""
+                        ),
+                    }
+                )
             writer.writerow(row)
 
 
@@ -334,23 +412,41 @@ def write_computation_log(
     results: list[CoverageResult],
     *,
     include_helios: bool,
+    include_rfp: bool,
     denominator: str,
+    fusion_load_multiplier: float,
 ) -> None:
     with path.open("w") as fh:
         fh.write("Coverage of ideal-fusion opportunities\n")
         fh.write("=" * 80 + "\n")
+        if fusion_load_multiplier != 1.0:
+            fh.write(
+                f"Helios and I-Fuse numerators are scaled by {fusion_load_multiplier:g} "
+                "loads per fusion event.\n"
+            )
         denominator_label = (
             "IDEAL_FUSION_FUSED_LOADS_count"
             if denominator == DENOMINATOR_FUSED_LOADS
-            else "ideal_fusion_candidate_rows"
+            else (
+                "ideal_fusion_candidate_rows"
+                if denominator == DENOMINATOR_CANDIDATES
+                else "ONPATH_MEM_LOADS_count"
+            )
         )
         if include_helios:
             fh.write(
-                "Helios coverage = 100 * weighted(HELIOS_FUSIONS_COMMITTED_count) "
+                "Helios coverage = 100 * "
+                f"{fusion_load_multiplier:g} * weighted(HELIOS_FUSIONS_COMMITTED_count) "
+                f"/ weighted({denominator_label})\n"
+            )
+        if include_rfp:
+            fh.write(
+                "RFP coverage = 100 * weighted(RFP_PREFETCH_USEFUL_count) "
                 f"/ weighted({denominator_label})\n"
             )
         fh.write(
-            "I-Fuse coverage = 100 * weighted(IFUSE_CORRECT_PREDICTIONS_count) "
+            "I-Fuse coverage = 100 * "
+            f"{fusion_load_multiplier:g} * weighted(IFUSE_CORRECT_PREDICTIONS_count) "
             f"/ weighted({denominator_label})\n\n"
         )
         for result in results:
@@ -365,6 +461,12 @@ def write_computation_log(
                     f"  helios loads: {result.helios_loads:.1f}  "
                     f"({result.helios_coverage_pct:.2f}%, "
                     f"{result.helios_trace_count} simpoints)\n"
+                )
+            if include_rfp and result.rfp_coverage_pct is not None:
+                fh.write(
+                    f"  rfp useful: {result.rfp_useful:.1f}  "
+                    f"({result.rfp_coverage_pct:.2f}%, "
+                    f"{result.rfp_trace_count} simpoints)\n"
                 )
             fh.write(
                 f"  ifuse correct: {result.ifuse_correct:.1f}  "
@@ -385,6 +487,13 @@ def write_computation_log(
                         "Arithmetic mean Helios coverage: "
                         f"{sum(helios_vals) / len(helios_vals):.2f}%\n"
                     )
+            if include_rfp:
+                rfp_vals = [r.rfp_coverage_pct for r in results if r.rfp_coverage_pct is not None]
+                if rfp_vals:
+                    fh.write(
+                        "Arithmetic mean RFP coverage: "
+                        f"{sum(rfp_vals) / len(rfp_vals):.2f}%\n"
+                    )
 
 
 def _bar_offsets(n: int) -> list[float]:
@@ -397,12 +506,14 @@ def _tight_x_limits(ax, x_min: float, x_max: float, n_bars: int) -> None:
     ax.margins(x=0)
 
 
-def _legend_handles(*, include_helios: bool) -> list:
+def _legend_handles(*, include_helios: bool, include_rfp: bool) -> list:
     from matplotlib.patches import Patch
 
     handles = []
     for key, label, color in SERIES:
         if key == "helios" and not include_helios:
+            continue
+        if key == "rfp" and not include_rfp:
             continue
         handles.append(
             Patch(
@@ -420,6 +531,7 @@ def plot_coverage_bars(
     output_dir: Path,
     *,
     include_helios: bool,
+    include_rfp: bool,
     denominator: str,
 ) -> None:
     import matplotlib.pyplot as plt
@@ -428,7 +540,13 @@ def plot_coverage_bars(
     for key, _label, color in SERIES:
         if key == "helios" and not include_helios:
             continue
-        attr = "helios_coverage_pct" if key == "helios" else "ifuse_coverage_pct"
+        if key == "rfp" and not include_rfp:
+            continue
+        attr = {
+            "helios": "helios_coverage_pct",
+            "rfp": "rfp_coverage_pct",
+            "ifuse": "ifuse_coverage_pct",
+        }[key]
         values = [
             getattr(r, attr) if getattr(r, attr) is not None else float("nan")
             for r in results
@@ -494,7 +612,11 @@ def plot_coverage_bars(
         (
             "Fraction of\ntotal ideal-fusion\ncandidates covered (%)"
             if denominator == DENOMINATOR_CANDIDATES
-            else "Fraction of\nideally fused loads\ncovered (%)"
+            else (
+                "Fraction of\ntotal on-path\nmemory loads (%)"
+                if denominator == DENOMINATOR_ONPATH_MEM_LOADS
+                else "Fraction of\nideally fused loads\ncovered (%)"
+            )
         ),
         fontsize=IPC_AXIS_LABEL_FONT,
         fontfamily=FONT_FAMILY,
@@ -512,7 +634,7 @@ def plot_coverage_bars(
     plt.subplots_adjust(top=0.88, bottom=0.28, left=0.08, right=0.99)
 
     legend = ax.legend(
-        handles=_legend_handles(include_helios=include_helios),
+        handles=_legend_handles(include_helios=include_helios, include_rfp=include_rfp),
         frameon=True,
         fancybox=False,
         shadow=False,
@@ -541,7 +663,11 @@ def plot_coverage_bars(
     stems = (
         ("ifuse_candidate_coverage", "ideal_fusion_candidate_coverage")
         if denominator == DENOMINATOR_CANDIDATES
-        else ("ifuse_coverage", "ideal_fusion_coverage")
+        else (
+            ("ifuse_onpath_mem_load_coverage", "ideal_fusion_onpath_mem_load_coverage")
+            if denominator == DENOMINATOR_ONPATH_MEM_LOADS
+            else ("ifuse_coverage", "ideal_fusion_coverage")
+        )
     )
     for stem in stems:
         out = output_dir / stem
@@ -565,6 +691,14 @@ def main() -> None:
         default=True,
         help="Plot Helios bars (default: on)",
     )
+    parser.add_argument("--rfp-dir", type=Path, default=None)
+    parser.add_argument("--rfp-config", default=DEFAULT_RFP_CONFIG)
+    parser.add_argument(
+        "--include-rfp",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Plot RFP bars (default: on)",
+    )
     parser.add_argument("--ifuse-dir", type=Path, default=None)
     parser.add_argument("--ideal-fusion-dir", type=Path, default=None)
     parser.add_argument("--candidates-dir", type=Path, default=DEFAULT_CANDIDATES_DIR)
@@ -573,15 +707,29 @@ def main() -> None:
     parser.add_argument("--ideal-fusion-config", default=DEFAULT_IDEAL_CONFIG)
     parser.add_argument(
         "--denominator",
-        choices=(DENOMINATOR_FUSED_LOADS, DENOMINATOR_CANDIDATES),
+        choices=(
+            DENOMINATOR_FUSED_LOADS,
+            DENOMINATOR_CANDIDATES,
+            DENOMINATOR_ONPATH_MEM_LOADS,
+        ),
         default=DENOMINATOR_FUSED_LOADS,
     )
     parser.add_argument("--output-dir", type=Path, default=None)
+    parser.add_argument(
+        "--fusion-load-multiplier",
+        type=float,
+        default=DEFAULT_FUSION_LOAD_MULTIPLIER,
+        help=(
+            "Scale Helios and I-Fuse numerators by this many loads per fusion event "
+            f"(default: {DEFAULT_FUSION_LOAD_MULTIPLIER:g})"
+        ),
+    )
     parser.add_argument("--exclude-workloads", nargs="*", default=["feedsim", "langchain_web"])
     args = parser.parse_args()
 
     sim_root = args.simulations_root
     helios_dir = args.helios_dir or DEFAULT_HELIOS_DIR
+    rfp_dir = args.rfp_dir or DEFAULT_RFP_DIR
     ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
     ideal_dir = args.ideal_fusion_dir or DEFAULT_IDEAL_DIR
     candidates_dir = args.candidates_dir
@@ -603,6 +751,7 @@ def main() -> None:
         )
         if not plot_helios:
             print(f"Helios skipped: missing {HELIOS_FUSED_STAT} in {helios_dir}")
+    plot_rfp = args.include_rfp
 
     if args.denominator == DENOMINATOR_CANDIDATES and not candidates_dir.is_dir():
         raise SystemExit(f"Candidates directory does not exist: {candidates_dir}")
@@ -610,11 +759,14 @@ def main() -> None:
     print("Computing coverage of ideal-fusion opportunities...")
     if plot_helios:
         print(f"  helios:       {helios_dir} (config={args.helios_config})")
+    if plot_rfp:
+        print(f"  rfp:          {rfp_dir} (config={args.rfp_config})")
     print(f"  ifuse:        {ifuse_dir} (config={args.ifuse_config})")
     print(f"  ideal fusion: {ideal_dir} (config={args.ideal_fusion_config})")
     if args.denominator == DENOMINATOR_CANDIDATES:
         print(f"  candidates:   {candidates_dir}")
     print(f"  denominator:  {args.denominator}")
+    print(f"  fusion scale: {args.fusion_load_multiplier:g} loads/fusion (Helios + I-Fuse)")
     print(f"  output:       {output_dir}")
 
     results: list[CoverageResult] = []
@@ -622,15 +774,19 @@ def main() -> None:
         result = compute_workload_coverage(
             workload,
             helios_dir if plot_helios else None,
+            rfp_dir if plot_rfp else None,
             ifuse_dir,
             ideal_dir,
             candidates_dir if args.denominator == DENOMINATOR_CANDIDATES else None,
             sp_weights,
             helios_config=args.helios_config,
+            rfp_config=args.rfp_config,
             ifuse_config=args.ifuse_config,
             ideal_config=args.ideal_fusion_config,
             include_helios=plot_helios,
+            include_rfp=plot_rfp,
             denominator=args.denominator,
+            fusion_load_multiplier=args.fusion_load_multiplier,
             suite=DEFAULT_SUITE,
             subsuite=DEFAULT_SUBSUITE,
         )
@@ -662,18 +818,22 @@ def main() -> None:
         output_dir / "ifuse_coverage_summary.csv",
         results,
         include_helios=plot_helios,
+        include_rfp=plot_rfp,
         denominator=args.denominator,
     )
     write_computation_log(
         output_dir / "ifuse_coverage_computation_log.txt",
         results,
         include_helios=plot_helios,
+        include_rfp=plot_rfp,
         denominator=args.denominator,
+        fusion_load_multiplier=args.fusion_load_multiplier,
     )
     plot_coverage_bars(
         results,
         output_dir,
         include_helios=plot_helios,
+        include_rfp=plot_rfp,
         denominator=args.denominator,
     )
 
@@ -684,11 +844,18 @@ def main() -> None:
         helios_vals = [r.helios_coverage_pct for r in results if r.helios_coverage_pct is not None]
         if helios_vals:
             print(f"  Helios mean:       {sum(helios_vals) / len(helios_vals):.2f}%")
+    if plot_rfp:
+        rfp_vals = [r.rfp_coverage_pct for r in results if r.rfp_coverage_pct is not None]
+        if rfp_vals:
+            print(f"  RFP mean:          {sum(rfp_vals) / len(rfp_vals):.2f}%")
     print(f"  I-Fuse mean:       {ifuse_avg:.2f}%")
     print("\nOutputs:")
     if args.denominator == DENOMINATOR_CANDIDATES:
         print(f"  - {output_dir / 'ifuse_candidate_coverage.png'}")
         print(f"  - {output_dir / 'ideal_fusion_candidate_coverage.png'}")
+    elif args.denominator == DENOMINATOR_ONPATH_MEM_LOADS:
+        print(f"  - {output_dir / 'ifuse_onpath_mem_load_coverage.png'}")
+        print(f"  - {output_dir / 'ideal_fusion_onpath_mem_load_coverage.png'}")
     else:
         print(f"  - {output_dir / 'ifuse_coverage.png'}")
         print(f"  - {output_dir / 'ideal_fusion_coverage.png'}")
