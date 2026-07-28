@@ -36,8 +36,9 @@ MCPAT_BIN="${MCPAT_BIN:-/users/deepmish/toolchain/bin/mcpat}"
 CACTI_BIN="${CACTI_BIN:-/users/deepmish/toolchain/bin/cacti}"
 
 IF_APPS=(
-  appworld bfs-web-google clickhouse corebench dfs-web-google duckdb leveldb
-  pagerank-gnutella31 rocksdb sssp-ego-facebook terminal_bench
+  appworld bfs-init bfs-web-google clickhouse corebench dfs-init dfs-web-google
+  duckdb grpc leveldb memcached pagerank-gnutella31 pagerank-init rocksdb
+  sqlite sssp-ego-facebook sssp-init terminal_bench
 )
 
 # Workload / candidate / result dirs match simpoint_traces names 1:1.

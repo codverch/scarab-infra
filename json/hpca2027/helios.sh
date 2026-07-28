@@ -31,8 +31,9 @@ WARMUP=20000000
 INST_LIMIT=30000000
 
 HELIOS_APPS=(
-  appworld bfs-web-google clickhouse corebench dfs-web-google duckdb leveldb
-  pagerank-gnutella31 rocksdb sssp-ego-facebook terminal_bench
+  appworld bfs-init bfs-web-google clickhouse corebench dfs-init dfs-web-google
+  duckdb grpc leveldb memcached pagerank-gnutella31 pagerank-init rocksdb
+  sqlite sssp-ego-facebook sssp-init terminal_bench
 )
 
 # Workload / result dirs match simpoint_traces names 1:1.
@@ -41,30 +42,38 @@ trace_dir_for_app() {
 }
 
 declare -A HELIOS_T=(
-  [appworld]=10000 [bfs-web-google]=300 [clickhouse]=300 [corebench]=1000
-  [dfs-web-google]=300 [duckdb]=30000 [leveldb]=4800 [pagerank-gnutella31]=300
-  [rocksdb]=4800 [sssp-ego-facebook]=300 [terminal_bench]=100
+  [appworld]=10000 [bfs-init]=300 [bfs-web-google]=300 [clickhouse]=300
+  [corebench]=1000 [dfs-init]=300 [dfs-web-google]=300 [duckdb]=30000
+  [grpc]=300 [leveldb]=4800 [memcached]=4800 [pagerank-gnutella31]=300
+  [pagerank-init]=300 [rocksdb]=4800 [sqlite]=30000 [sssp-ego-facebook]=300
+  [sssp-init]=300 [terminal_bench]=100
 )
 declare -A HELIOS_W=(
-  [appworld]=64 [bfs-web-google]=64 [clickhouse]=64 [corebench]=64
-  [dfs-web-google]=64 [duckdb]=64 [leveldb]=64 [pagerank-gnutella31]=64
-  [rocksdb]=64 [sssp-ego-facebook]=64 [terminal_bench]=64
+  [appworld]=64 [bfs-init]=64 [bfs-web-google]=64 [clickhouse]=64
+  [corebench]=64 [dfs-init]=64 [dfs-web-google]=64 [duckdb]=64 [grpc]=64
+  [leveldb]=64 [memcached]=64 [pagerank-gnutella31]=64 [pagerank-init]=64
+  [rocksdb]=64 [sqlite]=64 [sssp-ego-facebook]=64 [sssp-init]=64
+  [terminal_bench]=64
 )
 declare -A HELIOS_I=(
-  [appworld]=1 [bfs-web-google]=1 [clickhouse]=10 [corebench]=1
-  [dfs-web-google]=1 [duckdb]=1 [leveldb]=1 [pagerank-gnutella31]=1
-  [rocksdb]=1 [sssp-ego-facebook]=1 [terminal_bench]=1
+  [appworld]=1 [bfs-init]=1 [bfs-web-google]=1 [clickhouse]=10 [corebench]=1
+  [dfs-init]=1 [dfs-web-google]=1 [duckdb]=1 [grpc]=10 [leveldb]=1
+  [memcached]=1 [pagerank-gnutella31]=1 [pagerank-init]=1 [rocksdb]=1
+  [sqlite]=1 [sssp-ego-facebook]=1 [sssp-init]=1 [terminal_bench]=1
 )
 declare -A HELIOS_D=(
-  [appworld]=10 [bfs-web-google]=10 [clickhouse]=10 [corebench]=10
-  [dfs-web-google]=10 [duckdb]=10 [leveldb]=10 [pagerank-gnutella31]=10
-  [rocksdb]=10 [sssp-ego-facebook]=10 [terminal_bench]=10
+  [appworld]=10 [bfs-init]=10 [bfs-web-google]=10 [clickhouse]=10
+  [corebench]=10 [dfs-init]=10 [dfs-web-google]=10 [duckdb]=10 [grpc]=10
+  [leveldb]=10 [memcached]=10 [pagerank-gnutella31]=10 [pagerank-init]=10
+  [rocksdb]=10 [sqlite]=10 [sssp-ego-facebook]=10 [sssp-init]=10
+  [terminal_bench]=10
 )
 # stores-off for every app
 declare -A HELIOS_STORES=(
-  [appworld]=0 [bfs-web-google]=0 [clickhouse]=0 [corebench]=0
-  [dfs-web-google]=0 [duckdb]=0 [leveldb]=0 [pagerank-gnutella31]=0
-  [rocksdb]=0 [sssp-ego-facebook]=0 [terminal_bench]=0
+  [appworld]=0 [bfs-init]=0 [bfs-web-google]=0 [clickhouse]=0 [corebench]=0
+  [dfs-init]=0 [dfs-web-google]=0 [duckdb]=0 [grpc]=0 [leveldb]=0
+  [memcached]=0 [pagerank-gnutella31]=0 [pagerank-init]=0 [rocksdb]=0
+  [sqlite]=0 [sssp-ego-facebook]=0 [sssp-init]=0 [terminal_bench]=0
 )
 
 helios_label_for_app() {
@@ -170,16 +179,23 @@ workloads = [w for w in sys.argv[7].splitlines() if w]
 # Full per-app map (always documented).
 PER_APP = {
     "terminal_bench": "T100/W64/I1/D10/stores-off",
+    "bfs-init": "T300/W64/I1/D10/stores-off",
     "bfs-web-google": "T300/W64/I1/D10/stores-off",
+    "dfs-init": "T300/W64/I1/D10/stores-off",
     "dfs-web-google": "T300/W64/I1/D10/stores-off",
+    "pagerank-init": "T300/W64/I1/D10/stores-off",
     "pagerank-gnutella31": "T300/W64/I1/D10/stores-off",
+    "sssp-init": "T300/W64/I1/D10/stores-off",
     "sssp-ego-facebook": "T300/W64/I1/D10/stores-off",
     "corebench": "T1000/W64/I1/D10/stores-off",
     "appworld": "T10000/W64/I1/D10/stores-off",
     "rocksdb": "T4800/W64/I1/D10/stores-off",
     "leveldb": "T4800/W64/I1/D10/stores-off",
+    "memcached": "T4800/W64/I1/D10/stores-off",
     "duckdb": "T30000/W64/I1/D10/stores-off",
+    "sqlite": "T30000/W64/I1/D10/stores-off",
     "clickhouse": "T300/W64/I10/D10/stores-off",
+    "grpc": "T300/W64/I10/D10/stores-off",
 }
 
 desc = json.loads(desc_path.read_text())

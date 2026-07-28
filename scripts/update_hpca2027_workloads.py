@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Update hpca2027 descriptor JSON files with the new-crono-traces workload list."""
+"""Update hpca2027 descriptor JSON files with the ifuse-traces workload list."""
 
 import json
 from pathlib import Path
@@ -9,31 +9,26 @@ HPCA_DIR = INFRA / "json" / "hpca2027"
 
 NEW_WORKLOADS = [
     "appworld",
+    "bfs-init",
     "bfs-web-google",
     "clickhouse",
     "corebench",
+    "dfs-init",
     "dfs-web-google",
     "duckdb",
+    "grpc",
     "leveldb",
+    "memcached",
     "pagerank-gnutella31",
+    "pagerank-init",
     "rocksdb",
+    "sqlite",
     "sssp-ego-facebook",
+    "sssp-init",
     "terminal_bench",
 ]
 
-JSON_FILES = sorted(
-    p
-    for p in HPCA_DIR.glob("*.json")
-    if p.name
-    in {
-        "baseline.json",
-        "ideal-fusion-pass1.json",
-        "ideal-fusion-pass2.json",
-        "ifuse.json",
-        "helios.json",
-        "rfp.json",
-    }
-)
+JSON_FILES = sorted(p for p in HPCA_DIR.glob("*.json"))
 
 
 def main() -> None:

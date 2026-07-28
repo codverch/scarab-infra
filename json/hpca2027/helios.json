@@ -17,15 +17,22 @@
       "subsuite": "datacenter",
       "workload": [
         "appworld",
+        "bfs-init",
         "bfs-web-google",
         "clickhouse",
         "corebench",
+        "dfs-init",
         "dfs-web-google",
         "duckdb",
+        "grpc",
         "leveldb",
+        "memcached",
         "pagerank-gnutella31",
+        "pagerank-init",
         "rocksdb",
+        "sqlite",
         "sssp-ego-facebook",
+        "sssp-init",
         "terminal_bench"
       ],
       "cluster_id": null,
@@ -99,6 +106,13 @@
     "rocksdb": "T4800/W64/I1/D10/stores-off",
     "leveldb": "T4800/W64/I1/D10/stores-off",
     "duckdb": "T30000/W64/I1/D10/stores-off",
-    "clickhouse": "T300/W64/I10/D10/stores-off"
+    "clickhouse": "T300/W64/I10/D10/stores-off",
+    "bfs-init": "T300/W64/I1/D10/stores-off",
+    "dfs-init": "T300/W64/I1/D10/stores-off",
+    "pagerank-init": "T300/W64/I1/D10/stores-off",
+    "sssp-init": "T300/W64/I1/D10/stores-off",
+    "grpc": "T300/W64/I10/D10/stores-off",
+    "memcached": "T4800/W64/I1/D10/stores-off",
+    "sqlite": "T30000/W64/I1/D10/stores-off"
   }
 }
