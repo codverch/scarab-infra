@@ -55,8 +55,13 @@ except ImportError:
 
 
 GAP_WORKLOADS = ["bfs", "dfs", "pagerank"]
-AGENTIC_WORKLOADS = ["appworld", "corebench", "terminal_bench"]
-DATABASE_WORKLOADS = ["duckdb", "rocksdb", "clickhouse"]
+AGENTIC_WORKLOADS = ["core_bench", "appworld", "terminal_bench"]
+DATABASE_WORKLOADS = [
+    "clickhouse",
+    "duckdb",
+    "leveldb",
+    "memcached",
+]
 
 WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("GAP", tuple(GAP_WORKLOADS)),
@@ -67,15 +72,23 @@ SIMPOINT_WORKLOADS = GAP_WORKLOADS + AGENTIC_WORKLOADS + DATABASE_WORKLOADS
 
 HELIOS_COLOR = "#E98300"
 RFP_COLOR = "#620059"
-IFUSE_COLOR = "#FFE600"
+IFUSE_COLOR = "#009900"
 BASELINE_COLOR = "#808080"
 IDEAL_FUSION_COLOR = "#FEC51D"
 AVERAGE_SEPARATOR_COLOR = "#4A4A4A"
+AVERAGE_SEPARATOR_WIDTH = 5.0
 SMALL_BAR_THRESHOLD = 0.5
 BAR_LABEL_GAP = 1.2
-BAR_WIDTH = 0.24
+BAR_WIDTH = 0.38
 BAR_EDGE_WIDTH = 2.5
-FONT_FAMILY = "Noto Serif"
+FONT_FAMILY = "Noto Serif"  # NotoSerif (fonts-noto-core)
+GROUP_GAP = 0.0
+APP_STEP = 1.9
+AVERAGE_GAP = 1.15
+AVERAGE_SEPARATOR_FRAC = 0.5
+X_TICK_GUIDE_WIDTH = 2.5
+X_TICK_GUIDE_LENGTH = 0.04
+LEGEND_X_OFFSET = 0.01
 IPC_TICK_FONT = 42
 IPC_AXIS_LABEL_FONT = IPC_TICK_FONT
 IPC_LEGEND_FONT = 32
@@ -121,7 +134,7 @@ DEFAULT_BASELINE_IFUSE_DIR = DEFAULT_SIMULATIONS_ROOT / "baseline-ifuse"
 DEFAULT_HELIOS_DIR = DEFAULT_SIMULATIONS_ROOT / "helios"
 DEFAULT_RFP_DIR = DEFAULT_SIMULATIONS_ROOT / "rfp"
 DEFAULT_RFP_BASELINE_DIR = DEFAULT_SIMULATIONS_ROOT / "rfp-baseline"
-DEFAULT_IFUSE_DIR = DEFAULT_SIMULATIONS_ROOT / "ifuse"
+DEFAULT_IFUSE_DIR = DEFAULT_SIMULATIONS_ROOT / "ifuse-tt512-threshold-100"
 DEFAULT_IPC_IFUSE_DIR = DEFAULT_IFUSE_DIR
 DEFAULT_IDEAL_DIR = DEFAULT_SIMULATIONS_ROOT / "ideal-fusion"
 
@@ -146,9 +159,43 @@ def rename_workload(workload: str) -> str:
         "clickhouse": "ClickHouse",
         "rocksdb": "RocksDB",
         "duckdb": "DuckDB",
+        "memcached": "Memcached",
         "masstree": "Masstree",
     }
     return mapping.get(workload, workload)
+
+
+def order_workloads_by_group(workloads: list[str]) -> list[str]:
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for _group, members in WORKLOAD_GROUPS:
+        for wl in members:
+            if wl in workloads and wl not in seen:
+                ordered.append(wl)
+                seen.add(wl)
+    for wl in workloads:
+        if wl not in seen:
+            ordered.append(wl)
+    return ordered
+
+
+def grouped_x_positions(
+    workloads: list[str],
+    *,
+    n_series: int = len(IPC_SERIES),
+) -> tuple[list[str], dict[str, float], float, float]:
+    """Return grouped workload order, x map, average column x, and separator x."""
+    ordered = order_workloads_by_group(workloads)
+    x_map: dict[str, float] = {}
+    x = 0.0
+    for wl in ordered:
+        x_map[wl] = x
+        x += APP_STEP
+    last_x = x_map[ordered[-1]]
+    cluster_half = (n_series * BAR_WIDTH) / 2.0
+    avg_x = last_x + cluster_half + AVERAGE_GAP + cluster_half
+    separator_x = last_x + cluster_half + AVERAGE_GAP * AVERAGE_SEPARATOR_FRAC
+    return ordered, x_map, avg_x, separator_x
 
 
 def optional_stats_csv(experiment_dir: Path, explicit: Path | None) -> Path | None:
@@ -559,8 +606,8 @@ def _apply_ipc_plot_style() -> None:
 
     plt.rcParams.update(
         {
-            "font.family": FONT_FAMILY,
-            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
+            "font.family": "serif",
+            "font.serif": [FONT_FAMILY, "NotoSerif", "DejaVu Serif", "serif"],
             "font.size": IPC_AXIS_FONT,
             "axes.labelsize": IPC_AXIS_LABEL_FONT,
             "xtick.labelsize": IPC_TICK_FONT,
@@ -585,7 +632,7 @@ def _annotate_ipc_bar_labels(
     lane_base = 4.0
     small_fontsize = max(18, fontsize - 10)
     for patch, val in zip(container.patches, values, strict=True):
-        if math.isnan(val):
+        if math.isnan(val) or val < 0:
             continue
         x = patch.get_x() + patch.get_width() / 2.0
         if val < SMALL_BAR_THRESHOLD:
@@ -655,19 +702,19 @@ def _ipc_legend_handles(
 
 def _tight_x_limits(ax, x_min: float, x_max: float, n_bars: int) -> None:
     """Trim left/right plot margins while leaving room for outer bar edges."""
-    left_pad = 0.12
-    right_pad = 0.10
+    left_pad = 0.55
+    right_pad = 0.55
     half_span = (n_bars * BAR_WIDTH) / 2.0
     ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
     ax.margins(x=0)
 
 
 def _ylim_snap_to_tens(ylim: tuple[float, float]) -> tuple[float, float]:
-    ymin, ymax = ylim
-    ymin_snapped = 0.0 if ymin >= 0 else math.floor(ymin / 10.0) * 10.0
-    ymax_snapped = math.ceil(ymax / 10.0) * 10.0
+    _ymin, ymax = ylim
+    ymin_snapped = 0.0
+    ymax_snapped = math.ceil(max(0.0, ymax) / 5.0) * 5.0
     if ymax_snapped <= ymin_snapped:
-        ymax_snapped = ymin_snapped + 10.0
+        ymax_snapped = ymin_snapped + 5.0
     return (ymin_snapped, ymax_snapped)
 
 
@@ -675,6 +722,38 @@ def _apply_speedup_y_ticks(ax) -> None:
     import matplotlib.ticker as mticker
 
     ax.yaxis.set_major_locator(mticker.MultipleLocator(10))
+    ax.yaxis.set_minor_locator(mticker.MultipleLocator(5))
+    ax.tick_params(axis="y", which="minor", length=0)
+
+
+def _apply_speedup_y_grid(ax) -> None:
+    grid_style = {
+        "axis": "y",
+        "alpha": 0.8,
+        "linestyle": ":",
+        "color": "black",
+        "linewidth": 2.0,
+        "zorder": 0,
+    }
+    ax.grid(True, which="major", **grid_style)
+    ax.grid(True, which="minor", **grid_style)
+
+
+def _draw_app_x_tick_guides(ax, x_ticks: list[float]) -> None:
+    from matplotlib.transforms import blended_transform_factory
+
+    trans = blended_transform_factory(ax.transData, ax.transAxes)
+    for x in x_ticks:
+        ax.plot(
+            [x, x],
+            [0.0, -X_TICK_GUIDE_LENGTH],
+            transform=trans,
+            color="black",
+            linewidth=X_TICK_GUIDE_WIDTH,
+            solid_capstyle="butt",
+            clip_on=False,
+            zorder=6,
+        )
 
 
 def plot_speedup_bars(
@@ -694,8 +773,11 @@ def plot_speedup_bars(
         for key, _, _ in series
     }
     offsets = _bar_offsets(len(series))
-    display_apps = [rename_workload(wl) for wl in workloads] + ["Average"]
-    x = list(range(len(display_apps)))
+    ordered, x_map, avg_x, separator_x = grouped_x_positions(
+        workloads, n_series=len(series)
+    )
+    display_apps = [rename_workload(wl) for wl in ordered] + ["Average"]
+    x_ticks = [x_map[wl] for wl in ordered] + [avg_x]
 
     for key, _, _ in series:
         values = [val for val in series_normalized[key] if not math.isnan(val)]
@@ -705,7 +787,10 @@ def plot_speedup_bars(
         else:
             series_pct[key].append((arithmetic_mean - 1.0) * 100.0)
 
-    pct_sets = [series_pct[key] for key, _, _ in series]
+    pct_sets = [
+        [max(0.0, v) if not math.isnan(v) else v for v in series_pct[key]]
+        for key, _, _ in series
+    ]
     base_ylim = _ylim_speedup_pct_auto(*pct_sets)
 
     variants = (
@@ -715,15 +800,17 @@ def plot_speedup_bars(
 
     for stem, show_bar_labels, ylim in variants:
         _apply_ipc_plot_style()
-        fig, ax = plt.subplots(figsize=(24, 6.5))
-
-        ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
+        fig_width = max(22.0, len(x_ticks) * APP_STEP * 1.15 + AVERAGE_GAP)
+        fig, ax = plt.subplots(figsize=(fig_width, 6.5))
 
         for (_key, _label, color), offset in zip(series, offsets):
-            pct_vals = series_pct[_key]
+            wl_to_pct = dict(zip(workloads, series_pct[_key][:-1]))
+            avg_pct = series_pct[_key][-1]
+            pct_vals = [wl_to_pct[wl] for wl in ordered] + [avg_pct]
+            bar_x = [x_map[wl] + offset for wl in ordered] + [avg_x + offset]
             container = ax.bar(
-                [i + offset for i in x],
-                [0.0 if math.isnan(val) else val for val in pct_vals],
+                bar_x,
+                [0.0 if math.isnan(val) else max(0.0, val) for val in pct_vals],
                 BAR_WIDTH,
                 color=color,
                 edgecolor="black",
@@ -733,19 +820,17 @@ def plot_speedup_bars(
             if show_bar_labels:
                 _annotate_ipc_bar_labels(ax, container, pct_vals, fontsize=IPC_AXIS_FONT)
 
-        separator_x = len(display_apps) - 1.5 if len(display_apps) > 1 else float(len(display_apps) - 1)
-
-        if len(display_apps) > 1:
+        if len(x_ticks) > 1:
             ax.axvline(
                 x=separator_x,
                 color=AVERAGE_SEPARATOR_COLOR,
                 linestyle="--",
-                alpha=0.9,
-                linewidth=2.5,
+                alpha=1.0,
+                linewidth=AVERAGE_SEPARATOR_WIDTH,
                 zorder=2,
             )
 
-        ax.set_xticks(x)
+        ax.set_xticks(x_ticks)
         ax.set_xticklabels(
             display_apps,
             rotation=45,
@@ -757,7 +842,7 @@ def plot_speedup_bars(
             if i == len(display_apps) - 1:
                 label.set_weight("bold")
 
-        _tight_x_limits(ax, x[0], x[-1], n_bars=len(series))
+        _tight_x_limits(ax, x_ticks[0], x_ticks[-1], n_bars=len(series))
 
         ax.set_ylabel(
             "Speedup (%)\n(normalized to no-fusion)",
@@ -767,25 +852,32 @@ def plot_speedup_bars(
         ax.set_ylim(ylim[0], ylim[1])
         ax.set_ylim(_ylim_snap_to_tens(ax.get_ylim()))
         _apply_speedup_y_ticks(ax)
+        _apply_speedup_y_grid(ax)
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-        ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
+        ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
         ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
         for label in ax.get_yticklabels():
             label.set_fontfamily(FONT_FAMILY)
+        _draw_app_x_tick_guides(ax, x_ticks)
 
+        x_min, x_max = ax.get_xlim()
+        separator_x_frac = (separator_x - x_min) / (x_max - x_min) - LEGEND_X_OFFSET
         legend = ax.legend(
             handles=_ipc_legend_handles(series),
             frameon=True,
             fancybox=False,
             shadow=False,
-            loc="upper left",
-            bbox_to_anchor=(0.01, 0.96),
+            loc="upper right",
+            bbox_to_anchor=(separator_x_frac, 0.98),
             bbox_transform=ax.transAxes,
             fontsize=IPC_LEGEND_FONT,
             edgecolor="black",
             ncol=len(series),
-            handlelength=0.9,
-            handleheight=0.9,
+            handlelength=0.95,
+            handleheight=0.95,
+            borderpad=0.55,
+            labelspacing=0.4,
+            columnspacing=1.0,
             framealpha=1.0,
         )
         legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
@@ -798,7 +890,7 @@ def plot_speedup_bars(
             spine.set_linewidth(2.5)
 
         plt.tight_layout()
-        plt.subplots_adjust(top=0.95, bottom=0.28, right=0.99)
+        plt.subplots_adjust(top=0.95, bottom=0.28, right=0.98)
 
         out = output_dir / stem
         fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.05, dpi=300)
