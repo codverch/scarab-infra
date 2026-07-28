@@ -2903,27 +2903,30 @@ def check_sp_failed (descriptor_data, config_key, suite, subsuite, workload, exp
 
     # Power runs can emit stats CSVs then abort if McPAT/CACTI are missing
     # or point at a host binary that cannot run in the focal container.
+    # If mcpat.out was later backfilled successfully, treat the run as done.
+    configs = descriptor_data.get("configurations") or {}
+    power_enabled = any(
+        isinstance(cfg, dict) and "power_intf_on 1" in str(cfg.get("params", ""))
+        for cfg in configs.values()
+    )
+    mcpat_out = Path(experiment_dir) / "mcpat.out"
+    mcpat_ok = False
+    if mcpat_out.is_file() and mcpat_out.stat().st_size > 0:
+        mcpat_head = mcpat_out.read_text(errors="replace")[:512]
+        mcpat_ok = not (
+            "GLIBC_" in mcpat_head or "not found" in mcpat_head or "Error running" in mcpat_head
+        )
+
     sim_log = Path(experiment_dir) / "sim.log"
-    if sim_log.is_file():
+    if sim_log.is_file() and not mcpat_ok:
         log_text = sim_log.read_text(errors="replace")
         if "Error running McPAT" in log_text or "ASSERT FAILED" in log_text:
             return True
         if "GLIBC_" in log_text or "GLIBCXX_" in log_text:
             return True
 
-    configs = descriptor_data.get("configurations") or {}
-    power_enabled = any(
-        isinstance(cfg, dict) and "power_intf_on 1" in str(cfg.get("params", ""))
-        for cfg in configs.values()
-    )
-    if power_enabled:
-        mcpat_out = Path(experiment_dir) / "mcpat.out"
-        if not mcpat_out.is_file() or mcpat_out.stat().st_size == 0:
-            return True
-        # Reject GLIBC error dumps that look like "success" only because the file is non-empty.
-        mcpat_head = mcpat_out.read_text(errors="replace")[:512]
-        if "GLIBC_" in mcpat_head or "not found" in mcpat_head or "Error running" in mcpat_head:
-            return True
+    if power_enabled and not mcpat_ok:
+        return True
 
     # Success case
     return False
