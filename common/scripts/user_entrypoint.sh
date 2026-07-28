@@ -44,8 +44,27 @@ export LD_LIBRARY_PATH="${PIN_ROOT}/extras/xed-intel64/lib:${PIN_ROOT}/intel64/r
 if [ ! -e "$HOME/toolchain" ] && [ -d /tmp_home/application/toolchain ]; then
   ln -sfn /tmp_home/application/toolchain "$HOME/toolchain"
 fi
-export MCPAT_BIN="${MCPAT_BIN:-$HOME/toolchain/bin/mcpat}"
-export CACTI_BIN="${CACTI_BIN:-$HOME/toolchain/bin/cacti}"
+
+resolve_power_bin() {
+  local name="$1" cand
+  for cand in "$HOME/toolchain/bin/$name"               "/tmp_home/application/toolchain/bin/$name"               "/usr/local/bin/$name"; do
+    if [ -x "$cand" ]; then
+      echo "$cand"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if [ -z "${MCPAT_BIN:-}" ] || [ ! -x "${MCPAT_BIN}" ]; then
+  MCPAT_BIN="$(resolve_power_bin mcpat)" || MCPAT_BIN="${HOME}/toolchain/bin/mcpat"
+fi
+if [ -z "${CACTI_BIN:-}" ] || [ ! -x "${CACTI_BIN}" ]; then
+  CACTI_BIN="$(resolve_power_bin cacti)" || CACTI_BIN="${HOME}/toolchain/bin/cacti"
+fi
+export MCPAT_BIN CACTI_BIN
+[ -x "$MCPAT_BIN" ] || echo "WARNING: mcpat not found; --power_intf_on will produce no power data" >&2
+[ -x "$CACTI_BIN" ] || echo "WARNING: cacti not found; --power_intf_on will produce no power data" >&2
 
 if [ -f "/usr/local/bin/workload_user_entrypoint.sh" ]; then
   source /usr/local/bin/workload_user_entrypoint.sh

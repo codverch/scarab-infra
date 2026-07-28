@@ -10,7 +10,7 @@
   "traces_dir": "/dev/shm/baseline/simpoint_traces",
   "workload_db": "baseline.json",
   "top_simpoint": false,
-  "_comment": "20M warmup + 10M measured simulation (inst_limit=30,000,000, full_warmup=20,000,000, descriptor warmup=20,000,000).",
+  "_comment": "RFP 24KB per-app tuning via rfp.sh. binary=scarab_57cfe922e_0.",
   "simulations": [
     {
       "suite": "datacenter",
@@ -18,20 +18,20 @@
       "workload": [
         "appworld",
         "bfs-init",
-        "bfs-web-google",
+        "bfs_web-google",
         "clickhouse",
-        "corebench",
+        "core_bench",
         "dfs-init",
-        "dfs-web-google",
+        "dfs_web-google",
         "duckdb",
         "grpc",
         "leveldb",
         "memcached",
-        "pagerank-gnutella31",
+        "pagerank_gnutella31",
         "pagerank-init",
         "rocksdb",
         "sqlite",
-        "sssp-ego-facebook",
+        "sssp_ego-facebook",
         "sssp-init",
         "terminal_bench"
       ],
@@ -43,31 +43,13 @@
   "configurations": {
     "baseline": {
       "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/rfp/scarab/bin --rfp_on 0",
-      "binary": "scarab_current",
-      "slurm_options": "",
-      "memory_overhead_mb": 0
-    },
-    "rfp_6kb": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/rfp/scarab/bin --rfp_on 1 --rfp_pt_num_sets 128 --rfp_pt_num_ways 8 --rfp_pat_num_sets 16 --rfp_pat_num_ways 4",
-      "binary": "scarab_current",
-      "slurm_options": "",
-      "memory_overhead_mb": 0
-    },
-    "rfp_12kb": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/rfp/scarab/bin --rfp_on 1 --rfp_pt_num_sets 256 --rfp_pt_num_ways 8 --rfp_pat_num_sets 32 --rfp_pat_num_ways 4",
-      "binary": "scarab_current",
-      "slurm_options": "",
-      "memory_overhead_mb": 0
-    },
-    "rfp_18kb": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/rfp/scarab/bin --rfp_on 1 --rfp_pt_num_sets 512 --rfp_pt_num_ways 6 --rfp_pat_num_sets 32 --rfp_pat_num_ways 6",
-      "binary": "scarab_current",
+      "binary": "scarab_57cfe922e_0",
       "slurm_options": "",
       "memory_overhead_mb": 0
     },
     "rfp_24kb": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/rfp/scarab/bin --rfp_on 1 --rfp_pt_num_sets 512 --rfp_pt_num_ways 8 --rfp_pat_num_sets 64 --rfp_pat_num_ways 4",
-      "binary": "scarab_current",
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/rfp/scarab/bin --rfp_on 1 --rfp_conf_max 1 --rfp_prob_shift 2 --rfp_stride_signed 1 --rfp_stride_bits 5 --rfp_pt_num_sets 512 --rfp_pt_num_ways 8 --rfp_pat_num_sets 64 --rfp_pat_num_ways 4",
+      "binary": "scarab_57cfe922e_0",
       "slurm_options": "",
       "memory_overhead_mb": 0
     }
@@ -166,5 +148,25 @@
     "prompt_budget_tokens": 12000,
     "threshold_pct": 2.0,
     "analyzer_cli_cmd": "codex"
+  },
+  "rfp_per_app": {
+    "appworld": "p2/s5b/signed/24KB",
+    "bfs-init": "p3/s16b/signed/24KB",
+    "bfs_web-google": "p3/s16b/signed/24KB",
+    "clickhouse": "p2/s5b/signed/24KB",
+    "core_bench": "p2/s5b/signed/24KB",
+    "dfs-init": "p0/s16b/signed/24KB",
+    "dfs_web-google": "p0/s16b/signed/24KB",
+    "duckdb": "p2/s5b/signed/24KB",
+    "grpc": "p2/s5b/signed/24KB",
+    "leveldb": "p2/s5b/signed/24KB",
+    "memcached": "p2/s5b/signed/24KB",
+    "pagerank_gnutella31": "p1/s16b/signed/24KB",
+    "pagerank-init": "p1/s16b/signed/24KB",
+    "rocksdb": "p2/s5b/signed/24KB",
+    "sqlite": "p2/s5b/signed/24KB",
+    "sssp_ego-facebook": "p1/s16b/signed/24KB",
+    "sssp-init": "p1/s16b/signed/24KB",
+    "terminal_bench": "p2/s5b/signed/24KB"
   }
 }

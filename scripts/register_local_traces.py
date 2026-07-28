@@ -129,14 +129,25 @@ def build_simpoints(
         simpoints.append(
             {"cluster_id": cluster_id, "segment_id": segment_id, "weight": weight}
         )
-    # Fallback: no usable simpoint metadata, but zips exist -> register them as
-    # single-segment simpoints with equal weight so the workload is still runnable.
-    if not simpoints and zips:
-        n = len(zips)
-        for idx, cid in enumerate(sorted(zips)):
-            simpoints.append(
-                {"cluster_id": cid, "segment_id": idx, "weight": 1.0 / n}
-            )
+    # Prefer metadata-matched simpoints; also keep any on-disk zips that did not
+    # match (e.g. opt.p cluster ids that diverge from zip stems).
+    have = {sp["cluster_id"] for sp in simpoints}
+    orphans = [cid for cid in sorted(zips) if cid not in have]
+    if orphans:
+        if not simpoints:
+            n = len(zips)
+            for idx, cid in enumerate(sorted(zips)):
+                simpoints.append(
+                    {"cluster_id": cid, "segment_id": idx, "weight": 1.0 / n}
+                )
+        else:
+            # Append orphans with a small residual weight so they still run.
+            residual = max(0.01, 1.0 - sum(sp["weight"] for sp in simpoints))
+            w = residual / len(orphans)
+            for cid in orphans:
+                simpoints.append(
+                    {"cluster_id": cid, "segment_id": cid, "weight": w}
+                )
     return simpoints
 
 
