@@ -12,6 +12,14 @@ export LD_LIBRARY_PATH=$DYNAMORIO_HOME/lib64/release:$LD_LIBRARY_PATH
 export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
 
+# McPAT / CACTI for --power_intf_on. root_dir is bind-mounted as $HOME, so
+# expose toolchain there when it only exists via the application_dir mount.
+if [ ! -e "$HOME/toolchain" ] && [ -d /tmp_home/application/toolchain ]; then
+  ln -sfn /tmp_home/application/toolchain "$HOME/toolchain"
+fi
+export MCPAT_BIN="${MCPAT_BIN:-$HOME/toolchain/bin/mcpat}"
+export CACTI_BIN="${CACTI_BIN:-$HOME/toolchain/bin/cacti}"
+
 if [ -f "/usr/local/bin/workload_user_entrypoint.sh" ]; then
   source /usr/local/bin/workload_user_entrypoint.sh
 fi

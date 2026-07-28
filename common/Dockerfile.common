@@ -29,9 +29,10 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y \
  && update-alternatives --install /usr/bin/clang-tidy clang-tidy \
       /usr/bin/clang-tidy-18 100
 
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-RUN apt install -y nodejs
-RUN npm install -g @anthropic-ai/claude-code
+# Optional AI CLIs: nodesource can 403 in some environments; never fail the sim image.
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - || true
+RUN apt install -y nodejs npm || apt install -y nodejs || true
+RUN npm install -g @anthropic-ai/claude-code || true
 
 # Copy workflow simpoint/no_simpoint script
 COPY ./scripts/utilities.sh /usr/local/bin/utilities.sh

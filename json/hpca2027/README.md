@@ -20,11 +20,10 @@ Power modeling is enabled on all descriptors (`--power_intf_on 1`) with `--bindi
 cd ~/scarab-infra
 python3 -m scripts.register_local_traces \
   --traces-dir /dev/shm/baseline/simpoint_traces \
-  --warmup 20000000 \
-  --workloads appworld bfs-web-google clickhouse corebench dfs-web-google duckdb leveldb pagerank-gnutella31 rocksdb sssp-ego-facebook terminal_bench
+  --warmup 20000000
 ```
 
-Traces live under `/dev/shm/baseline/simpoint_traces` (appworld, bfs-web-google, clickhouse, corebench, dfs-web-google, duckdb, leveldb, pagerank-gnutella31, rocksdb, sssp-ego-facebook, terminal_bench).
+Traces live under `/dev/shm/baseline/simpoint_traces` (all apps from `deepanjalimishra99/ifuse-traces`, including init graph apps, grpc, memcached, sqlite, etc.).
 
 ## Run simulations
 

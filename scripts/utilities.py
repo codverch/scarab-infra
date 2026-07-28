@@ -1697,8 +1697,13 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
                 -e group_id={local_gid} \
                 -e username={user} \
                 -e HOME=/home/{user} \
+<<<<<<< HEAD
                 {mcpat_env}\
                 {cacti_env}\
+=======
+                -e MCPAT_BIN=/home/{user}/toolchain/bin/mcpat \
+                -e CACTI_BIN=/home/{user}/toolchain/bin/cacti \
+>>>>>>> f63ffcb (Expand ifuse suite to all ifuse-traces apps with McPAT paths.)
                 -e APP_GROUPNAME={docker_prefix} \
                 -e APPNAME={workload} \
                 -dit \
@@ -1717,8 +1722,13 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
                 -e group_id={local_gid} \
                 -e username={user} \
                 -e HOME=/home/{user} \
+<<<<<<< HEAD
                 {mcpat_env}\
                 {cacti_env}\
+=======
+                -e MCPAT_BIN=/home/{user}/toolchain/bin/mcpat \
+                -e CACTI_BIN=/home/{user}/toolchain/bin/cacti \
+>>>>>>> f63ffcb (Expand ifuse suite to all ifuse-traces apps with McPAT paths.)
                 -e APP_GROUPNAME={docker_prefix} \
                 -e APPNAME={workload} \
                 -dit \
