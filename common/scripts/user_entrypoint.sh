@@ -2,15 +2,39 @@
 #set -x #echo on
 
 export tmpdir="/tmp_home"
-export DYNAMORIO_HOME=$tmpdir/DynamoRIO-Linux-10.0.0/
-export PIN_ROOT=$tmpdir/pin-3.15-98253-gb56e429b1-gcc-linux
 export SCARAB_ENABLE_PT_MEMTRACE=1
-export LD_LIBRARY_PATH=$tmpdir/pin-3.15-98253-gb56e429b1-gcc-linux/extras/xed-intel64/lib
-export LD_LIBRARY_PATH=$tmpdir/pin-3.15-98253-gb56e429b1-gcc-linux/intel64/runtime/pincrt:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$DYNAMORIO_HOME/lib64/release:$LD_LIBRARY_PATH
-
 export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
+
+# Resolve DynamoRIO: prefer image-baked install, then scarab HOME mount, then application mount.
+if [ -z "${DYNAMORIO_HOME:-}" ] || [ ! -e "${DYNAMORIO_HOME}/lib64/release/libdynamorio.so" ]; then
+  if [ -e "$tmpdir/DynamoRIO-Linux-10.0.0/exports/lib64/release/libdynamorio.so" ]; then
+    export DYNAMORIO_HOME="$tmpdir/DynamoRIO-Linux-10.0.0/exports"
+  elif [ -e "$tmpdir/DynamoRIO-Linux-10.0.0/lib64/release/libdynamorio.so" ]; then
+    export DYNAMORIO_HOME="$tmpdir/DynamoRIO-Linux-10.0.0"
+  elif [ -e "${HOME}/build/opt/deps/dynamorio/lib64/release/libdynamorio.so" ]; then
+    export DYNAMORIO_HOME="${HOME}/build/opt/deps/dynamorio"
+  elif [ -e "/tmp_home/application/scarab/src/build/opt/deps/dynamorio/lib64/release/libdynamorio.so" ]; then
+    export DYNAMORIO_HOME="/tmp_home/application/scarab/src/build/opt/deps/dynamorio"
+  else
+    export DYNAMORIO_HOME="$tmpdir/DynamoRIO-Linux-10.0.0"
+  fi
+fi
+
+# Resolve PIN similarly.
+if [ -z "${PIN_ROOT:-}" ] || [ ! -d "${PIN_ROOT}" ]; then
+  if [ -d "$tmpdir/pin-3.15-98253-gb56e429b1-gcc-linux" ]; then
+    export PIN_ROOT="$tmpdir/pin-3.15-98253-gb56e429b1-gcc-linux"
+  elif [ -d "${HOME}/pin-3.15" ]; then
+    export PIN_ROOT="${HOME}/pin-3.15"
+  elif [ -d "/tmp_home/application/pin-3.15" ]; then
+    export PIN_ROOT="/tmp_home/application/pin-3.15"
+  else
+    export PIN_ROOT="$tmpdir/pin-3.15-98253-gb56e429b1-gcc-linux"
+  fi
+fi
+
+export LD_LIBRARY_PATH="${PIN_ROOT}/extras/xed-intel64/lib:${PIN_ROOT}/intel64/runtime/pincrt:${DYNAMORIO_HOME}/lib64/release:${LD_LIBRARY_PATH:-}"
 
 # McPAT / CACTI for --power_intf_on. root_dir is bind-mounted as $HOME, so
 # expose toolchain there when it only exists via the application_dir mount.
