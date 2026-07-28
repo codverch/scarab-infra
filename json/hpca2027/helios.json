@@ -10,7 +10,7 @@
   "traces_dir": "/dev/shm/baseline/simpoint_traces",
   "workload_db": "baseline.json",
   "top_simpoint": false,
-  "_comment": "20M warmup + 10M measured simulation (inst_limit=30,000,000, full_warmup=20,000,000, descriptor warmup=20,000,000).",
+  "_comment": "Helios per-app knobs (see helios.sh). binary=scarab_3d6d7cd88_2. stores-off for all. architecture=in (PARAMS.in).",
   "simulations": [
     {
       "suite": "datacenter",
@@ -43,7 +43,7 @@
   "configurations": {
     "helios": {
       "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/helios/scarab/bin --helios_do_fusion 1 --helios_enable_flushes 1 --helios_confidence_threshold 100 --helios_confidence_increment 1 --helios_confidence_decrement 10 --helios_fusion_window 64 --helios_fuse_stores 0 --helios_fused_wait_tail_srcs 1 --helios_extended_commit_group 1",
-      "binary": "scarab_37ef46a05_0",
+      "binary": "scarab_3d6d7cd88_2",
       "slurm_options": "",
       "memory_overhead_mb": 0
     }
@@ -96,23 +96,23 @@
     "analyzer_cli_cmd": "codex"
   },
   "helios_per_app": {
-    "terminal_bench": "T100/W64/I1/D10/stores-off",
-    "bfs-web-google": "T300/W64/I1/D10/stores-off",
-    "dfs-web-google": "T300/W64/I1/D10/stores-off",
-    "pagerank-gnutella31": "T300/W64/I1/D10/stores-off",
-    "sssp-ego-facebook": "T300/W64/I1/D10/stores-off",
-    "corebench": "T1000/W64/I1/D10/stores-off",
-    "appworld": "T10000/W64/I1/D10/stores-off",
-    "rocksdb": "T4800/W64/I1/D10/stores-off",
-    "leveldb": "T4800/W64/I1/D10/stores-off",
-    "duckdb": "T30000/W64/I1/D10/stores-off",
-    "clickhouse": "T300/W64/I10/D10/stores-off",
-    "bfs-init": "T300/W64/I1/D10/stores-off",
-    "dfs-init": "T300/W64/I1/D10/stores-off",
-    "pagerank-init": "T300/W64/I1/D10/stores-off",
-    "sssp-init": "T300/W64/I1/D10/stores-off",
-    "grpc": "T300/W64/I10/D10/stores-off",
-    "memcached": "T4800/W64/I1/D10/stores-off",
-    "sqlite": "T30000/W64/I1/D10/stores-off"
+    "appworld": "T10000/W64/I1/D10/stores-off/fusion-on",
+    "bfs-init": "T300/W64/I1/D10/stores-off/fusion-on",
+    "bfs-web-google": "T300/W64/I1/D10/stores-off/fusion-on",
+    "clickhouse": "T300/W64/I10/D10/stores-off/fusion-on",
+    "corebench": "T1000/W64/I1/D10/stores-off/fusion-on",
+    "dfs-init": "T300/W64/I1/D10/stores-off/fusion-on",
+    "dfs-web-google": "T300/W64/I1/D10/stores-off/fusion-off",
+    "duckdb": "T30000/W64/I1/D10/stores-off/fusion-on",
+    "grpc": "T300/W64/I10/D10/stores-off/fusion-on",
+    "leveldb": "T4800/W64/I1/D10/stores-off/fusion-off",
+    "memcached": "T4800/W64/I1/D10/stores-off/fusion-on",
+    "pagerank-gnutella31": "T300/W64/I1/D10/stores-off/fusion-on",
+    "pagerank-init": "T300/W64/I1/D10/stores-off/fusion-on",
+    "rocksdb": "T4800/W64/I1/D10/stores-off/fusion-on",
+    "sqlite": "T30000/W64/I1/D10/stores-off/fusion-on",
+    "sssp-ego-facebook": "T300/W64/I1/D10/stores-off/fusion-on",
+    "sssp-init": "T300/W64/I1/D10/stores-off/fusion-on",
+    "terminal_bench": "T100/W64/I1/D10/stores-off/fusion-on"
   }
 }

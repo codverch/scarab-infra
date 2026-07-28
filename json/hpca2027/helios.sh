@@ -26,9 +26,29 @@ DESCRIPTOR="hpca2027/helios"
 DESCRIPTOR_JSON="${INFRA_DIR}/json/hpca2027/helios.json"
 TRACES_DIR="/dev/shm/baseline/simpoint_traces"
 SCARAB_PATH="/users/deepmish/scarab"
+HELIOS_GIT_REF="${HELIOS_GIT_REF:-hpca2027-helios}"
 BUILDS_DIR="${INFRA_DIR}/scarab_builds"
+export MCPAT_BIN="${MCPAT_BIN:-/users/deepmish/scarab/src/toolchain/bin/mcpat}"
+export CACTI_BIN="${CACTI_BIN:-/users/deepmish/scarab/src/toolchain/bin/cacti}"
 WARMUP=20000000
 INST_LIMIT=30000000
+
+checkout_helios_scarab() {
+  git -C "${SCARAB_PATH}" checkout -f "${HELIOS_GIT_REF}"
+  git -C "${SCARAB_PATH}" reset --hard "${HELIOS_GIT_REF}"
+  local patch=/users/deepmish/helios-final-results/patches/mcpat_banks_power_softfail.patch
+  if [[ -f "${patch}" ]]; then
+    git -C "${SCARAB_PATH}" apply --whitespace=nowarn "${patch}" || \
+      git -C "${SCARAB_PATH}" apply --reverse --check "${patch}" 2>/dev/null || \
+      echo "WARN: could not apply ${patch}" >&2
+  fi
+  echo "Scarab at Helios ref: $(git -C "${SCARAB_PATH}" rev-parse --short HEAD)"
+  mkdir -p "$(dirname "${MCPAT_BIN}")"
+  if [[ -x /users/deepmish/toolchain/bin/mcpat ]]; then
+    cp -f /users/deepmish/toolchain/bin/mcpat "${MCPAT_BIN}"
+    cp -f /users/deepmish/toolchain/bin/cacti "${CACTI_BIN}"
+  fi
+}
 
 HELIOS_APPS=(
   appworld bfs-init bfs-web-google clickhouse corebench dfs-init dfs-web-google
@@ -75,17 +95,25 @@ declare -A HELIOS_STORES=(
   [memcached]=0 [pagerank-gnutella31]=0 [pagerank-init]=0 [rocksdb]=0
   [sqlite]=0 [sssp-ego-facebook]=0 [sssp-init]=0 [terminal_bench]=0
 )
+# 1=enable Helios fusion; 0=force off (when fusion hurts vs baseline)
+declare -A HELIOS_DO_FUSION=(
+  [appworld]=1 [bfs-init]=1 [bfs-web-google]=1 [clickhouse]=1 [corebench]=1
+  [dfs-init]=1 [dfs-web-google]=0 [duckdb]=1 [grpc]=1 [leveldb]=0
+  [memcached]=1 [pagerank-gnutella31]=1 [pagerank-init]=1 [rocksdb]=1
+  [sqlite]=1 [sssp-ego-facebook]=1 [sssp-init]=1 [terminal_bench]=1
+)
 
 helios_label_for_app() {
   local app="$1"
-  printf 'T%s/W%s/I%s/D%s/stores-off' \
-    "${HELIOS_T[$app]}" "${HELIOS_W[$app]}" "${HELIOS_I[$app]}" "${HELIOS_D[$app]}"
+  local fus=on; [[ ${HELIOS_DO_FUSION[$app]} -eq 0 ]] && fus=off
+  printf 'T%s/W%s/I%s/D%s/stores-off/fusion-%s' \
+    "${HELIOS_T[$app]}" "${HELIOS_W[$app]}" "${HELIOS_I[$app]}" "${HELIOS_D[$app]}" "$fus"
 }
 
 helios_knobs_for_app() {
   local app="$1"
   printf '%s' \
-    "--helios_do_fusion 1 --helios_enable_flushes 1 " \
+    "--helios_do_fusion ${HELIOS_DO_FUSION[$app]} --helios_enable_flushes 1 " \
     "--helios_confidence_threshold ${HELIOS_T[$app]} " \
     "--helios_confidence_increment ${HELIOS_I[$app]} " \
     "--helios_confidence_decrement ${HELIOS_D[$app]} " \
@@ -163,8 +191,13 @@ write_helios_descriptor() {
     comment="Helios per-app knobs (see helios.sh). binary=${binary}. stores-off for all. architecture=in (PARAMS.in)."
   fi
 
+  local per_app_blob="" a
+  for a in "${HELIOS_APPS[@]}"; do
+    per_app_blob+="${a}=$(helios_label_for_app "${a}")"$'\n'
+  done
+
   python3 - "${DESCRIPTOR_JSON}" "${binary}" "${knobs}" "${comment}" "${WARMUP}" "${INST_LIMIT}" \
-    "$(printf '%s\n' "${apps_for_json[@]}")" <<'PY'
+    "$(printf '%s\n' "${apps_for_json[@]}")" "${per_app_blob}" <<'PY'
 import json, sys
 from pathlib import Path
 
@@ -175,28 +208,12 @@ comment = sys.argv[4]
 warmup = int(sys.argv[5])
 inst_limit = int(sys.argv[6])
 workloads = [w for w in sys.argv[7].splitlines() if w]
-
-# Full per-app map (always documented).
-PER_APP = {
-    "terminal_bench": "T100/W64/I1/D10/stores-off",
-    "bfs-init": "T300/W64/I1/D10/stores-off",
-    "bfs-web-google": "T300/W64/I1/D10/stores-off",
-    "dfs-init": "T300/W64/I1/D10/stores-off",
-    "dfs-web-google": "T300/W64/I1/D10/stores-off",
-    "pagerank-init": "T300/W64/I1/D10/stores-off",
-    "pagerank-gnutella31": "T300/W64/I1/D10/stores-off",
-    "sssp-init": "T300/W64/I1/D10/stores-off",
-    "sssp-ego-facebook": "T300/W64/I1/D10/stores-off",
-    "corebench": "T1000/W64/I1/D10/stores-off",
-    "appworld": "T10000/W64/I1/D10/stores-off",
-    "rocksdb": "T4800/W64/I1/D10/stores-off",
-    "leveldb": "T4800/W64/I1/D10/stores-off",
-    "memcached": "T4800/W64/I1/D10/stores-off",
-    "duckdb": "T30000/W64/I1/D10/stores-off",
-    "sqlite": "T30000/W64/I1/D10/stores-off",
-    "clickhouse": "T300/W64/I10/D10/stores-off",
-    "grpc": "T300/W64/I10/D10/stores-off",
-}
+per_app = {}
+for line in sys.argv[8].splitlines():
+    if not line or "=" not in line:
+        continue
+    k, v = line.split("=", 1)
+    per_app[k] = v
 
 desc = json.loads(desc_path.read_text())
 desc["architecture"] = "in"
@@ -207,7 +224,7 @@ common = (
     f"--bindir {{root_dir}}/scarab_stage/{experiment}/scarab/bin"
 )
 desc["_comment"] = comment
-desc["helios_per_app"] = PER_APP
+desc["helios_per_app"] = per_app
 desc["simulations"][0]["workload"] = workloads
 desc["simulations"][0]["warmup"] = warmup
 desc["configurations"]["helios"] = {
@@ -256,12 +273,17 @@ register_traces() {
 
 ensure_pinned_binary() {
   local do_build="${1:-0}"
-  local pinned
+  local pinned helios_hash
+
+  checkout_helios_scarab
+  helios_hash="$(git -C "${SCARAB_PATH}" rev-parse --short HEAD)"
+  find "${BUILDS_DIR}" -maxdepth 1 -type f -name 'scarab_*' -size 0 -delete 2>/dev/null || true
 
   if [[ "${do_build}" == "1" ]]; then
     write_helios_descriptor "scarab_current"
     ensure_docker_image_tag
     ./sci --build-scarab "${DESCRIPTOR}"
+    checkout_helios_scarab
   fi
 
   if ! pinned="$(resolve_pinned_binary)"; then
@@ -269,6 +291,7 @@ ensure_pinned_binary() {
     write_helios_descriptor "scarab_current"
     ensure_docker_image_tag
     ./sci --build-scarab "${DESCRIPTOR}"
+    checkout_helios_scarab
     pinned="$(resolve_pinned_binary)" || {
       echo "ERROR: still no cached binary after build" >&2
       exit 1
@@ -276,10 +299,18 @@ ensure_pinned_binary() {
   fi
 
   if [[ ! -s "${BUILDS_DIR}/${pinned}.opt" && ! -s "${BUILDS_DIR}/${pinned}" ]]; then
-    echo "ERROR: pinned binary missing: ${pinned}" >&2
+    echo "ERROR: pinned binary missing/empty: ${pinned}" >&2
     exit 1
   fi
-  echo "Using pinned Scarab binary: ${pinned} (no per-app rebuild)"
+  if [[ "${pinned}" != *"${helios_hash}"* ]]; then
+    echo "WARN: pinned ${pinned} does not match Helios hash ${helios_hash}; rebuilding" >&2
+    write_helios_descriptor "scarab_current"
+    ensure_docker_image_tag
+    ./sci --build-scarab "${DESCRIPTOR}"
+    checkout_helios_scarab
+    pinned="$(resolve_pinned_binary)" || true
+  fi
+  echo "Using pinned Scarab binary: ${pinned} (Helios ${helios_hash}, no per-app rebuild)"
   PINNED_BINARY="${pinned}"
 }
 

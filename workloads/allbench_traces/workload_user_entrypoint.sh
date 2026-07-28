@@ -33,3 +33,5 @@ cacti_path="$(_resolve_power_tool cacti)" || true
 if [ -n "${cacti_path}" ]; then
   export CACTI_BIN="${cacti_path}"
 fi
+
+echo "[workload_user_entrypoint] MCPAT_BIN=${MCPAT_BIN:-unset} CACTI_BIN=${CACTI_BIN:-unset}"
