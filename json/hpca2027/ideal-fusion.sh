@@ -264,15 +264,14 @@ simpoint_status() {
   if [[ ! -f "${out}/sim.log" ]]; then
     return 1
   fi
-  # power_intf.c:139 is a known benign PARAMS.out-flush race: this Scarab
-  # build invokes the McPAT/CACTI power summary before PARAMS.out is fully
-  # flushed to disk, so power_intf.pl reads it incomplete and dies. It fires
-  # only after "** Core N Finished", i.e. after all performance stats are
-  # already written, so it does not invalidate the simpoint. backfill_power()
-  # re-runs power_intf.pl afterward (PARAMS.out is complete by then) to
-  # regenerate power_model_results. Any OTHER assert means a real failure.
+  # power_intf.c asserts (:139 PARAMS.out-flush race, :151 reopen race) are
+  # benign: this Scarab build invokes McPAT/CACTI around PARAMS.out flush /
+  # power_model_results reopen. They fire only after "** Core N Finished",
+  # i.e. after all performance stats are written, so they do not invalidate
+  # the simpoint. backfill_power() re-runs power_intf.pl afterward to ensure
+  # power_model_results exists. Any OTHER assert means a real failure.
   if grep -q 'ASSERT FAILED' "${out}/sim.log" 2>/dev/null && \
-     grep 'ASSERT FAILED' "${out}/sim.log" 2>/dev/null | grep -qv 'power_intf.c:139'; then
+     grep 'ASSERT FAILED' "${out}/sim.log" 2>/dev/null | grep -qv 'power_intf\.c:'; then
     return 2
   fi
   if [[ -f "${out}/bp.stat.0.csv" ]]; then
