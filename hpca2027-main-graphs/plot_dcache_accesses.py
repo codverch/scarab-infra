@@ -41,9 +41,8 @@ if str(GRAPH_DIR) not in sys.path:
     sys.path.insert(0, str(GRAPH_DIR))
 
 from plot_ipc import (  # noqa: E402
-    ARROW_THRESHOLD,
     AVERAGE_SEPARATOR_COLOR,
-    BAR_WIDTH,
+    AVERAGE_SEPARATOR_WIDTH,
     DEFAULT_BASELINE_CONFIG,
     DEFAULT_BASELINE_DIR,
     DEFAULT_DCACHE_ACCESSES_OUTPUT_DIR,
@@ -69,8 +68,13 @@ from plot_ipc import (  # noqa: E402
     IPC_TICK_FONT,
     RFP_COLOR,
     SIMPOINT_WORKLOADS,
+    _apply_speedup_y_grid,
+    _apply_speedup_y_ticks,
+    _draw_app_x_tick_guides,
+    _tight_x_limits,
     check_simpoint_coverage,
     find_simpoint_dir,
+    grouped_x_positions,
     load_simpoint_trace_weights,
     rename_workload,
 )
@@ -92,6 +96,8 @@ DCACHE_SERIES: tuple[tuple[str, str, str], ...] = (
     ("ifuse", "I-Fuse", IFUSE_COLOR),
     ("ideal", "Ideal fusion", IDEAL_FUSION_COLOR),
 )
+
+DCACHE_BAR_WIDTH = 0.36
 
 
 @dataclass
@@ -496,7 +502,7 @@ def write_computation_log(
 
 
 def _bar_offsets(n: int) -> list[float]:
-    return [(i - (n - 1) / 2.0) * BAR_WIDTH for i in range(n)]
+    return [(i - (n - 1) / 2.0) * DCACHE_BAR_WIDTH for i in range(n)]
 
 
 def plot_dcache_reduction_bars(
@@ -506,7 +512,6 @@ def plot_dcache_reduction_bars(
     include_helios: bool,
 ) -> None:
     import matplotlib.pyplot as plt
-    import matplotlib.ticker as mticker
 
     def display_pct(pct: float | None) -> float:
         if pct is None:
@@ -527,8 +532,12 @@ def plot_dcache_reduction_bars(
         values.append(sum(values) / len(values))
         active_series.append((label, values, color))
 
+    ordered_workloads = [result.workload for result in results]
+    _ordered, x_map, avg_x, separator_x = grouped_x_positions(
+        ordered_workloads, n_series=len(active_series)
+    )
     display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
-    x = list(range(len(display_apps)))
+    x = [x_map[result.workload] for result in results] + [avg_x]
     offsets = _bar_offsets(len(active_series))
 
     plt.rcParams.update(
@@ -541,53 +550,28 @@ def plot_dcache_reduction_bars(
             "legend.fontsize": IPC_LEGEND_FONT,
         }
     )
-    fig, ax = plt.subplots(figsize=(24, 6.5))
-    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
+    fig_width = max(22.0, len(x) * 1.15 + 1.15)
+    fig, ax = plt.subplots(figsize=(fig_width, 6.5))
 
     for offset, (_label, values, color) in zip(offsets, active_series):
         ax.bar(
             [i + offset for i in x],
             values,
-            BAR_WIDTH,
+            DCACHE_BAR_WIDTH,
             label=_label,
             color=color,
             edgecolor="black",
-            linewidth=1.0,
+            linewidth=2.5,
             zorder=3,
         )
 
-    for i in range(len(display_apps)):
-        for offset, (label, values, color) in zip(offsets, active_series):
-            if label == "RFP":
-                continue
-            val = values[i]
-            if 0 <= val < ARROW_THRESHOLD:
-                ax.annotate(
-                    "",
-                    xy=(i + offset, 0),
-                    xytext=(i + offset, 5.5),
-                    arrowprops=dict(arrowstyle="->", color=color, lw=1.5, mutation_scale=12),
-                    zorder=10,
-                )
-                ax.text(
-                    i + offset - 0.12,
-                    5.5,
-                    f"{val:.1f}",
-                    ha="center",
-                    va="bottom",
-                    fontsize=IPC_TICK_FONT,
-                    fontfamily=FONT_FAMILY,
-                    color=color,
-                    zorder=10,
-                )
-
     if len(display_apps) > 1:
         ax.axvline(
-            x=len(display_apps) - 1.5,
+            x=separator_x,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
-            alpha=0.8,
-            linewidth=2.5,
+            alpha=1.0,
+            linewidth=AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
@@ -597,6 +581,8 @@ def plot_dcache_reduction_bars(
         if i == len(display_apps) - 1:
             label.set_weight("bold")
 
+    _tight_x_limits(ax, x[0], x[-1], n_bars=len(active_series))
+
     ax.set_ylabel(
         "Reduction in number of\nL1-D cache accesses (%)\n(normalized to no-fusion)",
         fontsize=IPC_AXIS_LABEL_FONT,
@@ -604,14 +590,14 @@ def plot_dcache_reduction_bars(
     )
     ymax = max(value for _label, values, _color in active_series for value in values)
     ax.set_ylim(0.0, ymax * 1.12 + 2.0)
-    ax.yaxis.set_major_locator(mticker.MultipleLocator(10))
+    _apply_speedup_y_ticks(ax)
+    _apply_speedup_y_grid(ax)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
+    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
     ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
-
-    plt.subplots_adjust(top=0.88, bottom=0.28, left=0.08, right=0.99)
+    _draw_app_x_tick_guides(ax, x)
 
     legend = ax.legend(
         frameon=True,
@@ -638,8 +624,10 @@ def plot_dcache_reduction_bars(
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("dcache_accesses",):
         out = output_dir / stem
-        fig.savefig(f"{out}.png", bbox_inches="tight", dpi=300)
-        fig.savefig(f"{out}.pdf", bbox_inches="tight", dpi=300)
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.95, bottom=0.28, right=0.98)
+        fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.05, dpi=300)
+        fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.05, dpi=300)
         fig.savefig(f"{out}.eps", bbox_inches="tight", dpi=300)
     plt.close(fig)
 

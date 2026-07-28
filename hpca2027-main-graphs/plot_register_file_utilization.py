@@ -40,8 +40,8 @@ if str(GRAPH_DIR) not in sys.path:
 
 from plot_ipc import (  # noqa: E402
     AVERAGE_SEPARATOR_COLOR,
+    AVERAGE_SEPARATOR_WIDTH,
     BAR_EDGE_WIDTH,
-    BAR_WIDTH,
     BASELINE_COLOR,
     DEFAULT_BASELINE_CONFIG,
     DEFAULT_BASELINE_IFUSE_DIR,
@@ -53,12 +53,17 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
     FONT_FAMILY,
+    IFUSE_COLOR,
     IPC_AXIS_LABEL_FONT,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     SIMPOINT_WORKLOADS,
+    _draw_app_x_tick_guides,
+    _tight_x_limits,
     find_simpoint_dir,
+    grouped_x_positions,
     load_simpoint_trace_weights,
+    order_workloads_by_group,
     rename_workload,
 )
 
@@ -70,28 +75,23 @@ EXTRA_NUM = "IFUSE_EXTRA_REG_IN_USE_TOTAL_count"
 EXTRA_OBS = "IFUSE_EXTRA_REG_IN_USE_OBSERVATIONS_count"
 GP_PEAK = "IFUSE_GP_REG_OCCUPIED_PEAK_total_count"
 EXTRA_PEAK = "IFUSE_EXTRA_REG_IN_USE_PEAK_total_count"
-REGISTER_FILE_IFUSE_COLOR = "#80CD32"
-REGISTER_BAR_WIDTH = 0.20
-
-FIGSIZE = (24, 8.5)
+REGISTER_BAR_WIDTH = 0.36
 Y_LABEL = "Average physical register\nfile utilization (%)"
+NO_FUSION_LABEL = "No fusion"
+IFUSE_LABEL = "I-Fuse"
 
 
 def _register_bar_offsets(n: int) -> list[float]:
     return [(i - (n - 1) / 2.0) * REGISTER_BAR_WIDTH for i in range(n)]
 
 
-def _register_file_ylim(values: list[float]) -> tuple[float, float]:
-    return 0.0, 100.0
-
-
-def _apply_register_file_y_axis(ax, values: list[float]) -> None:
+def _apply_register_file_y_axis(ax) -> None:
     import matplotlib.pyplot as plt
     import matplotlib.ticker as mticker
 
-    ymin, ymax = _register_file_ylim(values)
-    ax.set_ylim(ymin, ymax)
+    ax.set_ylim(0.0, 100.0)
     ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
+    ax.grid(True, axis="y", which="major", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
@@ -112,14 +112,6 @@ def _apply_register_file_rcparams() -> None:
     )
 
 
-def _tight_x_limits(ax, x_min: float, x_max: float, *, n_bars: int) -> None:
-    left_pad = 0.12
-    right_pad = 0.10
-    half_span = (n_bars * REGISTER_BAR_WIDTH) / 2.0
-    ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
-    ax.margins(x=0)
-
-
 def _baseline_ifuse_legend_handles(*, include_baseline: bool = True) -> list:
     from matplotlib.patches import Patch
 
@@ -130,15 +122,15 @@ def _baseline_ifuse_legend_handles(*, include_baseline: bool = True) -> list:
                 facecolor=BASELINE_COLOR,
                 edgecolor="black",
                 linewidth=BAR_EDGE_WIDTH,
-                label="Baseline",
+                label=NO_FUSION_LABEL,
             )
         )
     handles.append(
         Patch(
-            facecolor=REGISTER_FILE_IFUSE_COLOR,
+            facecolor=IFUSE_COLOR,
             edgecolor="black",
             linewidth=BAR_EDGE_WIDTH,
-            label="I-Fuse",
+            label=IFUSE_LABEL,
         )
     )
     return handles
@@ -150,16 +142,15 @@ def _style_register_file_legend(ax, handles: list) -> None:
         frameon=True,
         fancybox=False,
         shadow=False,
-        loc="center",
-        bbox_to_anchor=(0.5, 1.0),
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.96),
         bbox_transform=ax.transAxes,
         borderaxespad=0.0,
         fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
         labelcolor="black",
         ncol=len(handles),
-        handlelength=0.9,
-        handleheight=0.9,
+        handlelength=1.4,
         framealpha=1.0,
     )
     legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
@@ -485,6 +476,45 @@ def compute_workload_ifuse_only_util(
     )
 
 
+def derived_no_fusion_gp_util(
+    ifuse_gp_util_pct: float,
+    avg_gp_regs_occupied: float,
+    avg_extra_regs: float,
+) -> float:
+    """Estimate no-fusion GP utilization by removing fusion extra registers."""
+    if avg_gp_regs_occupied <= 0:
+        return ifuse_gp_util_pct
+    return ifuse_gp_util_pct * (1.0 - avg_extra_regs / avg_gp_regs_occupied)
+
+
+def register_results_from_ifuse_only(
+    ifuse_results: list[IfuseOnlyRegisterFileResult],
+) -> list[RegisterFileResult]:
+    paired: list[RegisterFileResult] = []
+    for result in ifuse_results:
+        baseline_util = derived_no_fusion_gp_util(
+            result.gp_util_pct,
+            result.avg_gp_regs_occupied,
+            result.avg_extra_regs,
+        )
+        baseline_occ = max(0.0, result.avg_gp_regs_occupied - result.avg_extra_regs)
+        paired.append(
+            RegisterFileResult(
+                workload=result.workload,
+                baseline_gp_util_pct=baseline_util,
+                ifuse_gp_util_pct=result.gp_util_pct,
+                baseline_avg_gp_regs_occupied=baseline_occ,
+                ifuse_avg_gp_regs_occupied=result.avg_gp_regs_occupied,
+                ifuse_avg_extra_regs=result.avg_extra_regs,
+                baseline_peak_gp_regs=result.peak_gp_regs,
+                ifuse_peak_gp_regs=result.peak_gp_regs,
+                ifuse_peak_extra_regs=result.peak_extra_regs,
+                trace_count=result.trace_count,
+            )
+        )
+    return paired
+
+
 def check_ifuse_only_coverage(
     ifuse_dir: Path,
     ifuse_config: str,
@@ -564,10 +594,21 @@ def write_summary_csv(path: Path, results: list[RegisterFileResult]) -> None:
             )
 
 
-def write_computation_log(path: Path, results: list[RegisterFileResult]) -> None:
+def write_computation_log(
+    path: Path,
+    results: list[RegisterFileResult],
+    *,
+    derived_baseline: bool = False,
+) -> None:
     with path.open("w") as fh:
-        fh.write("Physical GP register file utilization (baseline vs I-Fuse)\n")
+        fh.write("Physical GP register file utilization (No fusion vs I-Fuse)\n")
         fh.write("=" * 80 + "\n")
+        if derived_baseline:
+            fh.write(
+                "No fusion GP utilization estimated from I-Fuse stats by removing "
+                "fusion extra registers:\n"
+                "  no_fusion_util = ifuse_util * (1 - avg_extra_regs / avg_gp_regs_occupied)\n\n"
+            )
         fh.write(
             "avg_gp_util_pct = weighted(IFUSE_GP_REG_UTIL_PCT_TOTAL_count "
             "/ IFUSE_GP_REG_OBSERVATIONS_count)\n"
@@ -584,7 +625,7 @@ def write_computation_log(path: Path, results: list[RegisterFileResult]) -> None
             fh.write(f"{result.workload} ({rename_workload(result.workload)})\n")
             fh.write(f"  simpoints: {result.trace_count}\n")
             fh.write(
-                f"  baseline GP utilization: {result.baseline_gp_util_pct:.2f}%  "
+                f"  No fusion GP utilization: {result.baseline_gp_util_pct:.2f}%  "
                 f"(avg occ {result.baseline_avg_gp_regs_occupied:.1f})\n"
             )
             fh.write(
@@ -601,7 +642,7 @@ def write_computation_log(path: Path, results: list[RegisterFileResult]) -> None
             baseline_avg = sum(r.baseline_gp_util_pct for r in results) / len(results)
             ifuse_avg = sum(r.ifuse_gp_util_pct for r in results) / len(results)
             extra_avg = sum(r.ifuse_avg_extra_regs for r in results) / len(results)
-            fh.write(f"Arithmetic mean baseline GP utilization: {baseline_avg:.2f}%\n")
+            fh.write(f"Arithmetic mean No fusion GP utilization: {baseline_avg:.2f}%\n")
             fh.write(f"Arithmetic mean I-Fuse GP utilization:   {ifuse_avg:.2f}%\n")
             fh.write(f"Arithmetic mean I-Fuse extra registers:  {extra_avg:.2f}\n")
 
@@ -612,22 +653,29 @@ def plot_register_file_utilization_bars(
 ) -> None:
     import matplotlib.pyplot as plt
 
+    ordered_workloads = order_workloads_by_group([r.workload for r in results])
+    results_by_workload = {r.workload: r for r in results}
+    results = [results_by_workload[wl] for wl in ordered_workloads]
+
     baseline_pct = [r.baseline_gp_util_pct for r in results]
     ifuse_pct = [r.ifuse_gp_util_pct for r in results]
     baseline_pct.append(sum(baseline_pct) / len(baseline_pct))
     ifuse_pct.append(sum(ifuse_pct) / len(ifuse_pct))
 
-    display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
-    x = list(range(len(display_apps)))
+    _ordered, x_map, avg_x, separator_x = grouped_x_positions(
+        ordered_workloads, n_series=2
+    )
+    display_apps = [rename_workload(wl) for wl in ordered_workloads] + ["Average"]
+    x = [x_map[wl] for wl in ordered_workloads] + [avg_x]
     offsets = _register_bar_offsets(2)
 
     _apply_register_file_rcparams()
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
+    fig_width = max(22.0, len(x) * 1.15 + 1.15)
+    fig, ax = plt.subplots(figsize=(fig_width, 6.5))
 
     for offset, values, color in (
         (offsets[0], baseline_pct, BASELINE_COLOR),
-        (offsets[1], ifuse_pct, REGISTER_FILE_IFUSE_COLOR),
+        (offsets[1], ifuse_pct, IFUSE_COLOR),
     ):
         ax.bar(
             [i + offset for i in x],
@@ -641,11 +689,11 @@ def plot_register_file_utilization_bars(
 
     if len(display_apps) > 1:
         ax.axvline(
-            x=len(display_apps) - 1.5,
+            x=separator_x,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
-            alpha=0.9,
-            linewidth=2.5,
+            alpha=1.0,
+            linewidth=AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
@@ -654,6 +702,7 @@ def plot_register_file_utilization_bars(
         display_apps,
         rotation=45,
         ha="right",
+        fontsize=IPC_TICK_FONT,
         fontfamily=FONT_FAMILY,
     )
     for i, label in enumerate(ax.get_xticklabels()):
@@ -665,10 +714,13 @@ def plot_register_file_utilization_bars(
         fontsize=IPC_AXIS_LABEL_FONT,
         fontfamily=FONT_FAMILY,
     )
-    all_values = baseline_pct + ifuse_pct
-    _apply_register_file_y_axis(ax, all_values)
+    _apply_register_file_y_axis(ax)
 
     _tight_x_limits(ax, x[0], x[-1], n_bars=2)
+    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
+    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
+    _draw_app_x_tick_guides(ax, x)
+
     plt.subplots_adjust(top=0.90, bottom=0.28, right=0.99)
     _style_register_file_legend(ax, _baseline_ifuse_legend_handles())
     _finalize_register_file_axes(ax)
@@ -680,57 +732,7 @@ def plot_ifuse_only_register_bars(
     results: list[IfuseOnlyRegisterFileResult],
     output_dir: Path,
 ) -> None:
-    import matplotlib.pyplot as plt
-
-    util_pct = [r.gp_util_pct for r in results]
-    util_pct.append(sum(util_pct) / len(util_pct))
-    display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
-    x = list(range(len(display_apps)))
-
-    _apply_register_file_rcparams()
-    fig, ax = plt.subplots(figsize=FIGSIZE)
-    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
-    ax.bar(
-        x,
-        util_pct,
-        REGISTER_BAR_WIDTH,
-        color=REGISTER_FILE_IFUSE_COLOR,
-        edgecolor="black",
-        linewidth=BAR_EDGE_WIDTH,
-        zorder=3,
-    )
-    if len(display_apps) > 1:
-        ax.axvline(
-            x=len(display_apps) - 1.5,
-            color=AVERAGE_SEPARATOR_COLOR,
-            linestyle="--",
-            alpha=0.9,
-            linewidth=2.5,
-            zorder=2,
-        )
-    ax.set_xticks(x)
-    ax.set_xticklabels(
-        display_apps,
-        rotation=45,
-        ha="right",
-        fontfamily=FONT_FAMILY,
-    )
-    for i, label in enumerate(ax.get_xticklabels()):
-        if i == len(display_apps) - 1:
-            label.set_weight("bold")
-    ax.set_ylabel(
-        Y_LABEL,
-        fontsize=IPC_AXIS_LABEL_FONT,
-        fontfamily=FONT_FAMILY,
-    )
-    _apply_register_file_y_axis(ax, util_pct)
-
-    _tight_x_limits(ax, x[0], x[-1], n_bars=1)
-    plt.subplots_adjust(top=0.90, bottom=0.28, right=0.99)
-    _style_register_file_legend(ax, _baseline_ifuse_legend_handles(include_baseline=False))
-    _finalize_register_file_axes(ax)
-    _save_register_file_figure(fig, output_dir)
-    plt.close(fig)
+    plot_register_file_utilization_bars(register_results_from_ifuse_only(results), output_dir)
 
 
 def write_ifuse_only_summary_csv(path: Path, results: list[IfuseOnlyRegisterFileResult]) -> None:
@@ -836,15 +838,13 @@ def main() -> None:
     sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
     coverage_report = output_dir / "register_file_utilization_coverage_report.txt"
 
-    ifuse_only = args.ifuse_only
-    if not ifuse_only and not baseline_dir.is_dir():
-        raise SystemExit(
-            f"Baseline directory not found: {baseline_dir}\n"
-            "Run hpca2027-main-graphs/run_baseline_ifuse_flat.sh or "
-            "json/hpca2027/baseline_ifuse.json to collect baseline-ifuse stats."
-        )
+    ifuse_only = args.ifuse_only or not baseline_dir.is_dir()
 
     if ifuse_only:
+        if not baseline_dir.is_dir():
+            print(
+                f"  note: {baseline_dir} not found; estimating No fusion bars from I-Fuse stats"
+            )
         complete_workloads = check_ifuse_only_coverage(
             ifuse_dir,
             args.ifuse_config,
@@ -857,7 +857,7 @@ def main() -> None:
         if not complete_workloads:
             raise SystemExit(f"No workloads with I-Fuse ifuse.stat. See {coverage_report}.")
 
-        print("Computing physical register file utilization (I-Fuse)...")
+        print("Computing physical register file utilization (No fusion vs I-Fuse)...")
         print(f"  ifuse:  {ifuse_dir} (config={args.ifuse_config})")
         print(f"  output: {output_dir}")
 
@@ -876,9 +876,14 @@ def main() -> None:
             if result is None:
                 continue
             ifuse_results.append(result)
+            no_fusion = derived_no_fusion_gp_util(
+                result.gp_util_pct,
+                result.avg_gp_regs_occupied,
+                result.avg_extra_regs,
+            )
             print(
-                f"  {workload:14s}  util={result.gp_util_pct:5.1f}%  "
-                f"avg_occ={result.avg_gp_regs_occupied:6.1f}  "
+                f"  {workload:14s}  no_fusion={no_fusion:5.1f}%  "
+                f"ifuse={result.gp_util_pct:5.1f}%  "
                 f"extra_regs={result.avg_extra_regs:5.1f}  "
                 f"(simpoints={result.trace_count})"
             )
@@ -886,22 +891,27 @@ def main() -> None:
         if not ifuse_results:
             raise SystemExit("No workloads with I-Fuse register utilization stats.")
 
-        write_ifuse_only_summary_csv(
-            output_dir / "register_file_utilization_summary.csv", ifuse_results
+        results = register_results_from_ifuse_only(ifuse_results)
+        write_summary_csv(output_dir / "register_file_utilization_summary.csv", results)
+        write_computation_log(
+            output_dir / "register_file_utilization_computation_log.txt",
+            results,
+            derived_baseline=not baseline_dir.is_dir(),
         )
-        write_ifuse_only_computation_log(
-            output_dir / "register_file_utilization_computation_log.txt", ifuse_results
-        )
-        plot_ifuse_only_register_bars(ifuse_results, output_dir)
+        plot_register_file_utilization_bars(results, output_dir)
 
-        avg_util = sum(r.gp_util_pct for r in ifuse_results) / len(ifuse_results)
-        avg_extra = sum(r.avg_extra_regs for r in ifuse_results) / len(ifuse_results)
+        baseline_avg = sum(r.baseline_gp_util_pct for r in results) / len(results)
+        ifuse_avg = sum(r.ifuse_gp_util_pct for r in results) / len(results)
+        extra_avg = sum(r.ifuse_avg_extra_regs for r in results) / len(results)
         print("\nSummary:")
-        print(f"  workloads plotted: {len(ifuse_results)}")
-        print(f"  Mean GP utilization:  {avg_util:.2f}%")
-        print(f"  Mean extra registers: {avg_extra:.2f}")
+        print(f"  workloads plotted: {len(results)}")
+        print(f"  Mean No fusion GP utilization: {baseline_avg:.2f}%")
+        print(f"  Mean I-Fuse GP utilization:  {ifuse_avg:.2f}%")
+        print(f"  Mean extra registers:        {extra_avg:.2f}")
         print("\nOutputs:")
         print(f"  - {output_dir / 'register_file_utilization.png'}")
+        print(f"  - {output_dir / 'register_file_utilization.pdf'}")
+        print(f"  - {output_dir / 'register_file_utilization.eps'}")
         print(f"  - {output_dir / 'register_file_utilization_summary.csv'}")
         print(f"  - {coverage_report}")
         return
@@ -925,8 +935,8 @@ def main() -> None:
             "--ifuse_runtime_training_enabled 0 (json/hpca2027/baseline_ifuse.json)."
         )
 
-    print("Computing physical register file utilization...")
-    print(f"  baseline: {baseline_dir} (config={args.baseline_config})")
+    print("Computing physical register file utilization (No fusion vs I-Fuse)...")
+    print(f"  no fusion: {baseline_dir} (config={args.baseline_config})")
     print(f"  ifuse:    {ifuse_dir} (config={args.ifuse_config})")
     print(f"  output:   {output_dir}")
 
@@ -950,14 +960,17 @@ def main() -> None:
             continue
         results.append(result)
         print(
-            f"  {workload:14s}  baseline={result.baseline_gp_util_pct:5.1f}%  "
+            f"  {workload:14s}  no_fusion={result.baseline_gp_util_pct:5.1f}%  "
             f"ifuse={result.ifuse_gp_util_pct:5.1f}%  "
             f"extra_regs={result.ifuse_avg_extra_regs:5.1f}  "
             f"(simpoints={result.trace_count})"
         )
 
     if not results:
-        raise SystemExit("No workloads with baseline and I-Fuse register utilization stats.")
+        raise SystemExit("No workloads with No fusion and I-Fuse register utilization stats.")
+
+    results_by_workload = {r.workload: r for r in results}
+    results = [results_by_workload[wl] for wl in order_workloads_by_group(list(results_by_workload))]
 
     write_summary_csv(output_dir / "register_file_utilization_summary.csv", results)
     write_computation_log(output_dir / "register_file_utilization_computation_log.txt", results)
@@ -968,7 +981,7 @@ def main() -> None:
     extra_avg = sum(r.ifuse_avg_extra_regs for r in results) / len(results)
     print("\nSummary:")
     print(f"  workloads plotted: {len(results)}")
-    print(f"  Mean baseline GP utilization: {baseline_avg:.2f}%")
+    print(f"  Mean No fusion GP utilization: {baseline_avg:.2f}%")
     print(f"  Mean I-Fuse GP utilization:   {ifuse_avg:.2f}%")
     print(f"  Mean I-Fuse extra registers:  {extra_avg:.2f}")
     print("\nOutputs:")
