@@ -2991,62 +2991,37 @@
           "prioritized_mode":"memtrace",
           "memtrace":{
             "image_name":"allbench_traces",
-            "segment_size":10000000,
-            "warmup":0,
+            "segment_size":100000000,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
         },
         "simpoints":[
           {
-            "cluster_id":4,
+            "cluster_id":149,
             "segment_id":0,
-            "weight":0.8135933254
+            "weight":0.2
           },
           {
-            "cluster_id":14,
+            "cluster_id":156,
             "segment_id":1,
-            "weight":0.1242710497
+            "weight":0.2
           },
           {
-            "cluster_id":6,
+            "cluster_id":162,
             "segment_id":2,
-            "weight":0.06213562485
+            "weight":0.2
           },
           {
-            "cluster_id":1,
+            "cluster_id":169,
             "segment_id":3,
-            "weight":0.1
+            "weight":0.2
           },
           {
-            "cluster_id":2,
+            "cluster_id":216,
             "segment_id":4,
-            "weight":0.1
-          },
-          {
-            "cluster_id":3,
-            "segment_id":5,
-            "weight":0.1
-          },
-          {
-            "cluster_id":5,
-            "segment_id":6,
-            "weight":0.1
-          },
-          {
-            "cluster_id":7,
-            "segment_id":7,
-            "weight":0.1
-          },
-          {
-            "cluster_id":8,
-            "segment_id":8,
-            "weight":0.1
-          },
-          {
-            "cluster_id":9,
-            "segment_id":9,
-            "weight":0.1
+            "weight":0.2
           }
         ]
       },
@@ -4401,7 +4376,7 @@
           "prioritized_mode":"memtrace",
           "memtrace":{
             "image_name":"allbench_traces",
-            "segment_size":100000000,
+            "segment_size":10000000,
             "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
@@ -4409,24 +4384,19 @@
         },
         "simpoints":[
           {
-            "cluster_id":80,
+            "cluster_id":4,
             "segment_id":0,
-            "weight":0.0550095
+            "weight":0.1
           },
           {
-            "cluster_id":105,
+            "cluster_id":9,
             "segment_id":1,
-            "weight":0.200035
+            "weight":0.6
           },
           {
-            "cluster_id":164,
+            "cluster_id":8,
             "segment_id":2,
-            "weight":0.360062
-          },
-          {
-            "cluster_id":198,
-            "segment_id":3,
-            "weight":0.384894
+            "weight":0.3
           }
         ]
       },
@@ -4519,6 +4489,215 @@
             "cluster_id":52,
             "segment_id":1,
             "weight":0.127641
+          }
+        ]
+      },
+      "bfs-init":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":30000000,
+            "warmup":20000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":94,
+            "segment_id":0,
+            "weight":0.0288912
+          },
+          {
+            "cluster_id":103,
+            "segment_id":2,
+            "weight":0.0176982
+          },
+          {
+            "cluster_id":96,
+            "segment_id":3,
+            "weight":0.0674129
+          },
+          {
+            "cluster_id":17,
+            "segment_id":4,
+            "weight":0.885998
+          }
+        ]
+      },
+      "dfs-init":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":30000000,
+            "warmup":20000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":8,
+            "segment_id":0,
+            "weight":0.529412
+          },
+          {
+            "cluster_id":28,
+            "segment_id":1,
+            "weight":0.372549
+          },
+          {
+            "cluster_id":96,
+            "segment_id":2,
+            "weight":0.0686274
+          },
+          {
+            "cluster_id":94,
+            "segment_id":4,
+            "weight":0.0294118
+          }
+        ]
+      },
+      "grpc":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":125000000,
+            "warmup":20000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":9,
+            "segment_id":0,
+            "weight":0.25
+          },
+          {
+            "cluster_id":15,
+            "segment_id":1,
+            "weight":0.1875
+          },
+          {
+            "cluster_id":14,
+            "segment_id":2,
+            "weight":0.125
+          },
+          {
+            "cluster_id":7,
+            "segment_id":3,
+            "weight":0.4375
+          }
+        ]
+      },
+      "pagerank-init":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":30000000,
+            "warmup":20000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":97,
+            "segment_id":0,
+            "weight":0.0181195
+          },
+          {
+            "cluster_id":94,
+            "segment_id":1,
+            "weight":0.036239
+          },
+          {
+            "cluster_id":91,
+            "segment_id":2,
+            "weight":0.842556
+          },
+          {
+            "cluster_id":107,
+            "segment_id":3,
+            "weight":0.0396669
+          },
+          {
+            "cluster_id":99,
+            "segment_id":4,
+            "weight":0.0634182
+          }
+        ]
+      },
+      "sqlite":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":60000000,
+            "warmup":20000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":12,
+            "segment_id":1,
+            "weight":0.266548
+          },
+          {
+            "cluster_id":22,
+            "segment_id":2,
+            "weight":0.231008
+          },
+          {
+            "cluster_id":27,
+            "segment_id":3,
+            "weight":0.248778
+          }
+        ]
+      },
+      "sssp-init":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":10000000,
+            "warmup":20000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":296,
+            "segment_id":0,
+            "weight":0.227209
+          },
+          {
+            "cluster_id":293,
+            "segment_id":2,
+            "weight":0.0112202
+          },
+          {
+            "cluster_id":249,
+            "segment_id":3,
+            "weight":0.0771388
+          },
+          {
+            "cluster_id":90,
+            "segment_id":4,
+            "weight":0.326788
+          },
+          {
+            "cluster_id":297,
+            "segment_id":6,
+            "weight":0.357644
           }
         ]
       }
