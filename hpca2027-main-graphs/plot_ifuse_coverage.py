@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""Simpoint-weighted Helios and I-Fuse coverage of ideally fused loads.
+"""Simpoint-weighted Helios and I-Fuse coverage of ideal-fusion opportunities.
 
-Coverage per workload (simpoint-weighted):
-  Helios: 100 * HELIOS_FUSIONS_COMMITTED / IDEAL_FUSION_FUSED_LOADS
-  I-Fuse: 100 * IFUSE_CORRECT_PREDICTIONS / IDEAL_FUSION_FUSED_LOADS
+Coverage per workload (simpoint-weighted), with denominator selected by
+`--denominator`:
+  fused-loads:
+    Helios: 100 * HELIOS_FUSIONS_COMMITTED / IDEAL_FUSION_FUSED_LOADS
+    I-Fuse: 100 * IFUSE_CORRECT_PREDICTIONS / IDEAL_FUSION_FUSED_LOADS
+  candidates:
+    Helios: 100 * HELIOS_FUSIONS_COMMITTED / IDEAL_FUSION_CANDIDATE_ROWS
+    I-Fuse: 100 * IFUSE_CORRECT_PREDICTIONS / IDEAL_FUSION_CANDIDATE_ROWS
 
 Helios fusion counts are scaled to the ideal-fusion simpoint measurement window
 when periodic instruction counts differ.
@@ -29,6 +34,7 @@ GRAPH_DIR = Path(__file__).resolve().parent
 if str(GRAPH_DIR) not in sys.path:
     sys.path.insert(0, str(GRAPH_DIR))
 
+from plot_fusion_predictability import DEFAULT_CANDIDATES_DIR, discover_simpoint_csvs  # noqa: E402
 from plot_fusion_fraction import (  # noqa: E402
     HELIOS_FUSED_STAT,
     helios_stats_available,
@@ -37,8 +43,8 @@ from plot_fusion_fraction import (  # noqa: E402
 )
 from plot_ipc import (  # noqa: E402
     AVERAGE_SEPARATOR_COLOR,
+    AVERAGE_SEPARATOR_WIDTH,
     BAR_EDGE_WIDTH,
-    BAR_WIDTH,
     DEFAULT_HELIOS_CONFIG,
     DEFAULT_HELIOS_DIR,
     DEFAULT_IDEAL_CONFIG,
@@ -59,16 +65,25 @@ from plot_ipc import (  # noqa: E402
     SIMPOINT_WORKLOADS,
     find_simpoint_dir,
     load_simpoint_trace_weights,
+    order_workloads_by_group,
     rename_workload,
 )
 
 IFUSE_STAT = "IFUSE_CORRECT_PREDICTIONS_count"
 IDEAL_STAT = "IDEAL_FUSION_FUSED_LOADS_count"
+DENOMINATOR_FUSED_LOADS = "fused-loads"
+DENOMINATOR_CANDIDATES = "candidates"
+
+WORKLOAD_CANDIDATE_ALIASES: dict[str, tuple[str, ...]] = {
+    "core_bench": ("core_bench", "corebench"),
+}
 
 SERIES: tuple[tuple[str, str, str], ...] = (
     ("helios", "Helios", HELIOS_COLOR),
     ("ifuse", "I-Fuse", IFUSE_COLOR),
 )
+
+COVERAGE_BAR_WIDTH = 0.32
 
 
 @dataclass
@@ -76,7 +91,7 @@ class CoverageResult:
     workload: str
     helios_loads: float | None
     ifuse_correct: float
-    ideal_fused: float
+    denominator_total: float
     helios_coverage_pct: float | None
     ifuse_coverage_pct: float
     trace_count: int
@@ -119,23 +134,50 @@ def load_simpoint_counts(
     return stat_count_from_csv(sim_dir / stat_file, stat_name)
 
 
+def candidate_workload_names(workload: str) -> tuple[str, ...]:
+    return WORKLOAD_CANDIDATE_ALIASES.get(workload, (workload,))
+
+
+def count_candidate_rows(csv_path: Path) -> int:
+    rows = 0
+    with csv_path.open() as fh:
+        next(fh, None)
+        for _ in fh:
+            rows += 1
+    return rows
+
+
+def load_candidate_row_count(
+    candidates_dir: Path,
+    workload: str,
+    cluster_id: str,
+) -> float | None:
+    for candidate_workload in candidate_workload_names(workload):
+        csv_path = candidates_dir / candidate_workload / f"{cluster_id}.csv"
+        if csv_path.is_file():
+            return float(count_candidate_rows(csv_path))
+    return None
+
+
 def compute_workload_coverage(
     workload: str,
     helios_dir: Path | None,
     ifuse_dir: Path,
     ideal_dir: Path,
+    candidates_dir: Path | None,
     sp_weights: dict[tuple[str, str], float],
     *,
     helios_config: str,
     ifuse_config: str,
     ideal_config: str,
     include_helios: bool,
+    denominator: str,
     suite: str,
     subsuite: str,
 ) -> CoverageResult | None:
     weighted_helios = 0.0
     weighted_ifuse = 0.0
-    weighted_ideal = 0.0
+    weighted_denominator = 0.0
     weight_sum = 0.0
     trace_count = 0
     helios_trace_count = 0
@@ -147,16 +189,6 @@ def compute_workload_coverage(
         ideal_sim = find_simpoint_dir(
             ideal_dir, ideal_config, workload, cluster_id, suite=suite, subsuite=subsuite
         )
-        ideal_count = load_simpoint_counts(
-            ideal_dir,
-            ideal_config,
-            workload,
-            cluster_id,
-            stat_file="ideal_fusion.stat.0.csv",
-            stat_name=IDEAL_STAT,
-            suite=suite,
-            subsuite=subsuite,
-        )
         ifuse_count = load_simpoint_counts(
             ifuse_dir,
             ifuse_config,
@@ -167,7 +199,24 @@ def compute_workload_coverage(
             suite=suite,
             subsuite=subsuite,
         )
-        if ideal_count is None or ifuse_count is None or ideal_count <= 0:
+        denominator_count: float | None
+        if denominator == DENOMINATOR_CANDIDATES:
+            if candidates_dir is None:
+                raise SystemExit("Candidate denominator requested without --candidates-dir")
+            denominator_count = load_candidate_row_count(candidates_dir, workload, cluster_id)
+        else:
+            denominator_count = load_simpoint_counts(
+                ideal_dir,
+                ideal_config,
+                workload,
+                cluster_id,
+                stat_file="ideal_fusion.stat.0.csv",
+                stat_name=IDEAL_STAT,
+                suite=suite,
+                subsuite=subsuite,
+            )
+
+        if denominator_count is None or ifuse_count is None or denominator_count <= 0:
             continue
 
         reference_periodic = periodic_instructions(ideal_sim)
@@ -198,15 +247,15 @@ def compute_workload_coverage(
                 helios_trace_count += 1
 
         weighted_ifuse += weight * ifuse_count
-        weighted_ideal += weight * ideal_count
+        weighted_denominator += weight * denominator_count
         weight_sum += weight
         trace_count += 1
 
-    if trace_count == 0 or weight_sum <= 0 or weighted_ideal <= 0:
+    if trace_count == 0 or weight_sum <= 0 or weighted_denominator <= 0:
         return None
 
     helios_coverage = (
-        100.0 * weighted_helios / weighted_ideal
+        100.0 * weighted_helios / weighted_denominator
         if include_helios and helios_trace_count > 0
         else None
     )
@@ -214,21 +263,32 @@ def compute_workload_coverage(
         workload=workload,
         helios_loads=weighted_helios if helios_trace_count > 0 else None,
         ifuse_correct=weighted_ifuse,
-        ideal_fused=weighted_ideal,
+        denominator_total=weighted_denominator,
         helios_coverage_pct=helios_coverage,
-        ifuse_coverage_pct=100.0 * weighted_ifuse / weighted_ideal,
+        ifuse_coverage_pct=100.0 * weighted_ifuse / weighted_denominator,
         trace_count=trace_count,
         helios_trace_count=helios_trace_count,
     )
 
 
-def write_summary_csv(path: Path, results: list[CoverageResult], *, include_helios: bool) -> None:
+def write_summary_csv(
+    path: Path,
+    results: list[CoverageResult],
+    *,
+    include_helios: bool,
+    denominator: str,
+) -> None:
+    denominator_field = (
+        "weighted_ideal_fused"
+        if denominator == DENOMINATOR_FUSED_LOADS
+        else "weighted_ideal_candidates"
+    )
     fieldnames = [
         "workload",
         "display_name",
         "trace_count",
         "weighted_ifuse_correct",
-        "weighted_ideal_fused",
+        denominator_field,
         "ifuse_coverage_pct",
     ]
     if include_helios:
@@ -247,7 +307,7 @@ def write_summary_csv(path: Path, results: list[CoverageResult], *, include_heli
                 "display_name": rename_workload(result.workload),
                 "trace_count": result.trace_count,
                 "weighted_ifuse_correct": f"{result.ifuse_correct:.1f}",
-                "weighted_ideal_fused": f"{result.ideal_fused:.1f}",
+                denominator_field: f"{result.denominator_total:.1f}",
                 "ifuse_coverage_pct": f"{result.ifuse_coverage_pct:.2f}",
             }
             if include_helios:
@@ -274,23 +334,32 @@ def write_computation_log(
     results: list[CoverageResult],
     *,
     include_helios: bool,
+    denominator: str,
 ) -> None:
     with path.open("w") as fh:
-        fh.write("Coverage of ideally fused loads\n")
+        fh.write("Coverage of ideal-fusion opportunities\n")
         fh.write("=" * 80 + "\n")
+        denominator_label = (
+            "IDEAL_FUSION_FUSED_LOADS_count"
+            if denominator == DENOMINATOR_FUSED_LOADS
+            else "ideal_fusion_candidate_rows"
+        )
         if include_helios:
             fh.write(
                 "Helios coverage = 100 * weighted(HELIOS_FUSIONS_COMMITTED_count) "
-                "/ weighted(IDEAL_FUSION_FUSED_LOADS_count)\n"
+                f"/ weighted({denominator_label})\n"
             )
         fh.write(
             "I-Fuse coverage = 100 * weighted(IFUSE_CORRECT_PREDICTIONS_count) "
-            "/ weighted(IDEAL_FUSION_FUSED_LOADS_count)\n\n"
+            f"/ weighted({denominator_label})\n\n"
         )
         for result in results:
             fh.write(f"{result.workload} ({rename_workload(result.workload)})\n")
             fh.write(f"  simpoints: {result.trace_count}\n")
-            fh.write(f"  weighted ideal fused loads: {result.ideal_fused:.1f}\n")
+            fh.write(
+                f"  weighted denominator ({denominator_label}): "
+                f"{result.denominator_total:.1f}\n"
+            )
             if include_helios and result.helios_coverage_pct is not None:
                 fh.write(
                     f"  helios loads: {result.helios_loads:.1f}  "
@@ -319,11 +388,11 @@ def write_computation_log(
 
 
 def _bar_offsets(n: int) -> list[float]:
-    return [(i - (n - 1) / 2.0) * BAR_WIDTH for i in range(n)]
+    return [(i - (n - 1) / 2.0) * COVERAGE_BAR_WIDTH for i in range(n)]
 
 
 def _tight_x_limits(ax, x_min: float, x_max: float, n_bars: int) -> None:
-    half_span = (n_bars * BAR_WIDTH) / 2.0
+    half_span = (n_bars * COVERAGE_BAR_WIDTH) / 2.0
     ax.set_xlim(x_min - half_span - 0.12, x_max + half_span + 0.10)
     ax.margins(x=0)
 
@@ -351,6 +420,7 @@ def plot_coverage_bars(
     output_dir: Path,
     *,
     include_helios: bool,
+    denominator: str,
 ) -> None:
     import matplotlib.pyplot as plt
 
@@ -389,7 +459,7 @@ def plot_coverage_bars(
         ax.bar(
             [i + offset for i in x],
             [0.0 if math.isnan(val) else val for val in values],
-            BAR_WIDTH,
+            COVERAGE_BAR_WIDTH,
             color=color,
             edgecolor="black",
             linewidth=BAR_EDGE_WIDTH,
@@ -401,8 +471,8 @@ def plot_coverage_bars(
             x=len(display_apps) - 1.5,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
-            alpha=0.9,
-            linewidth=2.5,
+            alpha=1.0,
+            linewidth=AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
@@ -421,7 +491,11 @@ def plot_coverage_bars(
     _tight_x_limits(ax, x[0], x[-1], n_bars=len(active_series))
 
     ax.set_ylabel(
-        "Fraction of\nideally fused loads\ncovered (%)",
+        (
+            "Fraction of\ntotal ideal-fusion\ncandidates covered (%)"
+            if denominator == DENOMINATOR_CANDIDATES
+            else "Fraction of\nideally fused loads\ncovered (%)"
+        ),
         fontsize=IPC_AXIS_LABEL_FONT,
         fontfamily=FONT_FAMILY,
     )
@@ -464,7 +538,12 @@ def plot_coverage_bars(
         spine.set_linewidth(2.5)
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    for stem in ("ifuse_coverage", "ideal_fusion_coverage"):
+    stems = (
+        ("ifuse_candidate_coverage", "ideal_fusion_candidate_coverage")
+        if denominator == DENOMINATOR_CANDIDATES
+        else ("ifuse_coverage", "ideal_fusion_coverage")
+    )
+    for stem in stems:
         out = output_dir / stem
         fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.05, dpi=300)
         fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.05, dpi=300)
@@ -488,9 +567,15 @@ def main() -> None:
     )
     parser.add_argument("--ifuse-dir", type=Path, default=None)
     parser.add_argument("--ideal-fusion-dir", type=Path, default=None)
+    parser.add_argument("--candidates-dir", type=Path, default=DEFAULT_CANDIDATES_DIR)
     parser.add_argument("--trace-root", type=Path, default=DEFAULT_TRACE_ROOT)
     parser.add_argument("--ifuse-config", default=DEFAULT_IPC_IFUSE_CONFIG)
     parser.add_argument("--ideal-fusion-config", default=DEFAULT_IDEAL_CONFIG)
+    parser.add_argument(
+        "--denominator",
+        choices=(DENOMINATOR_FUSED_LOADS, DENOMINATOR_CANDIDATES),
+        default=DENOMINATOR_FUSED_LOADS,
+    )
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--exclude-workloads", nargs="*", default=["feedsim", "langchain_web"])
     args = parser.parse_args()
@@ -499,6 +584,7 @@ def main() -> None:
     helios_dir = args.helios_dir or DEFAULT_HELIOS_DIR
     ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
     ideal_dir = args.ideal_fusion_dir or DEFAULT_IDEAL_DIR
+    candidates_dir = args.candidates_dir
     workloads = [wl for wl in SIMPOINT_WORKLOADS if wl not in set(args.exclude_workloads)]
     output_dir = args.output_dir or DEFAULT_IFUSE_COVERAGE_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -518,11 +604,17 @@ def main() -> None:
         if not plot_helios:
             print(f"Helios skipped: missing {HELIOS_FUSED_STAT} in {helios_dir}")
 
-    print("Computing coverage of ideally fused loads...")
+    if args.denominator == DENOMINATOR_CANDIDATES and not candidates_dir.is_dir():
+        raise SystemExit(f"Candidates directory does not exist: {candidates_dir}")
+
+    print("Computing coverage of ideal-fusion opportunities...")
     if plot_helios:
         print(f"  helios:       {helios_dir} (config={args.helios_config})")
     print(f"  ifuse:        {ifuse_dir} (config={args.ifuse_config})")
     print(f"  ideal fusion: {ideal_dir} (config={args.ideal_fusion_config})")
+    if args.denominator == DENOMINATOR_CANDIDATES:
+        print(f"  candidates:   {candidates_dir}")
+    print(f"  denominator:  {args.denominator}")
     print(f"  output:       {output_dir}")
 
     results: list[CoverageResult] = []
@@ -532,16 +624,18 @@ def main() -> None:
             helios_dir if plot_helios else None,
             ifuse_dir,
             ideal_dir,
+            candidates_dir if args.denominator == DENOMINATOR_CANDIDATES else None,
             sp_weights,
             helios_config=args.helios_config,
             ifuse_config=args.ifuse_config,
             ideal_config=args.ideal_fusion_config,
             include_helios=plot_helios,
+            denominator=args.denominator,
             suite=DEFAULT_SUITE,
             subsuite=DEFAULT_SUBSUITE,
         )
         if result is None:
-            print(f"  skip {workload}: missing ifuse/ideal-fusion stats")
+            print(f"  skip {workload}: missing data for selected denominator")
             continue
         results.append(result)
         helios_str = (
@@ -556,19 +650,32 @@ def main() -> None:
         )
 
     if not results:
-        raise SystemExit("No workloads with complete I-Fuse and ideal-fusion coverage data.")
+        raise SystemExit("No workloads with complete coverage data for the selected denominator.")
+
+    results_by_workload = {r.workload: r for r in results}
+    results = [
+        results_by_workload[wl]
+        for wl in order_workloads_by_group(list(results_by_workload))
+    ]
 
     write_summary_csv(
         output_dir / "ifuse_coverage_summary.csv",
         results,
         include_helios=plot_helios,
+        denominator=args.denominator,
     )
     write_computation_log(
         output_dir / "ifuse_coverage_computation_log.txt",
         results,
         include_helios=plot_helios,
+        denominator=args.denominator,
     )
-    plot_coverage_bars(results, output_dir, include_helios=plot_helios)
+    plot_coverage_bars(
+        results,
+        output_dir,
+        include_helios=plot_helios,
+        denominator=args.denominator,
+    )
 
     ifuse_avg = sum(r.ifuse_coverage_pct for r in results) / len(results)
     print("\nSummary:")
@@ -579,8 +686,12 @@ def main() -> None:
             print(f"  Helios mean:       {sum(helios_vals) / len(helios_vals):.2f}%")
     print(f"  I-Fuse mean:       {ifuse_avg:.2f}%")
     print("\nOutputs:")
-    print(f"  - {output_dir / 'ifuse_coverage.png'}")
-    print(f"  - {output_dir / 'ideal_fusion_coverage.png'}")
+    if args.denominator == DENOMINATOR_CANDIDATES:
+        print(f"  - {output_dir / 'ifuse_candidate_coverage.png'}")
+        print(f"  - {output_dir / 'ideal_fusion_candidate_coverage.png'}")
+    else:
+        print(f"  - {output_dir / 'ifuse_coverage.png'}")
+        print(f"  - {output_dir / 'ideal_fusion_coverage.png'}")
     print(f"  - {output_dir / 'ifuse_coverage_summary.csv'}")
     print(f"  - {output_dir / 'ifuse_coverage_computation_log.txt'}")
 

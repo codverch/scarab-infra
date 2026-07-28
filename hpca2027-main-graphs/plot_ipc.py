@@ -153,6 +153,7 @@ def rename_workload(workload: str) -> str:
         "pagerank": "PR",
         "sssp_ego_fb": "SSSP",
         "appworld": "AppWorld",
+        "core_bench": "CoreBench",
         "corebench": "CoreBench",
         "terminal_bench": "TerminalBench",
         "leveldb": "LevelDB",
