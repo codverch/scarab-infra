@@ -3064,62 +3064,32 @@
           "prioritized_mode":"memtrace",
           "memtrace":{
             "image_name":"allbench_traces",
-            "segment_size":10000000,
-            "warmup":0,
+            "segment_size":100000000,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
         },
         "simpoints":[
           {
-            "cluster_id":13,
+            "cluster_id":18,
             "segment_id":0,
-            "weight":0.3546273546
+            "weight":0.392702
           },
           {
-            "cluster_id":9,
+            "cluster_id":48,
             "segment_id":1,
-            "weight":0.2907452907
+            "weight":0.11642
           },
           {
-            "cluster_id":4,
+            "cluster_id":36,
             "segment_id":2,
-            "weight":0.2026442026
-          },
-          {
-            "cluster_id":16,
-            "segment_id":3,
-            "weight":0.151983152
-          },
-          {
-            "cluster_id":1,
-            "segment_id":4,
-            "weight":0.1
-          },
-          {
-            "cluster_id":2,
-            "segment_id":5,
-            "weight":0.1
-          },
-          {
-            "cluster_id":3,
-            "segment_id":6,
-            "weight":0.1
+            "weight":0.333797
           },
           {
             "cluster_id":5,
-            "segment_id":7,
-            "weight":0.1
-          },
-          {
-            "cluster_id":6,
-            "segment_id":8,
-            "weight":0.1
-          },
-          {
-            "cluster_id":7,
-            "segment_id":9,
-            "weight":0.1
+            "segment_id":3,
+            "weight":0.157081
           }
         ]
       },
@@ -4858,6 +4828,127 @@
             "cluster_id":8,
             "segment_id":2,
             "weight":0.3
+          }
+        ]
+      },
+      "bfs-kron22-gapbs":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":100000000,
+            "warmup":20000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":4,
+            "segment_id":0,
+            "weight":0.285714
+          },
+          {
+            "cluster_id":15,
+            "segment_id":1,
+            "weight":0.244898
+          },
+          {
+            "cluster_id":43,
+            "segment_id":2,
+            "weight":0.469388
+          }
+        ]
+      },
+      "lmdb":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":100000000,
+            "warmup":20000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":7,
+            "segment_id":0,
+            "weight":0.25
+          },
+          {
+            "cluster_id":9,
+            "segment_id":1,
+            "weight":0.25
+          },
+          {
+            "cluster_id":11,
+            "segment_id":2,
+            "weight":0.25
+          },
+          {
+            "cluster_id":13,
+            "segment_id":3,
+            "weight":0.25
+          }
+        ]
+      },
+      "pagerank-kron22-gapbs":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":100000000,
+            "warmup":20000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":26,
+            "segment_id":0,
+            "weight":0.25
+          },
+          {
+            "cluster_id":13,
+            "segment_id":1,
+            "weight":0.388889
+          },
+          {
+            "cluster_id":22,
+            "segment_id":2,
+            "weight":0.361111
+          }
+        ]
+      },
+      "sssp-kron22-gapbs":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":100000000,
+            "warmup":20000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":177,
+            "segment_id":0,
+            "weight":0.0646766
+          },
+          {
+            "cluster_id":74,
+            "segment_id":1,
+            "weight":0.079602
+          },
+          {
+            "cluster_id":185,
+            "segment_id":2,
+            "weight":0.855721
           }
         ]
       }
