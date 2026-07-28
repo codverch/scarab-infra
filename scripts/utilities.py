@@ -1462,15 +1462,6 @@ def prepare_simulation(user, scarab_path, scarab_build, docker_home, experiment_
         if os.path.isfile(cacti_src):
             os.system(f"cp {cacti_src} {scarab_stage_dir}/scarab/bin/cacti")
             os.system(f"chmod +x {scarab_stage_dir}/scarab/bin/cacti")
-        # Also install into host toolchain so MCPAT_BIN=$HOME/toolchain/bin/*
-        # works once /users/.../toolchain is bind-mounted into the container.
-        if os.path.isdir(host_toolchain_bin):
-            if os.path.isfile(mcpat_src):
-                os.system(f"cp {mcpat_src} {host_toolchain_bin}/mcpat")
-                os.system(f"chmod +x {host_toolchain_bin}/mcpat")
-            if os.path.isfile(cacti_src):
-                os.system(f"cp {cacti_src} {host_toolchain_bin}/cacti")
-                os.system(f"chmod +x {host_toolchain_bin}/cacti")
 
         return scarab_githash, image_tag_list
     except subprocess.CalledProcessError as e:
@@ -1676,17 +1667,28 @@ def write_docker_command_to_file(user, local_uid, local_gid, workload, workload_
             f.write(f"cd {infra_dir}\n")
             f.write(f"python -m scripts.prepare_docker_image --docker-prefix {docker_prefix} --githash {githash} \n")
             f.write(f"cd -\n")
-            # root_dir/toolchain is often a symlink to $HOME/toolchain outside the
-            # docker_home bind-mount; mount the real toolchain so MCPAT_BIN paths work.
+            # Prefer focal-built McPAT/CACTI (glibc 2.31) so power works inside
+            # Ubuntu focal sim images. Host toolchain builds often need newer glibc.
+            focal_power_bin = os.path.realpath(f"{infra_dir}/docker_bin/focal")
             host_toolchain = os.path.realpath(f"{infra_dir}/../toolchain")
             toolchain_mount = ""
-            if os.path.isdir(host_toolchain):
+            if os.path.isfile(f"{focal_power_bin}/mcpat") and os.path.isfile(f"{focal_power_bin}/cacti"):
+                toolchain_mount = (
+                    f"--mount type=bind,source={focal_power_bin},"
+                    f"target=/home/{user}/toolchain,readonly=true "
+                )
+                mcpat_env = f"-e MCPAT_BIN=/home/{user}/toolchain/mcpat "
+                cacti_env = f"-e CACTI_BIN=/home/{user}/toolchain/cacti "
+            elif os.path.isdir(host_toolchain):
                 toolchain_mount = (
                     f"--mount type=bind,source={host_toolchain},"
                     f"target=/home/{user}/toolchain,readonly=false "
                 )
-            mcpat_env = f"-e MCPAT_BIN=/home/{user}/toolchain/bin/mcpat "
-            cacti_env = f"-e CACTI_BIN=/home/{user}/toolchain/bin/cacti "
+                mcpat_env = f"-e MCPAT_BIN=/home/{user}/toolchain/bin/mcpat "
+                cacti_env = f"-e CACTI_BIN=/home/{user}/toolchain/bin/cacti "
+            else:
+                mcpat_env = f"-e MCPAT_BIN=/home/{user}/toolchain/bin/mcpat "
+                cacti_env = f"-e CACTI_BIN=/home/{user}/toolchain/bin/cacti "
             if slurm:
                 f.write("SLURM_CGROUP=$(cat /proc/self/cgroup | cut -d: -f3 | head -n 1)\n")
                 f.write("echo $SLURM_CGROUP\n")

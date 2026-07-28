@@ -39,15 +39,22 @@ fi
 
 export LD_LIBRARY_PATH="${PIN_ROOT}/extras/xed-intel64/lib:${PIN_ROOT}/intel64/runtime/pincrt:${DYNAMORIO_HOME}/lib64/release:${LD_LIBRARY_PATH:-}"
 
-# McPAT / CACTI for --power_intf_on. root_dir is bind-mounted as $HOME, so
-# expose toolchain there when it only exists via the application_dir mount.
-if [ ! -e "$HOME/toolchain" ] && [ -d /tmp_home/application/toolchain ]; then
+# Prefer focal-built binaries mounted at $HOME/toolchain/{mcpat,cacti};
+# otherwise fall back to host toolchain/bin layout.
+if [ ! -e "$HOME/toolchain" ] && [ -d /tmp_home/application/scarab-infra/docker_bin/focal ]; then
+  ln -sfn /tmp_home/application/scarab-infra/docker_bin/focal "$HOME/toolchain"
+elif [ ! -e "$HOME/toolchain" ] && [ -d /tmp_home/application/toolchain ]; then
   ln -sfn /tmp_home/application/toolchain "$HOME/toolchain"
 fi
 
 resolve_power_bin() {
   local name="$1" cand
-  for cand in "$HOME/toolchain/bin/$name"               "/tmp_home/application/toolchain/bin/$name"               "/usr/local/bin/$name"; do
+  for cand in \
+      "$HOME/toolchain/$name" \
+      "$HOME/toolchain/bin/$name" \
+      "/tmp_home/application/scarab-infra/docker_bin/focal/$name" \
+      "/tmp_home/application/toolchain/bin/$name" \
+      "/usr/local/bin/$name"; do
     if [ -x "$cand" ]; then
       echo "$cand"
       return 0
