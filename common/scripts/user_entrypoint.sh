@@ -2,6 +2,9 @@
 #set -x #echo on
 
 export tmpdir="/tmp_home"
+# Required by run_memtrace_single_simpoint.sh; baked into full images via
+# Dockerfile.common, but missing from partial-cache images.
+export trace_home="${trace_home:-/simpoint_traces}"
 export SCARAB_ENABLE_PT_MEMTRACE=1
 export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
