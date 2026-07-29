@@ -609,7 +609,7 @@ def plot_fusion_fraction_bars(
     _tight_x_limits(ax, x_ticks[0], x_ticks[-1], n_bars=len(active_series))
 
     ax.set_ylabel(
-        "Fraction of total on-path\nmemory loads\ncovered (%)",
+        "Fraction of total\nmemory loads\ncovered (%)",
         fontsize=IPC_AXIS_LABEL_FONT,
         fontfamily=FONT_FAMILY,
     )
@@ -627,17 +627,17 @@ def plot_fusion_fraction_bars(
         frameon=True,
         fancybox=False,
         shadow=False,
-        loc="lower center",
-        bbox_to_anchor=(0.5, 1.02),
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.36),
         bbox_transform=ax.transAxes,
         fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
         ncol=len(active_series),
-        handlelength=0.95,
-        handleheight=0.95,
+        handlelength=1.4,
+        handleheight=1.1,
         borderpad=0.55,
         labelspacing=0.4,
-        columnspacing=1.0,
+        columnspacing=1.2,
         framealpha=1.0,
     )
     legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
@@ -650,7 +650,7 @@ def plot_fusion_fraction_bars(
         spine.set_linewidth(2.5)
 
     plt.tight_layout()
-    plt.subplots_adjust(top=0.82, bottom=0.28, right=0.98)
+    plt.subplots_adjust(top=0.80, bottom=0.28, right=0.98)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("fusion_fraction",):
