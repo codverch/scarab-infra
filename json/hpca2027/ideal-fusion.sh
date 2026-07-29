@@ -4,7 +4,7 @@
 # Pass 1 writes candidates to:
 #   /dev/shm/baseline/ideal_fusion_candidates/{workload}/{cluster_id}.csv
 # Pass 2 reads the same paths (descriptor: ideal-fusion.json, experiment/config
-# "ideal-fusion"; ideal-fusion-pass2.json is kept only as an alias).
+# "ideal-fusion").
 # Outputs land under simulations/ideal-fusion/{workload}/{cluster_id}/ (not "pass2").
 #
 # Usage:
