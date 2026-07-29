@@ -7,6 +7,10 @@ Per workload (simpoint-weighted):
   I-Fuse:              100 * 2 * IFUSE_FUSED_LOADS / ONPATH_MEM_LOADS
   Ideal fusion:        100 * IDEAL_FUSION_LOADS_PARTICIPATED / ONPATH_MEM_LOADS
 
+Fusion schemes count both loads in each fused pair (LD1 + LD2), so fused-pair
+counts are scaled by 2. Ideal uses IDEAL_FUSION_LOADS_PARTICIPATED, which is
+already LD1+LD2. RFP covers one load per useful prefetch, so it is not scaled.
+
 ONPATH_MEM_LOADS is read from ideal-fusion simpoints and used as the shared
 denominator for every technique.
 
@@ -37,7 +41,10 @@ if str(GRAPH_DIR) not in sys.path:
     sys.path.insert(0, str(GRAPH_DIR))
 
 from plot_ipc import (  # noqa: E402
+    APP_STEP,
+    AVERAGE_GAP,
     AVERAGE_SEPARATOR_COLOR,
+    AVERAGE_SEPARATOR_WIDTH,
     BAR_EDGE_WIDTH,
     BAR_WIDTH,
     DEFAULT_FUSION_FRACTION_OUTPUT_DIR,
@@ -53,6 +60,7 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_SUBSUITE,
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
+    DEFAULT_WORKLOADS_DB,
     FONT_FAMILY,
     HELIOS_COLOR,
     IDEAL_FUSION_COLOR,
@@ -60,10 +68,17 @@ from plot_ipc import (  # noqa: E402
     IPC_AXIS_LABEL_FONT,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
+    LEGEND_X_OFFSET,
     RFP_COLOR,
     SIMPOINT_WORKLOADS,
+    _apply_ipc_plot_style,
+    _bar_offsets,
+    _draw_app_x_tick_guides,
+    _tight_x_limits,
     find_simpoint_dir,
+    grouped_x_positions,
     load_simpoint_trace_weights,
+    order_workloads_by_group,
     rename_workload,
 )
 
@@ -73,6 +88,7 @@ IFUSE_FUSED_STAT = "IFUSE_FUSED_LOADS_count"
 IDEAL_LOADS_PARTICIPATED_STAT = "IDEAL_FUSION_LOADS_PARTICIPATED_count"
 ONPATH_MEM_LOADS_STAT = "ONPATH_MEM_LOADS_count"
 PERIODIC_INSTRUCTIONS_STAT = "Periodic_Instructions"
+# Fusion covers both loads in a pair (LD1 + LD2). RFP is already one load per event.
 LOADS_PER_FUSION_PAIR = 2
 MEASUREMENT_WINDOW_TOLERANCE = 0.05
 
@@ -453,7 +469,8 @@ def write_computation_log(
             fh.write(f"RFP useful prefetches = {RFP_USEFUL_STAT}\n")
         fh.write(
             "I-Fuse loads participating = 2 * IFUSE_FUSED_LOADS_count; "
-            "ideal loads participating = IDEAL_FUSION_LOADS_PARTICIPATED_count.\n"
+            "ideal loads participating = IDEAL_FUSION_LOADS_PARTICIPATED_count "
+            "(already LD1+LD2). RFP is 1 load per useful prefetch.\n"
         )
         fh.write("ONPATH_MEM_LOADS_count is read from ideal-fusion simpoints.\n\n")
 
@@ -479,16 +496,6 @@ def write_computation_log(
                 f"  ideal:  {result.ideal_loads_participated:.1f}  "
                 f"({result.ideal_fraction_pct:.2f}%)\n\n"
             )
-
-
-def _bar_offsets(n: int) -> list[float]:
-    return [(i - (n - 1) / 2.0) * BAR_WIDTH for i in range(n)]
-
-
-def _tight_x_limits(ax, x_min: float, x_max: float, n_bars: int) -> None:
-    half_span = (n_bars * BAR_WIDTH) / 2.0
-    ax.set_xlim(x_min - half_span - 0.12, x_max + half_span + 0.10)
-    ax.margins(x=0)
 
 
 def _legend_handles(
@@ -523,45 +530,53 @@ def plot_fusion_fraction_bars(
     include_rfp: bool,
 ) -> None:
     import matplotlib.pyplot as plt
+    import matplotlib.ticker as mticker
 
-    active_series: list[tuple[str, list[float], str]] = []
-    for key, _label, color in SERIES:
-        if key == "helios" and not include_helios:
-            continue
-        if key == "rfp" and not include_rfp:
-            continue
-        attr = {
-            "helios": "helios_fraction_pct",
-            "rfp": "rfp_fraction_pct",
-            "ifuse": "ifuse_fraction_pct",
-            "ideal": "ideal_fraction_pct",
-        }[key]
-        values = [getattr(r, attr) if getattr(r, attr) is not None else float("nan") for r in results]
+    active_series = [
+        entry
+        for entry in SERIES
+        if not (
+            (entry[0] == "helios" and not include_helios)
+            or (entry[0] == "rfp" and not include_rfp)
+        )
+    ]
+    attr_by_key = {
+        "helios": "helios_fraction_pct",
+        "rfp": "rfp_fraction_pct",
+        "ifuse": "ifuse_fraction_pct",
+        "ideal": "ideal_fraction_pct",
+    }
+
+    workloads = [r.workload for r in results]
+    ordered, x_map, avg_x, separator_x = grouped_x_positions(
+        workloads, n_series=len(active_series)
+    )
+    result_by_wl = {r.workload: r for r in results}
+    display_apps = [rename_workload(wl) for wl in ordered] + ["Average"]
+    x_ticks = [x_map[wl] for wl in ordered] + [avg_x]
+    offsets = _bar_offsets(len(active_series))
+
+    series_values: dict[str, list[float]] = {}
+    for key, _label, _color in active_series:
+        values = []
+        for wl in ordered:
+            val = getattr(result_by_wl[wl], attr_by_key[key])
+            values.append(float("nan") if val is None else float(val))
         finite = [v for v in values if not math.isnan(v)]
         avg = sum(finite) / len(finite) if finite else float("nan")
         values.append(avg)
-        active_series.append((key, values, color))
+        series_values[key] = values
 
-    display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
-    x = list(range(len(display_apps)))
-    offsets = _bar_offsets(len(active_series))
-
-    plt.rcParams.update(
-        {
-            "font.family": FONT_FAMILY,
-            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "axes.labelsize": IPC_AXIS_LABEL_FONT,
-            "xtick.labelsize": IPC_TICK_FONT,
-            "ytick.labelsize": IPC_TICK_FONT,
-            "legend.fontsize": IPC_LEGEND_FONT,
-        }
-    )
-    fig, ax = plt.subplots(figsize=(24, 6.5))
+    _apply_ipc_plot_style()
+    fig_width = max(22.0, len(x_ticks) * APP_STEP * 1.15 + AVERAGE_GAP)
+    fig, ax = plt.subplots(figsize=(fig_width, 6.5))
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
-    for offset, (_name, values, color) in zip(offsets, active_series):
+    for (key, _label, color), offset in zip(active_series, offsets):
+        values = series_values[key]
+        bar_x = [x_map[wl] + offset for wl in ordered] + [avg_x + offset]
         ax.bar(
-            [i + offset for i in x],
+            bar_x,
             [0.0 if math.isnan(val) else val for val in values],
             BAR_WIDTH,
             color=color,
@@ -570,17 +585,17 @@ def plot_fusion_fraction_bars(
             zorder=3,
         )
 
-    if len(display_apps) > 1:
+    if len(x_ticks) > 1:
         ax.axvline(
-            x=len(display_apps) - 1.5,
+            x=separator_x,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
-            alpha=0.9,
-            linewidth=2.5,
+            alpha=1.0,
+            linewidth=AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
-    ax.set_xticks(x)
+    ax.set_xticks(x_ticks)
     ax.set_xticklabels(
         display_apps,
         rotation=45,
@@ -592,7 +607,7 @@ def plot_fusion_fraction_bars(
         if i == len(display_apps) - 1:
             label.set_weight("bold")
 
-    _tight_x_limits(ax, x[0], x[-1], n_bars=len(active_series))
+    _tight_x_limits(ax, x_ticks[0], x_ticks[-1], n_bars=len(active_series))
 
     ax.set_ylabel(
         "Fraction of total on-path\nmemory loads\ncovered (%)",
@@ -600,32 +615,32 @@ def plot_fusion_fraction_bars(
         fontfamily=FONT_FAMILY,
     )
     ax.set_ylim(0.0, 100.0)
-    import matplotlib.ticker as mticker
-
     ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT)
+    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
     ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
+    _draw_app_x_tick_guides(ax, x_ticks)
 
-    plt.subplots_adjust(top=0.88, bottom=0.28, left=0.08, right=0.99)
-
+    x_min, x_max = ax.get_xlim()
+    separator_x_frac = (separator_x - x_min) / (x_max - x_min) - LEGEND_X_OFFSET
     legend = ax.legend(
         handles=_legend_handles(include_helios=include_helios, include_rfp=include_rfp),
         frameon=True,
         fancybox=False,
         shadow=False,
-        loc="lower center",
-        bbox_to_anchor=(0.5, 0.96),
+        loc="upper right",
+        bbox_to_anchor=(separator_x_frac, 0.98),
         bbox_transform=ax.transAxes,
-        borderaxespad=0.0,
         fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
         ncol=len(active_series),
-        handlelength=1.4,
-        handleheight=1.1,
-        columnspacing=1.2,
+        handlelength=0.95,
+        handleheight=0.95,
+        borderpad=0.55,
+        labelspacing=0.4,
+        columnspacing=1.0,
         framealpha=1.0,
     )
     legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
@@ -636,6 +651,9 @@ def plot_fusion_fraction_bars(
         spine.set_visible(True)
         spine.set_color("black")
         spine.set_linewidth(2.5)
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.95, bottom=0.28, right=0.98)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("fusion_fraction",):
@@ -672,6 +690,7 @@ def main() -> None:
     parser.add_argument("--trace-root", type=Path, default=DEFAULT_TRACE_ROOT)
     parser.add_argument("--ifuse-config", default=DEFAULT_IPC_IFUSE_CONFIG)
     parser.add_argument("--ideal-fusion-config", default=DEFAULT_IDEAL_CONFIG)
+    parser.add_argument("--workloads-db", type=Path, default=DEFAULT_WORKLOADS_DB)
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--exclude-workloads", nargs="*", default=["feedsim", "langchain_web"])
     args = parser.parse_args()
@@ -681,11 +700,17 @@ def main() -> None:
     rfp_dir = args.rfp_dir or DEFAULT_RFP_DIR
     ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
     ideal_dir = args.ideal_fusion_dir or (sim_root / "ideal-fusion")
-    workloads = [wl for wl in SIMPOINT_WORKLOADS if wl not in set(args.exclude_workloads)]
+    workloads = order_workloads_by_group(
+        [wl for wl in SIMPOINT_WORKLOADS if wl not in set(args.exclude_workloads)]
+    )
     output_dir = args.output_dir or DEFAULT_FUSION_FRACTION_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
+    sp_weights = load_simpoint_trace_weights(
+        args.trace_root,
+        workloads,
+        workloads_db=args.workloads_db,
+    )
 
     plot_helios = False
     if args.include_helios:
