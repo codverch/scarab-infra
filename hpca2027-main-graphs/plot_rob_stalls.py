@@ -45,8 +45,10 @@ if str(GRAPH_DIR) not in sys.path:
     sys.path.insert(0, str(GRAPH_DIR))
 
 from plot_ipc import (  # noqa: E402
-    ARROW_THRESHOLD,
+    APP_STEP,
+    AVERAGE_GAP,
     AVERAGE_SEPARATOR_COLOR,
+    AVERAGE_SEPARATOR_WIDTH,
     BAR_EDGE_WIDTH,
     BAR_WIDTH,
     DEFAULT_HELIOS_CONFIG,
@@ -63,6 +65,7 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_SUBSUITE,
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
+    DEFAULT_WORKLOADS_DB,
     FONT_FAMILY,
     HELIOS_COLOR,
     IDEAL_FUSION_COLOR,
@@ -72,10 +75,15 @@ from plot_ipc import (  # noqa: E402
     IPC_TICK_FONT,
     RFP_COLOR,
     SIMPOINT_WORKLOADS,
+    _apply_ipc_plot_style,
     _bar_offsets,
+    _draw_app_x_tick_guides,
+    _tight_x_limits,
     check_simpoint_coverage,
     find_simpoint_dir,
+    grouped_x_positions,
     load_simpoint_trace_weights,
+    order_workloads_by_group,
     rename_workload,
 )
 
@@ -485,21 +493,22 @@ def plot_rob_stall_bars(
         values.append(avg)
         active_series.append((key, values, color))
 
-    display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
-    x = list(range(len(display_apps)))
+    workloads = [result.workload for result in results]
+    ordered, x_map, avg_x, separator_x = grouped_x_positions(
+        workloads, n_series=len(active_series)
+    )
+    display_apps = [rename_workload(workload) for workload in ordered] + ["Average"]
+    x = [x_map[workload] for workload in ordered] + [avg_x]
+    order_indices = [workloads.index(workload) for workload in ordered]
+    active_series = [
+        (key, [values[index] for index in order_indices] + [values[-1]], color)
+        for key, values, color in active_series
+    ]
     offsets = _bar_offsets(len(active_series))
 
-    plt.rcParams.update(
-        {
-            "font.family": FONT_FAMILY,
-            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "axes.labelsize": IPC_AXIS_LABEL_FONT,
-            "xtick.labelsize": IPC_TICK_FONT,
-            "ytick.labelsize": IPC_TICK_FONT,
-            "legend.fontsize": IPC_LEGEND_FONT,
-        }
-    )
-    fig, ax = plt.subplots(figsize=(24, 6.5))
+    _apply_ipc_plot_style()
+    fig_width = max(22.0, len(x) * APP_STEP * 1.15 + AVERAGE_GAP)
+    fig, ax = plt.subplots(figsize=(fig_width, 6.5))
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
     for offset, (key, values, color) in zip(offsets, active_series):
@@ -519,38 +528,13 @@ def plot_rob_stall_bars(
             zorder=3,
         )
 
-    for offset, (key, values, color) in zip(offsets, active_series):
-        if key == "rfp":
-            continue
-        for i, val in enumerate(values):
-            if math.isnan(val) or not (0 <= val < ARROW_THRESHOLD):
-                continue
-            ax.annotate(
-                "",
-                xy=(i + offset, 0),
-                xytext=(i + offset, 5.5),
-                arrowprops=dict(arrowstyle="->", color=color, lw=1.5, mutation_scale=12),
-                zorder=10,
-            )
-            ax.text(
-                i + offset - 0.12,
-                5.5,
-                f"{val:.1f}",
-                ha="center",
-                va="bottom",
-                fontsize=IPC_TICK_FONT,
-                fontfamily=FONT_FAMILY,
-                color=color,
-                zorder=10,
-            )
-
     if len(display_apps) > 1:
         ax.axvline(
-            x=len(display_apps) - 1.5,
+            x=separator_x,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
-            alpha=0.9,
-            linewidth=2.5,
+            alpha=1.0,
+            linewidth=AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
@@ -564,6 +548,7 @@ def plot_rob_stall_bars(
     for i, label in enumerate(ax.get_xticklabels()):
         if i == len(display_apps) - 1:
             label.set_weight("bold")
+    _tight_x_limits(ax, x[0], x[-1], n_bars=len(active_series))
 
     ax.set_ylabel(
         "ROB stalls reduction (%)\n(normalized to no-fusion)",
@@ -576,8 +561,11 @@ def plot_rob_stall_bars(
     ax.set_ylim(0.0, ymax * 1.12 + 2.0)
     ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
+    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
+    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
+    _draw_app_x_tick_guides(ax, x)
 
     plt.subplots_adjust(top=0.88, bottom=0.28, left=0.08, right=0.99)
 
@@ -648,6 +636,7 @@ def main() -> None:
     parser.add_argument("--baseline-config", default="baseline")
     parser.add_argument("--ifuse-config", default=DEFAULT_IPC_IFUSE_CONFIG)
     parser.add_argument("--ideal-fusion-config", default=DEFAULT_IDEAL_CONFIG)
+    parser.add_argument("--workloads-db", type=Path, default=DEFAULT_WORKLOADS_DB)
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -662,11 +651,17 @@ def main() -> None:
     rfp_dir = args.rfp_dir or DEFAULT_RFP_DIR
     ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
     ideal_dir = args.ideal_fusion_dir or DEFAULT_IDEAL_DIR
-    workloads = [wl for wl in SIMPOINT_WORKLOADS if wl not in set(args.exclude_workloads)]
+    workloads = order_workloads_by_group(
+        [wl for wl in SIMPOINT_WORKLOADS if wl not in set(args.exclude_workloads)]
+    )
     output_dir = args.output_dir or DEFAULT_ROB_STALLS_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
+    sp_weights = load_simpoint_trace_weights(
+        args.trace_root,
+        workloads,
+        workloads_db=args.workloads_db,
+    )
 
     plot_helios = False
     if args.include_helios:
