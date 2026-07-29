@@ -40,6 +40,14 @@ static droption_t<bool> op_use_bb_pc
 (DROPTION_SCOPE_CLIENT, "use_bb_pc", true, "specify if the fps use the bb pc as identifier",
  "Set to true to save the pc information. Default is true.");
 
+static droption_t<unsigned long long> op_skip_instrs
+(DROPTION_SCOPE_CLIENT, "skip_instrs", 0, "instructions to skip before fingerprinting starts",
+ "Discard the first N dynamic instructions (summed across all threads) before any segment or BBV data is recorded. Used to skip an application's setup phase so SimPoint only clusters the phase of interest. Default is 0 (no skip).");
+
+// Remaining instructions to discard before fingerprinting begins. Shared across
+// all threads and guarded by count_lock.
+static long long g_skip_remaining = 0;
+
 typedef struct bb_counts {
     uint64 blocks;
     uint64 total_size;
@@ -168,6 +176,8 @@ dr_client_main(client_id_t id, int argc, const char *argv[])
     dr_printf("The pcmap output prefix: %s\n", op_pcmap_output.get_value().c_str());
     dr_printf("op_use_fetched_count: %d\n", op_use_fetched_count.get_value());
     dr_printf("op_use_bb_pc: %d\n", op_use_bb_pc.get_value());
+    dr_printf("The skip instrs: %llu\n", op_skip_instrs.get_value());
+    g_skip_remaining = (long long) op_skip_instrs.get_value();
 
     if (!drmgr_init() || !drutil_init())
         DR_ASSERT(false);
@@ -367,6 +377,18 @@ event_thread_exit(void *drcontext)
 static void
 clean_call(uint instruction_count, uint64 bb_id, uint64 segment_size, uint emulation_start_count, uint64 first_addr, uint is_rep_emulation)
 {
+    // Discard the application's setup phase before any accounting happens, so
+    // SimPoint never sees a segment from before the skip point.
+    if (op_skip_instrs.get_value() > 0) {
+        dr_mutex_lock(count_lock);
+        bool still_skipping = g_skip_remaining > 0;
+        if (still_skipping)
+            g_skip_remaining -= (long long) instruction_count;
+        dr_mutex_unlock(count_lock);
+        if (still_skipping)
+            return;
+    }
+
     void *drcontext = dr_get_current_drcontext();
     per_thread_data *t_data = (per_thread_data *) drmgr_get_tls_field(drcontext, tls_idx);
     DR_ASSERT(t_data->thread_id == dr_get_thread_id(drcontext));

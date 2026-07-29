@@ -1,7 +1,7 @@
 {
   "descriptor_type": "simulation",
   "architecture": "golden_cove",
-  "experiment": "ifuse",
+  "experiment": "ifuse-tt-128-fct-insert-100",
   "workload_manager": "manual",
   "root_dir": "/users/deepmish/scarab/src",
   "application_dir": "/users/deepmish",
@@ -42,7 +42,7 @@
   ],
   "configurations": {
     "ifuse": {
-      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/ifuse/scarab/bin --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 1000 --ifuse_fct_hash_bits 9",
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/ifuse/scarab/bin --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 9",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
@@ -52,7 +52,7 @@
     "configs": null
   },
   "visualize": {
-    "baseline": "ifuse",
+    "baseline": "ifuse-tt-128-fct-insert-100",
     "configs": [],
     "counters": [
       "IPC",
@@ -73,7 +73,7 @@
     "fallback_mb": 16384
   },
   "perf_analyze": {
-    "baseline": "ifuse",
+    "baseline": "ifuse-tt-128-fct-insert-100",
     "counters": [
       "IPC",
       "IFUSE_FUSED_LOADS",
