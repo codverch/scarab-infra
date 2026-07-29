@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import math
 import sys
 from collections import defaultdict
@@ -55,7 +56,7 @@ except ImportError:
 
 
 GAP_WORKLOADS = ["bfs", "dfs", "pagerank"]
-AGENTIC_WORKLOADS = ["core_bench", "appworld", "terminal_bench"]
+AGENTIC_WORKLOADS = ["corebench", "appworld", "terminal_bench", "cachebench"]
 DATABASE_WORKLOADS = [
     "clickhouse",
     "duckdb",
@@ -69,12 +70,30 @@ WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("Database", tuple(DATABASE_WORKLOADS)),
 )
 SIMPOINT_WORKLOADS = GAP_WORKLOADS + AGENTIC_WORKLOADS + DATABASE_WORKLOADS
+DEFAULT_WORKLOADS_DB = SCARAB_INFRA_ROOT / "workloads" / "workloads_db.json"
+TRACE_ROOT_SKIP_DIRS = frozenset({"datacenter", ".cache"})
+EXCLUDED_SIMPOINT_TRACE_APPS = frozenset(
+    {
+        "sssp",
+        "bc",
+        "cc",
+        "tc",
+        "apsp",
+        "cd",
+        "tsp",
+        "749-fotonik3d-r-ref",
+        "782-lbm-r-ref",
+        "800-pot3d-s-ref",
+        "809-cactus-s-ref",
+        "822-palm-s-ref",
+    }
+)
 
 HELIOS_COLOR = "#E98300"
 RFP_COLOR = "#620059"
-IFUSE_COLOR = "#009900"
+IFUSE_COLOR = "#A3E635"
 BASELINE_COLOR = "#808080"
-IDEAL_FUSION_COLOR = "#FEC51D"
+IDEAL_FUSION_COLOR = "#017E7C"
 AVERAGE_SEPARATOR_COLOR = "#4A4A4A"
 AVERAGE_SEPARATOR_WIDTH = 5.0
 SMALL_BAR_THRESHOLD = 0.5
@@ -151,19 +170,48 @@ def rename_workload(workload: str) -> str:
         "bfs": "BFS",
         "dfs": "DFS",
         "pagerank": "PR",
+        "sssp": "SSSP",
         "sssp_ego_fb": "SSSP",
+        "bc": "BC",
+        "cc": "CC",
+        "tc": "TC",
+        "apsp": "APSP",
+        "cd": "CD",
+        "tsp": "TSP",
         "appworld": "AppWorld",
         "core_bench": "CoreBench",
         "corebench": "CoreBench",
         "terminal_bench": "TerminalBench",
+        "cachebench": "CacheBench",
         "leveldb": "LevelDB",
         "clickhouse": "ClickHouse",
         "rocksdb": "RocksDB",
         "duckdb": "DuckDB",
         "memcached": "Memcached",
         "masstree": "Masstree",
+        "749-fotonik3d-r-ref": "fotonik3d",
+        "782-lbm-r-ref": "lbm",
+        "800-pot3d-s-ref": "pot3d",
+        "809-cactus-s-ref": "cactus",
+        "822-palm-s-ref": "palm",
     }
     return mapping.get(workload, workload)
+
+
+def discover_simpoint_trace_workloads(trace_root: Path) -> list[str]:
+    """Return apps under trace_root that have opt.p/opt.w simpoint weights."""
+    if not trace_root.is_dir():
+        raise SystemExit(f"Trace root not found: {trace_root}")
+    apps: list[str] = []
+    for path in sorted(trace_root.iterdir()):
+        if not path.is_dir() or path.name in TRACE_ROOT_SKIP_DIRS:
+            continue
+        simpoints = path / "simpoints"
+        if (simpoints / "opt.p").is_file() and (simpoints / "opt.w").is_file():
+            apps.append(path.name)
+    if not apps:
+        raise SystemExit(f"No simpoint-trace apps found under {trace_root}")
+    return apps
 
 
 def order_workloads_by_group(workloads: list[str]) -> list[str]:
@@ -206,12 +254,54 @@ def optional_stats_csv(experiment_dir: Path, explicit: Path | None) -> Path | No
     return primary if primary.is_file() else None
 
 
+def load_workloads_db_weights(
+    workloads_db: Path,
+    workloads: list[str],
+) -> dict[tuple[str, str], float]:
+    """Load cluster_id weights from workloads_db.json (datacenter/datacenter)."""
+    if not workloads_db.is_file():
+        return {}
+    with workloads_db.open() as fh:
+        db = json.load(fh)
+    suite = db.get("datacenter", {}).get("datacenter", {})
+    weights: dict[tuple[str, str], float] = {}
+    for workload in workloads:
+        entry = suite.get(workload)
+        if not entry:
+            continue
+        for sp in entry.get("simpoints", []):
+            cid = str(sp["cluster_id"])
+            weight = float(sp["weight"])
+            if weight > 0:
+                weights[(workload, cid)] = weight
+    return weights
+
+
 def load_simpoint_trace_weights(
     trace_root: Path,
     workloads: list[str],
+    *,
+    workloads_db: Path | None = None,
 ) -> dict[tuple[str, str], float]:
+    """Load simpoint weights, preferring workloads_db cluster_id weights when present.
+
+    workloads_db matches simulation directory names (cluster_id). Trace opt.p/opt.w
+    keys can disagree with result dirs for some apps (e.g. memcached).
+    """
     weights: dict[tuple[str, str], float] = {}
+    db_weights = (
+        load_workloads_db_weights(workloads_db, workloads)
+        if workloads_db is not None
+        else {}
+    )
+
     for workload in workloads:
+        db_keys = {cid for (wl, cid) in db_weights if wl == workload}
+        if db_keys:
+            for cid in db_keys:
+                weights[(workload, cid)] = db_weights[(workload, cid)]
+            continue
+
         simpoints_dir = trace_root / workload / "simpoints"
         pfile = simpoints_dir / "opt.p"
         wfile = simpoints_dir / "opt.w"
@@ -380,18 +470,28 @@ def check_simpoint_coverage(
     report_path: Path,
     optional_configs: set[str] | None = None,
 ) -> tuple[set[str], dict[str, set[str]]]:
-    """Return (complete workloads, baseline reference trace ids per workload)."""
+    """Return (complete workloads, reference trace ids per workload).
+
+    Reference traces are the intersection of weighted simpoints present in
+    baseline and every required (non-optional) experiment. Apps with a
+    non-empty intersection are included so partial result sets still plot.
+    """
     optional = optional_configs or set()
     complete_apps: set[str] = set()
     reference_by_workload: dict[str, set[str]] = {}
     all_missing: dict[str, dict[str, list[str]]] = defaultdict(dict)
 
-    baseline_dir, baseline_config = directories["baseline"]
+    required_labels = [
+        label for label in directories if label == "baseline" or label not in optional
+    ]
 
     with report_path.open("w") as rpt:
         rpt.write("=" * 100 + "\n")
         rpt.write("SIMPOINT COVERAGE REPORT\n")
-        rpt.write("Reference: baseline — all other directories checked against it.\n")
+        rpt.write(
+            "Reference: intersection of weighted traces present in baseline and "
+            "all required experiments.\n"
+        )
         rpt.write("=" * 100 + "\n\n")
 
         for workload in workloads:
@@ -399,58 +499,69 @@ def check_simpoint_coverage(
             rpt.write(f"APP: {workload}\n")
             rpt.write(f"{'=' * 80}\n")
 
-            reference_traces = reference_traces_for_workload(
-                baseline_dir,
-                baseline_config,
-                workload,
-                sp_weights,
-                suite=suite,
-                subsuite=subsuite,
-            )
-            if not reference_traces:
+            present_by_label: dict[str, set[str]] = {}
+            for label, (exp_dir, config) in directories.items():
+                found: set[str] = set()
+                for (wl, cid), _weight in sp_weights.items():
+                    if wl != workload:
+                        continue
+                    sim_dir = find_simpoint_dir(
+                        exp_dir, config, wl, cid, suite=suite, subsuite=subsuite
+                    )
+                    if sim_dir and ipc_from_sim_dir(sim_dir) is not None:
+                        found.add(cid)
+                present_by_label[label] = found
+
+            baseline_traces = present_by_label.get("baseline", set())
+            if not baseline_traces:
                 rpt.write(f"  !! No baseline simpoints for {workload} — skipping\n")
                 all_missing[workload]["baseline"] = ["NO BASELINE SIMPOINTS"]
                 continue
 
+            required_sets = [present_by_label[label] for label in required_labels]
+            reference_traces = set.intersection(*required_sets) if required_sets else set()
             reference_by_workload[workload] = reference_traces
-            rpt.write(f"  Reference traces from baseline: {sorted(reference_traces)}\n")
-            rpt.write(f"  Total reference traces: {len(reference_traces)}\n")
-            rpt.write(f"\n  [baseline]  ({baseline_dir})\n")
-            rpt.write(
-                f"    REFERENCE - {len(reference_traces)} trace(s): "
-                f"{sorted(reference_traces)}\n"
-            )
 
-            app_complete = True
-            for label, (exp_dir, config) in directories.items():
-                if label == "baseline":
-                    continue
+            rpt.write(f"  Baseline traces: {sorted(baseline_traces)}\n")
+            rpt.write(f"  Intersection reference: {sorted(reference_traces)}\n")
+            rpt.write(f"  Total reference traces: {len(reference_traces)}\n")
+
+            app_complete = bool(reference_traces)
+            for label, (exp_dir, _config) in directories.items():
+                found = present_by_label[label]
                 rpt.write(f"\n  [{label}]  ({exp_dir})\n")
-                found: set[str] = set()
-                for cid in reference_traces:
-                    sim_dir = find_simpoint_dir(
-                        exp_dir, config, workload, cid,
-                        suite=suite, subsuite=subsuite,
-                    )
-                    if sim_dir and ipc_from_sim_dir(sim_dir) is not None:
-                        found.add(cid)
-                missing = reference_traces - found
-                if missing:
+                missing_vs_baseline = baseline_traces - found
+                if missing_vs_baseline:
                     if label in optional:
                         rpt.write(
-                            f"    OPTIONAL MISSING ({len(missing)}): {sorted(missing)}\n"
+                            f"    OPTIONAL MISSING vs baseline ({len(missing_vs_baseline)}): "
+                            f"{sorted(missing_vs_baseline)}\n"
                         )
+                    elif label != "baseline":
+                        rpt.write(
+                            f"    MISSING vs baseline ({len(missing_vs_baseline)}): "
+                            f"{sorted(missing_vs_baseline)}\n"
+                        )
+                        if not reference_traces:
+                            all_missing[workload][label] = sorted(missing_vs_baseline)
                     else:
-                        app_complete = False
-                        rpt.write(f"    MISSING ({len(missing)}): {sorted(missing)}\n")
-                        all_missing[workload][label] = sorted(missing)
+                        rpt.write(
+                            f"    OK  - {len(found)} baseline trace(s)\n"
+                        )
                 else:
-                    rpt.write(f"    OK  - All {len(reference_traces)} trace(s) present.\n")
+                    rpt.write(f"    OK  - All {len(baseline_traces)} baseline trace(s) present.\n")
                 rpt.write(f"    Found: {sorted(found)}\n")
 
             if app_complete:
                 complete_apps.add(workload)
-                rpt.write("\n  >> RESULT: COMPLETE - will be included in plot\n")
+                dropped = baseline_traces - reference_traces
+                if dropped:
+                    rpt.write(
+                        f"\n  >> RESULT: COMPLETE via intersection "
+                        f"(dropped vs baseline: {sorted(dropped)})\n"
+                    )
+                else:
+                    rpt.write("\n  >> RESULT: COMPLETE - will be included in plot\n")
             else:
                 rpt.write("\n  >> RESULT: INCOMPLETE - will be EXCLUDED from plot\n")
 
@@ -940,6 +1051,20 @@ def main() -> None:
     )
     parser.add_argument("--exclude-workloads", nargs="*", default=[])
     parser.add_argument(
+        "--all-simpoint-traces",
+        action="store_true",
+        help=(
+            "Plot every app under --trace-root that has simpoint weights "
+            "(instead of the default curated SIMPOINT_WORKLOADS list)."
+        ),
+    )
+    parser.add_argument(
+        "--workloads-db",
+        type=Path,
+        default=DEFAULT_WORKLOADS_DB,
+        help="workloads_db.json used for cluster_id weights (default: %(default)s)",
+    )
+    parser.add_argument(
         "--schemes",
         nargs="*",
         default=None,
@@ -972,14 +1097,25 @@ def main() -> None:
     ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
     ideal_dir = args.ideal_fusion_dir or DEFAULT_IDEAL_DIR
 
-    workloads = [wl for wl in SIMPOINT_WORKLOADS if wl not in set(args.exclude_workloads)]
+    if args.all_simpoint_traces:
+        candidate_workloads = discover_simpoint_trace_workloads(args.trace_root)
+        candidate_workloads = [
+            wl for wl in candidate_workloads if wl not in EXCLUDED_SIMPOINT_TRACE_APPS
+        ]
+    else:
+        candidate_workloads = list(SIMPOINT_WORKLOADS)
+    workloads = [wl for wl in candidate_workloads if wl not in set(args.exclude_workloads)]
     if not workloads:
         raise SystemExit("No workloads left after exclusions.")
 
     output_dir = args.output_dir or DEFAULT_IPC_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
+    sp_weights = load_simpoint_trace_weights(
+        args.trace_root,
+        workloads,
+        workloads_db=args.workloads_db,
+    )
 
     baseline_csv = optional_stats_csv(baseline_dir, args.baseline_stats_csv)
     helios_csv = optional_stats_csv(helios_dir, args.helios_stats_csv)
