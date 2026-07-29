@@ -68,7 +68,6 @@ from plot_ipc import (  # noqa: E402
     IPC_AXIS_LABEL_FONT,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
-    LEGEND_X_OFFSET,
     RFP_COLOR,
     SIMPOINT_WORKLOADS,
     _apply_ipc_plot_style,
@@ -623,15 +622,13 @@ def plot_fusion_fraction_bars(
         label.set_fontfamily(FONT_FAMILY)
     _draw_app_x_tick_guides(ax, x_ticks)
 
-    x_min, x_max = ax.get_xlim()
-    separator_x_frac = (separator_x - x_min) / (x_max - x_min) - LEGEND_X_OFFSET
     legend = ax.legend(
         handles=_legend_handles(include_helios=include_helios, include_rfp=include_rfp),
         frameon=True,
         fancybox=False,
         shadow=False,
-        loc="upper right",
-        bbox_to_anchor=(separator_x_frac, 0.98),
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.02),
         bbox_transform=ax.transAxes,
         fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
@@ -653,7 +650,7 @@ def plot_fusion_fraction_bars(
         spine.set_linewidth(2.5)
 
     plt.tight_layout()
-    plt.subplots_adjust(top=0.95, bottom=0.28, right=0.98)
+    plt.subplots_adjust(top=0.82, bottom=0.28, right=0.98)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("fusion_fraction",):
