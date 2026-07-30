@@ -38,6 +38,7 @@ from pathlib import Path
 GRAPH_DIR = Path(__file__).resolve().parent
 SCARAB_INFRA_ROOT = GRAPH_DIR.parent
 SCRIPTS_DIR = SCARAB_INFRA_ROOT / "scripts"
+NOTO_SERIF_FONT = GRAPH_DIR / "fonts" / "NotoSerif.ttf"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
@@ -108,10 +109,21 @@ AVERAGE_SEPARATOR_FRAC = 0.5
 X_TICK_GUIDE_WIDTH = 2.5
 X_TICK_GUIDE_LENGTH = 0.04
 LEGEND_X_OFFSET = 0.01
-IPC_TICK_FONT = 42
+IPC_TICK_FONT = 37
 IPC_AXIS_LABEL_FONT = IPC_TICK_FONT
-IPC_LEGEND_FONT = 32
-IPC_AXIS_FONT = 32
+IPC_LEGEND_FONT = 30
+IPC_AXIS_FONT = 30
+
+
+def register_noto_serif() -> None:
+    """Register the bundled Noto Serif font used by HPCA plots."""
+    global FONT_FAMILY
+    if not NOTO_SERIF_FONT.is_file():
+        return
+    from matplotlib import font_manager
+
+    font_manager.fontManager.addfont(str(NOTO_SERIF_FONT))
+    FONT_FAMILY = font_manager.FontProperties(fname=str(NOTO_SERIF_FONT)).get_name()
 
 # Backward-compatible aliases used by other hpca2027-main-graphs scripts.
 MAROON_COLOR = AVERAGE_SEPARATOR_COLOR
@@ -739,25 +751,31 @@ def _annotate_ipc_bar_labels(
     label_lane: int = 0,
     n_label_lanes: int = 1,
 ) -> None:
-    """Label bar speedups; tiny values use a downward arrow and black text."""
-    lane_step = 5.0
-    lane_base = 4.0
+    """Label bar speedups; tiny values use a downward arrow matching the bar color."""
+    import matplotlib.colors as mcolors
+
+    lane_step = 3.0
+    lane_base = 3.0
     small_fontsize = max(18, fontsize - 10)
     for patch, val in zip(container.patches, values, strict=True):
         if math.isnan(val) or val < 0:
             continue
         x = patch.get_x() + patch.get_width() / 2.0
+        bar_color = mcolors.to_hex(patch.get_facecolor())
         if val < SMALL_BAR_THRESHOLD:
             bar_top = patch.get_height()
             arrow_target = max(bar_top + 0.08, 0.12)
-            arrow_top = lane_base + label_lane * lane_step
+            arrow_top = max(
+                bar_top + 2.5,
+                lane_base + label_lane * lane_step,
+            )
             ax.annotate(
                 "",
                 xy=(x, arrow_target),
                 xytext=(x, arrow_top),
                 arrowprops=dict(
                     arrowstyle="->",
-                    color="black",
+                    color=bar_color,
                     lw=1.5,
                     mutation_scale=12,
                     shrinkA=0,
@@ -766,14 +784,15 @@ def _annotate_ipc_bar_labels(
                 zorder=10,
             )
             ax.text(
-                x,
+                x - 0.03,
                 arrow_top,
                 f"{val:+.1f}",
-                ha="center",
+                ha="right",
                 va="bottom",
                 fontsize=small_fontsize,
                 fontfamily=FONT_FAMILY,
-                color="black",
+                color=bar_color,
+                bbox=dict(facecolor="white", edgecolor="none", pad=0.15),
                 zorder=11,
             )
             continue
@@ -874,6 +893,7 @@ def plot_speedup_bars(
     output_dir: Path,
     *,
     series: tuple[tuple[str, str, str], ...] = IPC_SERIES,
+    file_prefix: str = "ipc",
 ) -> None:
     import matplotlib.pyplot as plt
 
@@ -906,8 +926,8 @@ def plot_speedup_bars(
     base_ylim = _ylim_speedup_pct_auto(*pct_sets)
 
     variants = (
-        ("ipc-labeled", True, _ylim_with_bar_label_headroom(base_ylim)),
-        ("ipc", False, base_ylim),
+        (f"{file_prefix}-labeled", True, _ylim_with_bar_label_headroom(base_ylim)),
+        (file_prefix, False, base_ylim),
     )
 
     for stem, show_bar_labels, ylim in variants:
@@ -915,7 +935,7 @@ def plot_speedup_bars(
         fig_width = max(22.0, len(x_ticks) * APP_STEP * 1.15 + AVERAGE_GAP)
         fig, ax = plt.subplots(figsize=(fig_width, 6.5))
 
-        for (_key, _label, color), offset in zip(series, offsets):
+        for series_idx, ((_key, _label, color), offset) in enumerate(zip(series, offsets)):
             wl_to_pct = dict(zip(workloads, series_pct[_key][:-1]))
             avg_pct = series_pct[_key][-1]
             pct_vals = [wl_to_pct[wl] for wl in ordered] + [avg_pct]
@@ -929,8 +949,15 @@ def plot_speedup_bars(
                 linewidth=BAR_EDGE_WIDTH,
                 zorder=3,
             )
-            if show_bar_labels:
-                _annotate_ipc_bar_labels(ax, container, pct_vals, fontsize=IPC_AXIS_FONT)
+            _annotate_ipc_bar_labels(
+                ax,
+                container,
+                pct_vals,
+                fontsize=IPC_AXIS_FONT,
+                small_values_only=not show_bar_labels,
+                label_lane=series_idx,
+                n_label_lanes=len(series),
+            )
 
         if len(x_ticks) > 1:
             ax.axvline(
@@ -957,12 +984,14 @@ def plot_speedup_bars(
         _tight_x_limits(ax, x_ticks[0], x_ticks[-1], n_bars=len(series))
 
         ax.set_ylabel(
-            "Speedup (%)\n(normalized to no-fusion)",
+            "Speedup (%)\n(normalized to\nno-fusion)",
             fontsize=IPC_AXIS_LABEL_FONT,
             fontfamily=FONT_FAMILY,
         )
+        ax.yaxis.set_label_coords(-0.045, 0.5)
         ax.set_ylim(ylim[0], ylim[1])
-        ax.set_ylim(_ylim_snap_to_tens(ax.get_ylim()))
+        snapped_ylim = _ylim_snap_to_tens(ax.get_ylim())
+        ax.set_ylim(snapped_ylim[0], snapped_ylim[1] + 5.0)
         _apply_speedup_y_ticks(ax)
         _apply_speedup_y_grid(ax)
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
@@ -1002,15 +1031,16 @@ def plot_speedup_bars(
             spine.set_linewidth(2.5)
 
         plt.tight_layout()
-        plt.subplots_adjust(top=0.95, bottom=0.28, right=0.98)
+        plt.subplots_adjust(top=0.88, bottom=0.28, right=0.98)
 
         out = output_dir / stem
-        fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.05, dpi=300)
-        fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.05, dpi=300)
+        fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.12, dpi=300)
+        fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.12, dpi=300)
         plt.close(fig)
 
 
 def main() -> None:
+    register_noto_serif()
     parser = argparse.ArgumentParser(
         description=(
             "Plot simpoint-weighted IPC speedup vs baseline for "
@@ -1048,6 +1078,11 @@ def main() -> None:
         type=Path,
         default=None,
         help="Plot output directory (default: scarab/src/hpca2027-main-graphs-results/ipc)",
+    )
+    parser.add_argument(
+        "--file-prefix",
+        default="ipc",
+        help="Output filename prefix (default: ipc).",
     )
     parser.add_argument("--exclude-workloads", nargs="*", default=[])
     parser.add_argument(
@@ -1301,13 +1336,19 @@ def main() -> None:
     summary_rows.append(avg_row)
 
     write_summary_csv(output_dir / "ipc_summary.csv", summary_rows)
-    plot_speedup_bars(apps, series_normalized, output_dir, series=active_series)
+    plot_speedup_bars(
+        apps,
+        series_normalized,
+        output_dir,
+        series=active_series,
+        file_prefix=args.file_prefix,
+    )
 
     print("\nIPC comparison plots saved as:")
-    print(f"  - {output_dir / 'ipc-labeled.png'}")
-    print(f"  - {output_dir / 'ipc-labeled.pdf'}")
-    print(f"  - {output_dir / 'ipc.png'}")
-    print(f"  - {output_dir / 'ipc.pdf'}")
+    print(f"  - {output_dir / f'{args.file_prefix}-labeled.png'}")
+    print(f"  - {output_dir / f'{args.file_prefix}-labeled.pdf'}")
+    print(f"  - {output_dir / f'{args.file_prefix}.png'}")
+    print(f"  - {output_dir / f'{args.file_prefix}.pdf'}")
 
 
 if __name__ == "__main__":
