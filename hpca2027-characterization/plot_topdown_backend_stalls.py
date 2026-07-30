@@ -31,6 +31,7 @@ MAIN_GRAPHS = SCARAB_INFRA_ROOT / "hpca2027-main-graphs"
 if str(MAIN_GRAPHS) not in sys.path:
     sys.path.insert(0, str(MAIN_GRAPHS))
 
+import plot_ipc  # noqa: E402
 from plot_ipc import (  # noqa: E402
     FONT_FAMILY,
     IPC_TICK_FONT,
@@ -39,6 +40,20 @@ from plot_ipc import (  # noqa: E402
 )
 
 AXIS_FONT = IPC_TICK_FONT
+NOTO_SERIF_FONT = MAIN_GRAPHS / "fonts" / "NotoSerif.ttf"
+
+
+def register_noto_serif() -> None:
+    """Register the bundled Noto Serif font used by main-graphs plots."""
+    if not NOTO_SERIF_FONT.is_file():
+        raise SystemExit(f"Missing required Noto Serif font: {NOTO_SERIF_FONT}")
+    from matplotlib import font_manager
+
+    font_manager.fontManager.addfont(str(NOTO_SERIF_FONT))
+    font_name = font_manager.FontProperties(fname=str(NOTO_SERIF_FONT)).get_name()
+    plot_ipc.FONT_FAMILY = font_name
+    global FONT_FAMILY
+    FONT_FAMILY = font_name
 
 
 WORKLOAD_LABELS = {
@@ -67,12 +82,15 @@ WORKLOAD_LABELS = {
     "django": "django",
     "videotranscode": "videotranscode",
     "appworld": "AppWorld",
+    "cachebench": "CacheBench",
     "corebench": "Core Bench",
     "mlgym_fmnist": "MLGym FMNIST",
     "terminal_bench": "TerminalBench",
     "rocksdb": "RocksDB",
     "duckdb": "DuckDB",
     "leveldb": "LevelDB",
+    "clickhouse": "ClickHouse",
+    "memcached": "Memcached",
 }
 
 # Level-1 x-axis groups (benchmark suite) and level-2 short application labels.
@@ -91,12 +109,13 @@ WORKLOAD_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "Agentic",
         (
             "appworld",
+            "cachebench",
             "corebench",
             "mlgym_fmnist",
             "terminal_bench",
         ),
     ),
-    ("Database", ("duckdb", "leveldb", "rocksdb")),
+    ("Database", ("clickhouse", "duckdb", "leveldb", "memcached", "rocksdb")),
 )
 
 WORKLOAD_SHORT_LABELS = {
@@ -120,12 +139,15 @@ WORKLOAD_SHORT_LABELS = {
     "mongodb": "MongoDB",
     "postgres": "Postgres",
     "appworld": "AppWorld",
+    "cachebench": "CacheBench",
     "corebench": "CoreBench",
     "mlgym_fmnist": "MLGym",
     "terminal_bench": "TerminalBench",
     "rocksdb": "RocksDB",
     "duckdb": "DuckDB",
     "leveldb": "LevelDB",
+    "clickhouse": "ClickHouse",
+    "memcached": "Memcached",
 }
 
 WORKLOAD_TO_SUITE: dict[str, str] = {
@@ -439,7 +461,7 @@ BAR_COLOR = "#A81423"  # 50/50 blend of Stanford and CMU cardinal reds
 AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
 AVERAGE_SEPARATOR_WIDTH = 3.5
 BAR_WIDTH = 0.40
-FIGSIZE = (24.0, 6.5)
+FIGSIZE = (24.0, 7.0)
 BAR_EDGE_WIDTH = 3.0
 Y_LABEL_PAD = 20
 DEFAULT_SCARAB_ROOT = Path("/users/deepmish/scarab")
@@ -464,7 +486,7 @@ def _apply_plot_style() -> None:
 
 
 def _tight_x_limits(ax, x_min: float, x_max: float) -> None:
-    left_pad = 0.12
+    left_pad = 0.40
     right_pad = 0.12
     half_span = BAR_WIDTH / 2.0
     ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
@@ -554,15 +576,15 @@ def plot(
     _tight_x_limits(ax, x[0], x[-1])
 
     ax.set_ylabel(
-        "Backend bound stalls (%)",
+        "Backend bound\nstalls (%)",
         fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
         labelpad=Y_LABEL_PAD,
     )
     y_max = max(values) if values else 100.0
-    ymax = min(100.0, max(10.0, (int(y_max / 10) + 1) * 10))
-    ax.set_ylim(0.0, ymax * 1.08)
-    ax.yaxis.set_major_locator(mticker.MultipleLocator(10))
+    ymax = min(100.0, max(20.0, (int(y_max / 20) + 1) * 20))
+    ax.set_ylim(0.0, ymax * 1.15)
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
     ax.tick_params(axis="both", labelsize=AXIS_FONT)
     for label in ax.get_yticklabels():
@@ -574,7 +596,7 @@ def plot(
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
-    plt.subplots_adjust(top=0.98, bottom=0.32, left=0.10)
+    plt.subplots_adjust(top=0.90, bottom=0.32, left=0.12)
     fig.savefig(out_png, bbox_inches="tight", pad_inches=0.08, dpi=300)
     if out_pdf:
         fig.savefig(out_pdf, bbox_inches="tight", pad_inches=0.08, dpi=300)
@@ -632,6 +654,8 @@ def main() -> None:
     )
     parser.add_argument("--sum-tolerance", type=float, default=0.01)
     args = parser.parse_args()
+
+    register_noto_serif()
 
     allowed = installed_trace_workloads(args.traces_dir)
     if not allowed:
