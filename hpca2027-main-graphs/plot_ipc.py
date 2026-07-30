@@ -756,7 +756,7 @@ def _annotate_ipc_bar_labels(
 
     lane_step = 3.0
     lane_base = 3.0
-    small_fontsize = max(18, fontsize - 10)
+    small_fontsize = fontsize
     for patch, val in zip(container.patches, values, strict=True):
         if math.isnan(val) or val < 0:
             continue
@@ -933,7 +933,7 @@ def plot_speedup_bars(
     for stem, show_bar_labels, ylim in variants:
         _apply_ipc_plot_style()
         fig_width = max(22.0, len(x_ticks) * APP_STEP * 1.15 + AVERAGE_GAP)
-        fig, ax = plt.subplots(figsize=(fig_width, 6.5))
+        fig, ax = plt.subplots(figsize=(fig_width, 7.0))
 
         for series_idx, ((_key, _label, color), offset) in enumerate(zip(series, offsets)):
             wl_to_pct = dict(zip(workloads, series_pct[_key][:-1]))
@@ -949,15 +949,15 @@ def plot_speedup_bars(
                 linewidth=BAR_EDGE_WIDTH,
                 zorder=3,
             )
-            _annotate_ipc_bar_labels(
-                ax,
-                container,
-                pct_vals,
-                fontsize=IPC_AXIS_FONT,
-                small_values_only=not show_bar_labels,
-                label_lane=series_idx,
-                n_label_lanes=len(series),
-            )
+            if show_bar_labels:
+                _annotate_ipc_bar_labels(
+                    ax,
+                    container,
+                    pct_vals,
+                    fontsize=IPC_AXIS_FONT,
+                    label_lane=series_idx,
+                    n_label_lanes=len(series),
+                )
 
         if len(x_ticks) > 1:
             ax.axvline(
