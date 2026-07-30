@@ -39,7 +39,7 @@ from plot_ipc import (  # noqa: E402
     rename_workload,
 )
 
-AXIS_FONT = IPC_TICK_FONT
+AXIS_FONT = 37
 NOTO_SERIF_FONT = MAIN_GRAPHS / "fonts" / "NotoSerif.ttf"
 
 
