@@ -103,6 +103,7 @@ PREDICTABLE_THRESHOLD = 0.80
 
 # Styling aligned with hpca2027-characterization/plot_topdown_backend_stalls.py
 PREDICTABILITY_BAR_COLOR = "#003262"
+LD2_SIZE_PREDICTABILITY_BAR_COLOR = "#FEC51D"
 BACKEND_STALLS_BAR_WIDTH = 0.40
 BACKEND_STALLS_BAR_EDGE_WIDTH = 3.0
 BACKEND_STALLS_AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
@@ -175,13 +176,20 @@ def load_simpoint_frame(csv_path: Path) -> pd.DataFrame:
 
 def pair_distributions(
     df: pd.DataFrame,
-) -> tuple[dict, pd.Series, pd.Series, pd.Series]:
-    """Per-pair totals and per-(pair, value) counts for delta, LD1 size, and LD2 size."""
+) -> tuple[dict, pd.Series, pd.Series, pd.Series, pd.Series]:
+    """Per-pair totals and per-(pair, value) counts for delta, LD1 size, and LD2 size.
+
+    Also returns LD2 size counts keyed by (load1_pc, load2_pc, offset_delta, load2_mem_size)
+    so size predictability can be conditioned on the pair's dominant offset delta.
+    """
     totals = df.groupby(["load1_pc", "load2_pc"]).size().to_dict()
     delta_counts = df.groupby(["load1_pc", "load2_pc", "offset_delta"]).size()
     ld1_size_counts = df.groupby(["load1_pc", "load2_pc", "load1_mem_size"]).size()
     ld2_size_counts = df.groupby(["load1_pc", "load2_pc", "load2_mem_size"]).size()
-    return totals, delta_counts, ld1_size_counts, ld2_size_counts
+    ld2_size_by_delta_counts = df.groupby(
+        ["load1_pc", "load2_pc", "offset_delta", "load2_mem_size"]
+    ).size()
+    return totals, delta_counts, ld1_size_counts, ld2_size_counts, ld2_size_by_delta_counts
 
 
 class WorkloadAccumulator:
@@ -197,9 +205,16 @@ class WorkloadAccumulator:
         self.raw_delta: dict[tuple[str, str], Counter] = defaultdict(Counter)
         self.raw_ld1_size: dict[tuple[str, str], Counter] = defaultdict(Counter)
         self.raw_ld2_size: dict[tuple[str, str], Counter] = defaultdict(Counter)
+        # LD2 size histograms conditioned on offset delta: (pair) -> delta -> Counter[size]
+        self.raw_ld2_size_by_delta: dict[tuple[str, str], dict[int, Counter]] = defaultdict(
+            lambda: defaultdict(Counter)
+        )
         self.weighted_delta_mass: dict[tuple[str, str], Counter] = defaultdict(Counter)
         self.weighted_ld1_size_mass: dict[tuple[str, str], Counter] = defaultdict(Counter)
         self.weighted_ld2_size_mass: dict[tuple[str, str], Counter] = defaultdict(Counter)
+        self.weighted_ld2_size_by_delta_mass: dict[
+            tuple[str, str], dict[int, Counter]
+        ] = defaultdict(lambda: defaultdict(Counter))
         self.weight_seen: dict[tuple[str, str], float] = defaultdict(float)
         self.dynamic_weight: dict[tuple[str, str], float] = defaultdict(float)
 
@@ -210,6 +225,7 @@ class WorkloadAccumulator:
         delta_counts: pd.Series,
         ld1_size_counts: pd.Series,
         ld2_size_counts: pd.Series,
+        ld2_size_by_delta_counts: pd.Series,
     ) -> None:
         for pair, total in totals.items():
             self.weight_seen[pair] += weight
@@ -230,6 +246,14 @@ class WorkloadAccumulator:
             self.raw_ld2_size[pair][size] += count
             self.weighted_ld2_size_mass[pair][size] += weight * count / totals[pair]
 
+        for (load1_pc, load2_pc, delta, size), count in ld2_size_by_delta_counts.items():
+            pair = (load1_pc, load2_pc)
+            self.raw_ld2_size_by_delta[pair][delta][size] += count
+            # Normalize by the pair's simpoint total so simpoint weight still applies.
+            self.weighted_ld2_size_by_delta_mass[pair][delta][size] += (
+                weight * count / totals[pair]
+            )
+
     def finalize(self, workload: str) -> list[PairAccuracy]:
         records = []
         for pair, weight_sum in self.weight_seen.items():
@@ -238,9 +262,21 @@ class WorkloadAccumulator:
             load1_pc, load2_pc = pair
             dominant_delta, delta_mass = self.weighted_delta_mass[pair].most_common(1)[0]
             dominant_ld1_size, ld1_size_mass = self.weighted_ld1_size_mass[pair].most_common(1)[0]
-            dominant_ld2_size, ld2_size_mass = self.weighted_ld2_size_mass[pair].most_common(1)[0]
-            raw_ld2_total = sum(self.raw_ld2_size[pair].values())
-            raw_ld2_dominant_count = self.raw_ld2_size[pair].most_common(1)[0][1]
+
+            # LD2 size predictability is evaluated only on dynamic instances that
+            # use the pair's most frequent (dominant) cache-block offset delta.
+            ld2_at_delta = self.weighted_ld2_size_by_delta_mass[pair].get(dominant_delta, Counter())
+            raw_ld2_at_delta = self.raw_ld2_size_by_delta[pair].get(dominant_delta, Counter())
+            if ld2_at_delta:
+                dominant_ld2_size, ld2_size_mass = ld2_at_delta.most_common(1)[0]
+                raw_ld2_total = sum(raw_ld2_at_delta.values())
+                raw_ld2_dominant_count = raw_ld2_at_delta.most_common(1)[0][1]
+            else:
+                # Fallback: no instances of the dominant delta (shouldn't happen).
+                dominant_ld2_size, ld2_size_mass = self.weighted_ld2_size_mass[pair].most_common(1)[0]
+                raw_ld2_total = sum(self.raw_ld2_size[pair].values())
+                raw_ld2_dominant_count = self.raw_ld2_size[pair].most_common(1)[0][1]
+
             raw_delta_total = sum(self.raw_delta[pair].values())
             raw_dominant_delta_count = self.raw_delta[pair].most_common(1)[0][1]
             ld2_dominant_size_frac = (
@@ -256,7 +292,7 @@ class WorkloadAccumulator:
                     load2_pc=load2_pc,
                     raw_observations=sum(self.raw_delta[pair].values()),
                     raw_unique_deltas=len(self.raw_delta[pair]),
-                    raw_unique_ld2_sizes=len(self.raw_ld2_size[pair]),
+                    raw_unique_ld2_sizes=len(raw_ld2_at_delta) if raw_ld2_at_delta else len(self.raw_ld2_size[pair]),
                     delta_accuracy=delta_mass / weight_sum,
                     dominant_delta=dominant_delta,
                     dominant_offset_delta_frac=dominant_offset_delta_frac,
@@ -284,9 +320,16 @@ def compute_workload_pairs(
             print(f"  skip {workload}/{cluster_id}: no SimPoint weight", flush=True)
             continue
         df = load_simpoint_frame(csv_path)
-        totals, delta_counts, ld1_size_counts, ld2_size_counts = pair_distributions(df)
+        totals, delta_counts, ld1_size_counts, ld2_size_counts, ld2_size_by_delta_counts = (
+            pair_distributions(df)
+        )
         accumulator.add_simpoint(
-            weight, totals, delta_counts, ld1_size_counts, ld2_size_counts
+            weight,
+            totals,
+            delta_counts,
+            ld1_size_counts,
+            ld2_size_counts,
+            ld2_size_by_delta_counts,
         )
     return accumulator.finalize(workload)
 
@@ -530,7 +573,8 @@ def write_computation_log(output_dir: Path, reports: list[WorkloadReport]) -> Pa
                 f"predictable-or-better: {r.delta_predictable_or_better_frac:.1%}\n"
             )
             fh.write(
-                "  LD2 mem size   -- same size on every dynamic instance: "
+                "  LD2 mem size   -- same size on every dynamic instance of the "
+                "dominant offset delta: "
                 f"{r.same_ld2_size_frac:.1%}  "
                 f"avg dominant-size share: {r.mean_ld2_dominant_size_frac:.1%}  "
                 f"highly predictable: {r.size_highly_predictable_frac:.1%}\n"
@@ -704,6 +748,7 @@ def plot_per_app_fraction_bar(
     fraction_attr: str,
     ylabel: str,
     output_path: Path,
+    bar_color: str = PREDICTABILITY_BAR_COLOR,
 ) -> None:
     """Per-app bar chart of a WorkloadReport fraction field (0-1 scaled to %)."""
     import matplotlib.pyplot as plt
@@ -731,7 +776,7 @@ def plot_per_app_fraction_bar(
         x,
         pct_values,
         BACKEND_STALLS_BAR_WIDTH,
-        color=PREDICTABILITY_BAR_COLOR,
+        color=bar_color,
         edgecolor="black",
         linewidth=BACKEND_STALLS_BAR_EDGE_WIDTH,
         zorder=3,
@@ -819,17 +864,18 @@ def plot_per_app_ld2_dominant_size_share(
     reports: list[WorkloadReport],
     output_path: Path,
 ) -> None:
-    """Per-app bar chart: mean dominant LD2 mem size share across static pairs."""
+    """Per-app bar chart: mean dominant LD2 mem size share for the dominant offset delta."""
     plot_per_app_fraction_bar(
         reports,
         fraction_attr="mean_ld2_dominant_size_frac",
         ylabel=(
             "% of times a specific LD2\n"
             "memory access size occurs\n"
-            "across all dynamic instances\n"
-            "of a fusible load pair"
+            "for the most frequent\n"
+            "cache-block offset delta"
         ),
         output_path=output_path,
+        bar_color=LD2_SIZE_PREDICTABILITY_BAR_COLOR,
     )
 
 
