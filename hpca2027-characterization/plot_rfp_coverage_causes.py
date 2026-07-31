@@ -45,6 +45,7 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_SUBSUITE,
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
+    DEFAULT_WORKLOADS_DB,
     FONT_FAMILY,
     IPC_TICK_FONT,
     RFP_COLOR,
@@ -73,9 +74,9 @@ Y_AXIS_LABEL = (
     "loads (%)"
 )
 
-LOW_CONFIDENCE_COLOR = "#A81423"  # backend-stalls red; distinct from RFP_COLOR
+LOW_CONFIDENCE_COLOR = "#FFD92F"
 RFP_CLR_PREFETCH_NOT_USEFUL = "#D5D5D4"
-RFP_CLR_WRONG_ADDRESS = "#FFD92F"
+RFP_CLR_WRONG_ADDRESS = "#A81423"
 
 # (field, color) — bottom-to-top stack order.
 BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
@@ -87,9 +88,9 @@ BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
 
 BREAKDOWN_CATEGORIES: dict[str, str] = {
     "covered_frac": "Covered",
-    "low_confidence_frac": "Not covered: low predictor confidence",
-    "prefetch_not_useful_frac": "Not covered: prefetch not useful (load too early)",
-    "wrong_address_frac": "Not covered: prefetch not useful (wrong address)",
+    "low_confidence_frac": "Low predictor confidence",
+    "prefetch_not_useful_frac": "Prefetch not useful (load too early)",
+    "wrong_address_frac": "Prefetch not useful (wrong address)",
 }
 
 
@@ -584,6 +585,12 @@ def main() -> None:
     parser.add_argument("--rfp-dir", type=Path, default=None)
     parser.add_argument("--rfp-config", default=DEFAULT_RFP_CONFIG)
     parser.add_argument("--trace-root", type=Path, default=DEFAULT_TRACE_ROOT)
+    parser.add_argument(
+        "--workloads-db",
+        type=Path,
+        default=DEFAULT_WORKLOADS_DB,
+        help="workloads_db.json used for cluster_id weights (default: %(default)s)",
+    )
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--exclude-workloads", nargs="*", default=["feedsim", "langchain_web"])
     args = parser.parse_args()
@@ -595,7 +602,11 @@ def main() -> None:
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
+    sp_weights = load_simpoint_trace_weights(
+        args.trace_root,
+        workloads,
+        workloads_db=args.workloads_db,
+    )
 
     print("Computing RFP on-path load breakdown...")
     print(f"  rfp:    {rfp_dir} (config={args.rfp_config})")
