@@ -92,14 +92,9 @@ WORKLOAD_COLORS: dict[str, str] = {
     "bfs": "#017E7C",
     "dfs": "#8F993E",
     "pagerank": "#016895",
-<<<<<<< HEAD
-    "appworld": "#E98300",
-    "corebench": "#C74632",
-=======
     "corebench": "#C74632",
     "core_bench": "#C74632",
     "appworld": "#E98300",
->>>>>>> 81611a5 (Polish micro-op distance CDF for paper apps and hyphenated outputs.)
     "terminal_bench": "#620059",
     "clickhouse": "#795548",
     "duckdb": "#9475BD",
