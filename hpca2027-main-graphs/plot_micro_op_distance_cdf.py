@@ -66,16 +66,17 @@ LEGACY_CDF_CSV_PREFIX = "micro_op_distance_cdf"
 # Characterization / IPC bar charts use font 37 on ~24in-wide canvases. This CDF
 # is much narrower, so scale fonts so on-paper text matches those graphs when
 # both are rendered at the same display width.
-# Height matches the Helios coverage-breakdown aspect ratio (24 x 8).
+#
+# Height is chosen to match the *saved* Helios coverage-causes aspect ratio
+# (FIGSIZE 24x8 with large top/bottom margins + bbox_inches='tight' → H/W≈0.25),
+# not the raw 24x8 canvas.
 CHAR_REF_FIGSIZE = (24.0, 8.0)
-PLOT_FIGSIZE = (
-    10.0,
-    round(10.0 * CHAR_REF_FIGSIZE[1] / CHAR_REF_FIGSIZE[0], 2),
-)
+PLOT_FIGSIZE = (9.5, 2.7)
 _FONT_SCALE = PLOT_FIGSIZE[0] / CHAR_REF_FIGSIZE[0]
 PLOT_LABEL_FONT = max(11, round(IPC_AXIS_LABEL_FONT * _FONT_SCALE))
 PLOT_TICK_FONT = max(11, round(IPC_TICK_FONT * _FONT_SCALE))
-PLOT_LEGEND_FONT = max(10, round(IPC_LEGEND_FONT * _FONT_SCALE))
+# Keep legend a bit smaller than axis text so the in-axes box does not inflate height.
+PLOT_LEGEND_FONT = max(10, round(IPC_LEGEND_FONT * _FONT_SCALE) - 3)
 CDF_REFERENCE_LABEL_FONT = max(10, PLOT_TICK_FONT - 1)
 NOTO_SERIF_FONT_DIR = Path.home() / ".local/share/fonts" / "noto-serif"
 _noto_serif_registered = False
@@ -118,12 +119,16 @@ WORKLOAD_COLORS: dict[str, str] = {
 LEGEND_EDGE_WIDTH = 0.8
 LEGEND_FRAME_WIDTH = 0.8
 LEGEND_FRAME_COLOR = "#000000"
-# (CDF fraction, label, label offset in points from intersection)
-CDF_REFERENCE_LEVELS: tuple[tuple[float, str, tuple[int, int]], ...] = (
-    (0.80, "p80", (6, -10)),
-    (0.95, "p95", (6, -10)),
+# (CDF fraction, label, unused offset placeholder, horizontal alignment).
+# Label y is shared in plot_cdf so p80/p95 sit on one horizontal line.
+CDF_REFERENCE_LEVELS: tuple[
+    tuple[float, str, tuple[int, int], str], ...
+] = (
+    (0.80, "p80", (0, 0), "left"),
+    (0.95, "p95", (0, 0), "right"),
 )
-CDF_REFERENCE_COLOR = "#C74632"
+CDF_REFERENCE_COLOR = "#32CD32"  # lime (intersection lines)
+CDF_REFERENCE_LABEL_COLOR = "#000080"  # navy blue (labels)
 
 WORKLOAD_DISPLAY_NAMES: dict[str, str] = {
     "corebench": "CoreBench",
@@ -628,7 +633,10 @@ def plot_cdf(
 
     log_x_min = math.log10(xmin)
     log_x_max = math.log10(xmax)
-    for fraction, ref_label, label_offset in CDF_REFERENCE_LEVELS:
+    # Place both percentile labels on one shared horizontal line just below p80,
+    # clear of the dashed crosshairs (p80 a bit up, p95 a bit down from prior).
+    label_data_y = 0.74
+    for fraction, ref_label, label_offset, label_ha in CDF_REFERENCE_LEVELS:
         all_apps_dist = max_distance_at_fraction_across_curves(curves, fraction)
         if all_apps_dist is not None:
             print(
@@ -653,22 +661,29 @@ def plot_cdf(
                 zorder=1,
             )
             label_xy = (all_apps_dist, fraction)
+            # Nudge x slightly off the vertical line (right for p80, left for p95).
+            x_scale = 1.12 if label_ha == "left" else (1.0 / 1.12)
+            label_text_xy = (all_apps_dist * x_scale, label_data_y)
         else:
             label_xy = (
                 10.0 ** (log_x_min + 0.5 * (log_x_max - log_x_min)),
                 fraction,
             )
+            label_text_xy = (label_xy[0], label_data_y)
 
         ax.annotate(
             ref_label,
             xy=label_xy,
-            xytext=label_offset,
-            textcoords="offset points",
-            ha="left",
-            va="top",
+            xytext=label_text_xy,
+            textcoords="data",
+            ha=label_ha,
+            va="center",
             fontsize=CDF_REFERENCE_LABEL_FONT,
-            color=CDF_REFERENCE_COLOR,
+            color=CDF_REFERENCE_LABEL_COLOR,
             fontfamily=FONT_FAMILY,
+            zorder=5,
+            clip_on=False,
+            arrowprops=None,
         )
 
     ax.set_xscale("log")
@@ -687,7 +702,7 @@ def plot_cdf(
         tick_label.set_fontfamily(FONT_FAMILY)
     _style_axes(ax)
 
-    fig.subplots_adjust(left=0.07, bottom=0.18, right=0.985, top=0.97)
+    fig.subplots_adjust(left=0.08, bottom=0.22, right=0.985, top=0.96)
     if len(curves) > 1:
         legend = ax.legend(
             handles=_legend_handles(curves),
