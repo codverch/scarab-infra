@@ -50,6 +50,7 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_SUBSUITE,
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
+    DEFAULT_WORKLOADS_DB,
     FONT_FAMILY,
     HELIOS_COLOR,
     IPC_LEGEND_FONT,
@@ -60,7 +61,7 @@ from plot_ipc import (  # noqa: E402
     rename_workload,
 )
 
-DISTANCE_MISPRED_COLOR = "#A81423"  # backend-stalls red; distinct enough from HELIOS_COLOR
+DISTANCE_MISPRED_COLOR = "#007BA7"
 
 DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
 DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "helios_coverage_causes"
@@ -538,6 +539,12 @@ def main() -> None:
     parser.add_argument("--ideal-fusion-dir", type=Path, default=None)
     parser.add_argument("--ideal-fusion-config", default=DEFAULT_IDEAL_CONFIG)
     parser.add_argument("--trace-root", type=Path, default=DEFAULT_TRACE_ROOT)
+    parser.add_argument(
+        "--workloads-db",
+        type=Path,
+        default=DEFAULT_WORKLOADS_DB,
+        help="workloads_db.json used for cluster_id weights (default: %(default)s)",
+    )
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--exclude-workloads", nargs="*", default=["feedsim", "langchain_web"])
     args = parser.parse_args()
@@ -548,7 +555,11 @@ def main() -> None:
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
+    sp_weights = load_simpoint_trace_weights(
+        args.trace_root,
+        workloads,
+        workloads_db=args.workloads_db,
+    )
 
     print("Computing Helios ideally-fusible pair breakdown...")
     print(f"  helios:       {helios_dir} (config={args.helios_config})")
