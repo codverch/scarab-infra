@@ -52,7 +52,6 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_TRACE_ROOT,
     DEFAULT_WORKLOADS_DB,
     FONT_FAMILY,
-    HELIOS_COLOR,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     SIMPOINT_WORKLOADS,
@@ -61,10 +60,11 @@ from plot_ipc import (  # noqa: E402
     rename_workload,
 )
 
-DISTANCE_MISPRED_COLOR = "#007BA7"
+HELIOS_FUSED_COLOR = "#CF3054"
+DISTANCE_MISPRED_COLOR = "#FFD700"
 
 DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
-DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "helios_coverage_causes"
+DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "helios-coverage-causes"
 
 CORE_STAT = "core.stat.0.csv"
 IDEAL_STAT_FILE = "ideal_fusion.stat.0.csv"
@@ -87,10 +87,10 @@ Y_AXIS_LABEL = (
 
 # (field, color) — bottom-to-top stack order.
 BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
-    ("committed_frac", HELIOS_COLOR),
+    ("committed_frac", HELIOS_FUSED_COLOR),
     ("head_evicted_frac", DISTANCE_MISPRED_COLOR),
     ("deadlock_frac", "#D5D5D4"),
-    ("addr_mismatch_frac", "#FFD700"),
+    ("addr_mismatch_frac", "#FF8F00"),
     ("distance_invalid_frac", "#984EA3"),
     ("serializing_frac", "#1B9E77"),
     ("store_hazard_frac", "#A65628"),
@@ -513,7 +513,7 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
         spine.set_linewidth(2.5)
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    for stem in ("helios_coverage_causes",):
+    for stem in ("helios-coverage-causes",):
         fig.savefig(
             output_dir / f"{stem}.png",
             dpi=OUTPUT_DPI,
@@ -593,8 +593,8 @@ def main() -> None:
     if not results:
         raise SystemExit("No workloads with complete Helios fusion breakdown data.")
 
-    write_summary_csv(output_dir / "helios_coverage_causes_summary.csv", results)
-    write_computation_log(output_dir / "helios_coverage_causes_computation_log.txt", results)
+    write_summary_csv(output_dir / "helios-coverage-causes_summary.csv", results)
+    write_computation_log(output_dir / "helios-coverage-causes_computation_log.txt", results)
     plot_breakdown(results, output_dir)
 
     avg = average_breakdown(results)
@@ -603,10 +603,10 @@ def main() -> None:
     print(f"  mean helios fused: {avg.breakdown.committed_frac * 100:.2f}%")
     print(f"  mean head evict:   {avg.breakdown.head_evicted_frac * 100:.2f}%")
     print("\nOutputs:")
-    print(f"  - {output_dir / 'helios_coverage_causes.png'}")
-    print(f"  - {output_dir / 'helios_coverage_causes.pdf'}")
-    print(f"  - {output_dir / 'helios_coverage_causes_summary.csv'}")
-    print(f"  - {output_dir / 'helios_coverage_causes_computation_log.txt'}")
+    print(f"  - {output_dir / 'helios-coverage-causes.png'}")
+    print(f"  - {output_dir / 'helios-coverage-causes.pdf'}")
+    print(f"  - {output_dir / 'helios-coverage-causes_summary.csv'}")
+    print(f"  - {output_dir / 'helios-coverage-causes_computation_log.txt'}")
 
 
 if __name__ == "__main__":
