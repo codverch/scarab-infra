@@ -28,22 +28,14 @@ if str(GRAPH_DIR) not in sys.path:
     sys.path.insert(0, str(GRAPH_DIR))
 
 from plot_ipc import (  # noqa: E402
-    APP_STEP,
     BAR_EDGE_WIDTH,
-    BAR_WIDTH,
     BASELINE_COLOR,
     DEFAULT_SCARAB_ROOT,
     DEFAULT_SIMULATIONS_ROOT,
     DEFAULT_WORKLOADS_DB,
     FONT_FAMILY,
     IFUSE_COLOR,
-    IPC_AXIS_LABEL_FONT,
-    IPC_FIGSIZE,
-    IPC_LEGEND_FONT,
-    IPC_TICK_FONT,
     _apply_ipc_plot_style,
-    _draw_app_x_tick_guides,
-    _tight_x_limits,
     ipc_from_sim_dir,
     register_noto_serif,
 )
@@ -54,6 +46,13 @@ SERIES = (
     ("baseline", "No-fusion", BASELINE_COLOR),
     ("ifuse", "I-Fuse", IFUSE_COLOR),
 )
+
+# Match plot_topdown_backend_stalls.py sizing (scaled for 4 ROB groups vs ~12 apps).
+AXIS_FONT = 37
+BAR_WIDTH = 0.40
+FIGSIZE = (8.0, 7.0)
+Y_LABEL_PAD = 20
+
 
 
 def load_bfs_weights(workloads_db: Path) -> dict[str, float]:
@@ -136,9 +135,7 @@ def plot_bfs_rob_ipc(rows: list[dict[str, object]], output_dir: Path) -> None:
     from matplotlib.patches import Patch
 
     rob_labels = [str(r["rob_size"]) for r in rows]
-    # Compact group spacing so a 4-point plot matches main-graph bar density.
-    group_step = APP_STEP * 0.55
-    x = [i * group_step for i in range(len(rows))]
+    x = list(range(len(rows)))
     offsets = [-(BAR_WIDTH / 2.0), BAR_WIDTH / 2.0]
 
     baseline_vals = [float(r["baseline_ipc"]) for r in rows]
@@ -146,9 +143,15 @@ def plot_bfs_rob_ipc(rows: list[dict[str, object]], output_dir: Path) -> None:
     series_vals = [baseline_vals, ifuse_vals]
 
     _apply_ipc_plot_style()
-    fig_w, fig_h = IPC_FIGSIZE
-    # Same height as other main graphs; narrower width for 4 ROB sizes.
-    fig, ax = plt.subplots(figsize=(fig_w * 0.42, fig_h + 1.5))
+    plt.rcParams.update(
+        {
+            "axes.labelsize": AXIS_FONT,
+            "xtick.labelsize": AXIS_FONT,
+            "ytick.labelsize": AXIS_FONT,
+            "legend.fontsize": AXIS_FONT,
+        }
+    )
+    fig, ax = plt.subplots(figsize=FIGSIZE)
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
     for offset, (_key, _label, color), values in zip(offsets, SERIES, series_vals):
@@ -163,23 +166,29 @@ def plot_bfs_rob_ipc(rows: list[dict[str, object]], output_dir: Path) -> None:
         )
 
     ax.set_xticks(x)
-    ax.set_xticklabels(rob_labels, fontsize=IPC_TICK_FONT, fontfamily=FONT_FAMILY)
-    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
-    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
+    ax.set_xticklabels(rob_labels, fontsize=AXIS_FONT, fontfamily=FONT_FAMILY)
+    ax.tick_params(axis="both", labelsize=AXIS_FONT)
     for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontsize(AXIS_FONT)
         label.set_fontfamily(FONT_FAMILY)
 
-    ax.set_xlabel("ROB size", fontsize=IPC_AXIS_LABEL_FONT, fontfamily=FONT_FAMILY)
+    # Same tight-x padding style as backend-stalls (single-bar width).
+    left_pad = 0.40
+    right_pad = 0.12
+    half_span = BAR_WIDTH
+    ax.set_xlim(x[0] - half_span - left_pad, x[-1] + half_span + right_pad)
+    ax.margins(x=0)
+
+    ax.set_xlabel("ROB size", fontsize=AXIS_FONT, fontfamily=FONT_FAMILY)
     ax.set_ylabel(
         "Instructions Per\nCycle (IPC)",
-        fontsize=IPC_AXIS_LABEL_FONT,
+        fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
+        labelpad=Y_LABEL_PAD,
     )
 
     ymax = max(max(baseline_vals), max(ifuse_vals))
-    ax.set_ylim(0.0, ymax * 1.18)
-    _tight_x_limits(ax, x[0], x[-1], n_bars=len(SERIES))
-    _draw_app_x_tick_guides(ax, x)
+    ax.set_ylim(0.0, ymax * 1.15)
 
     legend = ax.legend(
         handles=[
@@ -197,14 +206,13 @@ def plot_bfs_rob_ipc(rows: list[dict[str, object]], output_dir: Path) -> None:
         loc="lower center",
         bbox_to_anchor=(0.5, 1.02),
         bbox_transform=ax.transAxes,
-        fontsize=IPC_LEGEND_FONT,
+        fontsize=AXIS_FONT,
         edgecolor="black",
         ncol=2,
         handlelength=0.95,
         handleheight=0.95,
-        borderpad=0.55,
-        labelspacing=0.4,
-        columnspacing=1.0,
+        borderpad=0.45,
+        columnspacing=0.9,
         framealpha=1.0,
     )
     legend.set_clip_on(False)
@@ -216,14 +224,13 @@ def plot_bfs_rob_ipc(rows: list[dict[str, object]], output_dir: Path) -> None:
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.78, bottom=0.32, left=0.22, right=0.98)
+    plt.subplots_adjust(top=0.82, bottom=0.18, left=0.22, right=0.98)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("bfs_rob_size_ipc",):
         out = output_dir / stem
-        fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.05, dpi=300)
-        fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.05, dpi=300)
+        fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.08, dpi=300)
+        fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.08, dpi=300)
         fig.savefig(f"{out}.eps", bbox_inches="tight", dpi=300)
     plt.close(fig)
 
