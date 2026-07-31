@@ -10,10 +10,17 @@ This script plots an empirical CDF with:
 
 Commands:
 
+# Slow path: stream candidate CSVs (one-time / data refresh).
 /users/deepmish/miniconda3/envs/scarabinfra/bin/python \
   /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_micro_op_distance_cdf.py \
-  --candidates-dir /dev/shm/baseline/ideal_fusion_candidates \
-  --output-dir /users/deepmish/scarab/src/hpca2027-main-graphs-results/micro_op_distance_cdf
+  --candidates-dir /dev/shm/baseline/ideal_fusion_candidates_unbounded \
+  --output-dir /users/deepmish/scarab/src/hpca2027-main-graphs-results/micro-op-distance-cdf-unbounded
+
+# Fast path: restyle from cached per-workload CDF CSVs in --output-dir.
+/users/deepmish/miniconda3/envs/scarabinfra/bin/python \
+  /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_micro_op_distance_cdf.py \
+  --replot \
+  --output-dir /users/deepmish/scarab/src/hpca2027-main-graphs-results/micro-op-distance-cdf-unbounded
 """
 
 from __future__ import annotations
@@ -34,12 +41,11 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_RESULTS_ROOT,
     FONT_FAMILY,
     IDEAL_FUSION_COLOR,
-    SIMPOINT_WORKLOADS,
     rename_workload,
 )
 
 DEFAULT_CANDIDATES_DIR = Path("/dev/shm/baseline/ideal_fusion_candidates")
-DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "micro_op_distance_cdf"
+DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "micro-op-distance-cdf"
 
 COL_MICRO_OP_DISTANCE = 10
 AGGREGATE_LABEL = "All workloads"
@@ -47,36 +53,77 @@ AGGREGATE_COLOR = IDEAL_FUSION_COLOR
 DEFAULT_NUM_LOG_BINS = 800
 DEFAULT_LOG_MAX = 8.0  # log10 ceiling before streaming (10^8 micro-ops)
 
-# Styling aligned with plot_fusion_predictability.py CDF figures.
-PLOT_LABEL_FONT = 22
-PLOT_TICK_FONT = 20
-PLOT_LEGEND_FONT = 14
+FIGURE_STEM = "micro-op-distance-cdf"
+CDF_CSV_PREFIX = "micro-op-distance-cdf"
+SUMMARY_CSV_NAME = "micro-op-distance-summary.csv"
+# Backward-compatible names from older runs.
+LEGACY_FIGURE_STEM = "micro_op_distance_cdf"
+LEGACY_CDF_CSV_PREFIX = "micro_op_distance_cdf"
+
+# Axis fonts stay paper-readable; legend stays compact inside the axes.
+PLOT_LABEL_FONT = 26
+PLOT_TICK_FONT = 22
+PLOT_LEGEND_FONT = 15
 NOTO_SERIF_FONT_DIR = Path.home() / ".local/share/fonts" / "noto-serif"
 _noto_serif_registered = False
 
-# Per-app colors (user palette + distinct 9th for ClickHouse).
+# Paper subset / plot order.
+DEFAULT_WORKLOADS = [
+    "bfs",
+    "dfs",
+    "pagerank",
+    "corebench",
+    "appworld",
+    "terminal_bench",
+    "clickhouse",
+    "duckdb",
+    "leveldb",
+    "memcached",
+]
+
+# Directory-name aliases (simpoint release vs workloads_db naming).
+WORKLOAD_DIR_ALIASES: dict[str, tuple[str, ...]] = {
+    "corebench": ("corebench", "core_bench"),
+    "core_bench": ("core_bench", "corebench"),
+}
+
+# Per-app colors (user palette + LevelDB / Memcached).
 WORKLOAD_COLORS: dict[str, str] = {
     "bfs": "#017E7C",
     "dfs": "#8F993E",
     "pagerank": "#016895",
+<<<<<<< HEAD
     "appworld": "#E98300",
     "corebench": "#C74632",
+=======
+    "corebench": "#C74632",
+    "core_bench": "#C74632",
+    "appworld": "#E98300",
+>>>>>>> 81611a5 (Polish micro-op distance CDF for paper apps and hyphenated outputs.)
     "terminal_bench": "#620059",
-    "duckdb": "#9475BD",
-    "rocksdb": "#FEC51D",
     "clickhouse": "#795548",
+    "duckdb": "#9475BD",
+    "leveldb": "#FEC51D",
+    "memcached": "#00796B",
+    "rocksdb": "#FEC51D",
 }
-LEGEND_EDGE_WIDTH = 1.2
-LEGEND_FRAME_WIDTH = 1.0
+LEGEND_EDGE_WIDTH = 0.8
+LEGEND_FRAME_WIDTH = 0.8
 LEGEND_FRAME_COLOR = "#000000"
-PLOT_FIGSIZE = (10.0, 3.5)
+# Paper figure size; legend sits in the empty lower-right of the axes.
+PLOT_FIGSIZE = (10.0, 4.2)
 # (CDF fraction, label, label offset in points from intersection)
 CDF_REFERENCE_LEVELS: tuple[tuple[float, str, tuple[int, int]], ...] = (
-    (0.80, "p80", (5, -10)),
-    (0.95, "p95", (5, -10)),
+    (0.80, "p80", (6, -10)),
+    (0.95, "p95", (6, -10)),
 )
 CDF_REFERENCE_COLOR = "#C74632"
-CDF_REFERENCE_LABEL_FONT = 12
+CDF_REFERENCE_LABEL_FONT = 14
+
+WORKLOAD_DISPLAY_NAMES: dict[str, str] = {
+    "corebench": "CoreBench",
+    "memcached": "Memcached",
+}
 
 
 @dataclass
@@ -111,8 +158,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--workloads",
         nargs="*",
-        default=None,
-        help="Optional workload subset (default: every directory under candidates-dir).",
+        default=DEFAULT_WORKLOADS,
+        help=(
+            "Workload subset to plot (default: BFS/DFS/PR/CoreBench/AppWorld/"
+            "TerminalBench/ClickHouse/DuckDB/LevelDB/Memcached)."
+        ),
+    )
+    parser.add_argument(
+        "--all-workloads",
+        action="store_true",
+        help="Plot every directory under candidates-dir (overrides --workloads).",
     )
     parser.add_argument(
         "--aggregate",
@@ -131,7 +186,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=DEFAULT_LOG_MAX,
         help="Initial log10 ceiling for binning (expanded if data exceeds it).",
     )
+    parser.add_argument(
+        "--replot",
+        action="store_true",
+        help=(
+            "Skip streaming candidates; load cached micro-op-distance-cdf-*.csv "
+            "from --output-dir and only redraw the figure (fast style iteration)."
+        ),
+    )
     return parser.parse_args(argv)
+
+
+def resolve_workload_dir(candidates_dir: Path, workload: str) -> Path:
+    candidates = WORKLOAD_DIR_ALIASES.get(workload, (workload,))
+    for name in candidates:
+        wl_dir = candidates_dir / name
+        if wl_dir.is_dir():
+            return wl_dir
+    tried = ", ".join(str(candidates_dir / name) for name in candidates)
+    raise SystemExit(f"Missing workload directory for {workload!r} (tried: {tried})")
 
 
 def discover_candidate_files(
@@ -148,14 +221,22 @@ def discover_candidate_files(
         )
 
     for workload in workload_names:
-        wl_dir = candidates_dir / workload
-        if not wl_dir.is_dir():
-            raise SystemExit(f"Missing workload directory: {wl_dir}")
+        wl_dir = resolve_workload_dir(candidates_dir, workload)
+        # Keep the requested/canonical name so colors and ordering stay stable.
         for csv_path in sorted(wl_dir.glob("*.csv")):
             tasks.append((workload, csv_path.stem, csv_path))
     if not tasks:
         raise SystemExit(f"No candidate CSVs found under {candidates_dir}")
     return tasks
+
+
+def workload_display_name(workload: str) -> str:
+    if workload in WORKLOAD_DISPLAY_NAMES:
+        return WORKLOAD_DISPLAY_NAMES[workload]
+    aliased = {
+        "corebench": "core_bench",
+    }.get(workload, workload)
+    return rename_workload(aliased)
 
 
 def empty_histogram(log_max: float, num_bins: int) -> DistanceHistogram:
@@ -299,7 +380,7 @@ def write_summary_csv(
     per_workload: dict[str, DistanceHistogram],
 ) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
-    summary_path = output_dir / "micro_op_distance_summary.csv"
+    summary_path = output_dir / SUMMARY_CSV_NAME
     with summary_path.open("w", newline="") as fh:
         writer = csv.writer(fh)
         writer.writerow(
@@ -342,13 +423,83 @@ def write_cdf_csv(
         .replace("/", "_")
         .replace("-", "_")
     )
-    path = output_dir / f"micro_op_distance_cdf_{slug}.csv"
+    path = output_dir / f"{CDF_CSV_PREFIX}-{slug}.csv"
     with path.open("w", newline="") as fh:
         writer = csv.writer(fh)
         writer.writerow(["micro_op_distance", "cdf_fraction"])
         for x, y in zip(xs, ys):
             writer.writerow([f"{x:.6f}", f"{y:.6f}"])
     return path
+
+
+def cdf_csv_slug(workload: str) -> str:
+    return (
+        workload.lower()
+        .replace(" ", "_")
+        .replace("/", "_")
+        .replace("-", "_")
+    )
+
+
+def resolve_cdf_csv(output_dir: Path, workload: str) -> Path | None:
+    slug = cdf_csv_slug(workload)
+    candidates = [
+        output_dir / f"{CDF_CSV_PREFIX}-{slug}.csv",
+        output_dir / f"{LEGACY_CDF_CSV_PREFIX}_{slug}.csv",
+    ]
+    for alias in WORKLOAD_DIR_ALIASES.get(workload, ()):
+        alias_slug = cdf_csv_slug(alias)
+        candidates.append(output_dir / f"{CDF_CSV_PREFIX}-{alias_slug}.csv")
+        candidates.append(output_dir / f"{LEGACY_CDF_CSV_PREFIX}_{alias_slug}.csv")
+    for path in candidates:
+        if path.is_file():
+            return path
+    return None
+
+
+def load_cdf_csv(path: Path) -> tuple[list[float], list[float]]:
+    xs: list[float] = []
+    ys: list[float] = []
+    with path.open(newline="") as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            xs.append(float(row["micro_op_distance"]))
+            ys.append(float(row["cdf_fraction"]))
+    if not xs:
+        raise SystemExit(f"Empty CDF CSV: {path}")
+    return xs, ys
+
+
+def load_cached_curves(
+    output_dir: Path,
+    workloads: list[str],
+) -> list[tuple[str, list[float], list[float], str]]:
+    curves: list[tuple[str, list[float], list[float], str]] = []
+    missing: list[str] = []
+    for workload in workloads:
+        path = resolve_cdf_csv(output_dir, workload)
+        if path is None:
+            missing.append(
+                str(output_dir / f"{CDF_CSV_PREFIX}-{cdf_csv_slug(workload)}.csv")
+            )
+            continue
+        xs, ys = load_cdf_csv(path)
+        curves.append(
+            (
+                workload_display_name(workload),
+                xs,
+                ys,
+                workload_color(workload),
+            )
+        )
+    if missing:
+        raise SystemExit(
+            "Missing cached CDF CSVs (run without --replot first):\n  "
+            + "\n  ".join(missing)
+        )
+    if not curves:
+        raise SystemExit(f"No cached CDF curves found under {output_dir}")
+    return curves
 
 
 def print_scope_summary(label: str, hist: DistanceHistogram) -> None:
@@ -387,9 +538,11 @@ def _apply_plot_style() -> None:
         {
             "font.family": FONT_FAMILY,
             "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
+            "font.size": PLOT_TICK_FONT,
             "axes.labelsize": PLOT_LABEL_FONT,
             "xtick.labelsize": PLOT_TICK_FONT,
             "ytick.labelsize": PLOT_TICK_FONT,
+            "legend.fontsize": PLOT_LEGEND_FONT,
         }
     )
 
@@ -413,7 +566,6 @@ def _style_axes(ax) -> None:
 def _save_figure(fig, output_path: Path) -> None:
     output_dir = output_path.parent
     output_dir.mkdir(parents=True, exist_ok=True)
-    fig.subplots_adjust(left=0.14, bottom=0.14, right=0.97, top=0.97)
     for ext in ("png", "pdf", "eps"):
         fig.savefig(f"{output_path}.{ext}", bbox_inches="tight", dpi=300)
 
@@ -423,7 +575,7 @@ def workload_color(workload: str) -> str:
 
 
 def ordered_workloads(per_workload: dict[str, DistanceHistogram]) -> list[str]:
-    ordered = [wl for wl in SIMPOINT_WORKLOADS if wl in per_workload]
+    ordered = [wl for wl in DEFAULT_WORKLOADS if wl in per_workload]
     extras = sorted(set(per_workload.keys()) - set(ordered))
     return ordered + extras
 
@@ -455,13 +607,19 @@ def plot_cdf(
 
     fig, ax = plt.subplots(figsize=PLOT_FIGSIZE)
     xmax = 1.0
-    for _label, xs, _ys, _color in curves:
-        if xs:
-            xmax = max(xmax, max(xs))
+    for _label, xs, ys, _color in curves:
+        if not xs:
+            continue
+        # Trim the long flat 100% tail so the useful rise uses the width.
+        cutoff = next(
+            (x for x, y in zip(xs, ys) if y >= 0.995),
+            xs[-1],
+        )
+        xmax = max(xmax, cutoff)
 
     xmin = 1.0
     for label, xs, ys, color in curves:
-        ax.plot(xs, ys, label=label, color=color, linewidth=2.5)
+        ax.plot(xs, ys, label=label, color=color, linewidth=2.2)
 
     log_x_min = math.log10(xmin)
     log_x_max = math.log10(xmax)
@@ -478,7 +636,7 @@ def plot_cdf(
             fraction,
             color=CDF_REFERENCE_COLOR,
             linestyle="--",
-            linewidth=1.8,
+            linewidth=1.4,
             zorder=1,
         )
         if all_apps_dist is not None:
@@ -486,7 +644,7 @@ def plot_cdf(
                 all_apps_dist,
                 color=CDF_REFERENCE_COLOR,
                 linestyle="--",
-                linewidth=1.8,
+                linewidth=1.4,
                 zorder=1,
             )
             label_xy = (all_apps_dist, fraction)
@@ -509,31 +667,39 @@ def plot_cdf(
         )
 
     ax.set_xscale("log")
-    ax.set_xlim(xmin, xmax * 1.05)
+    ax.set_xlim(xmin, xmax * 1.15)
     ax.set_ylim(0.0, 1.0)
     ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
     ax.set_yticklabels(["0", "20", "40", "60", "80", "100"])
     ax.set_xlabel(
         "Distance in micro-ops between fusible load pairs (log scale)",
         fontsize=PLOT_LABEL_FONT,
+        fontfamily=FONT_FAMILY,
     )
-    ax.set_ylabel("CDF", fontsize=PLOT_LABEL_FONT)
+    ax.set_ylabel("CDF", fontsize=PLOT_LABEL_FONT, fontfamily=FONT_FAMILY)
+    ax.tick_params(axis="both", labelsize=PLOT_TICK_FONT)
+    for tick_label in ax.get_xticklabels() + ax.get_yticklabels():
+        tick_label.set_fontfamily(FONT_FAMILY)
     _style_axes(ax)
+
+    fig.subplots_adjust(left=0.07, bottom=0.18, right=0.985, top=0.97)
     if len(curves) > 1:
         legend = ax.legend(
             handles=_legend_handles(curves),
             loc="lower right",
-            bbox_to_anchor=(0.99, 0.02),
+            bbox_to_anchor=(0.99, 0.03),
             ncol=2,
             frameon=True,
             fancybox=False,
             edgecolor=LEGEND_FRAME_COLOR,
             fontsize=PLOT_LEGEND_FONT,
-            handlelength=1.0,
-            handleheight=1.0,
-            borderpad=0.35,
-            labelspacing=0.35,
-            handletextpad=0.45,
+            prop={"family": FONT_FAMILY, "size": PLOT_LEGEND_FONT},
+            handlelength=1.05,
+            handleheight=1.05,
+            borderpad=0.3,
+            labelspacing=0.22,
+            handletextpad=0.4,
+            columnspacing=0.75,
         )
         frame = legend.get_frame()
         frame.set_edgecolor(LEGEND_FRAME_COLOR)
@@ -541,7 +707,7 @@ def plot_cdf(
         frame.set_facecolor("white")
         frame.set_alpha(1.0)
 
-    stem = output_dir / "micro_op_distance_cdf"
+    stem = output_dir / FIGURE_STEM
     _save_figure(fig, stem)
     plt.close(fig)
     print(f"Wrote figure: {stem}.{{png,pdf,eps}}", flush=True)
@@ -549,15 +715,28 @@ def plot_cdf(
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
-    candidates_dir = args.candidates_dir.expanduser().resolve()
     output_dir = args.output_dir.expanduser().resolve()
+    workloads_arg = None if args.all_workloads else args.workloads
 
+    if args.replot:
+        workloads = workloads_arg if workloads_arg is not None else DEFAULT_WORKLOADS
+        # Preserve DEFAULT_WORKLOADS order when using the paper subset.
+        if workloads_arg is not None:
+            ordered = [wl for wl in DEFAULT_WORKLOADS if wl in workloads]
+            ordered += [wl for wl in workloads if wl not in set(ordered)]
+            workloads = ordered
+        curves = load_cached_curves(output_dir, workloads)
+        print(f"Replotting {len(curves)} cached CDF curves from {output_dir}", flush=True)
+        plot_cdf(curves, output_dir)
+        return
+
+    candidates_dir = args.candidates_dir.expanduser().resolve()
     if not candidates_dir.is_dir():
         raise SystemExit(f"Candidates directory does not exist: {candidates_dir}")
     if args.num_bins < 10:
         raise SystemExit("--num-bins must be at least 10")
 
-    tasks = discover_candidate_files(candidates_dir, args.workloads)
+    tasks = discover_candidate_files(candidates_dir, workloads_arg)
     aggregate, per_workload = stream_histograms(
         tasks,
         log_max=args.log_max,
@@ -572,7 +751,7 @@ def main(argv: list[str] | None = None) -> None:
     for workload in workloads:
         hist = per_workload[workload]
         xs, ys = histogram_to_cdf(hist)
-        label = rename_workload(workload)
+        label = workload_display_name(workload)
         write_cdf_csv(output_dir, workload, xs, ys)
         print_scope_summary(label, hist)
         curves.append((label, xs, ys, workload_color(workload)))
