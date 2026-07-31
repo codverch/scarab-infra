@@ -41,6 +41,9 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_RESULTS_ROOT,
     FONT_FAMILY,
     IDEAL_FUSION_COLOR,
+    IPC_AXIS_LABEL_FONT,
+    IPC_LEGEND_FONT,
+    IPC_TICK_FONT,
     rename_workload,
 )
 
@@ -60,10 +63,16 @@ SUMMARY_CSV_NAME = "micro-op-distance-summary.csv"
 LEGACY_FIGURE_STEM = "micro_op_distance_cdf"
 LEGACY_CDF_CSV_PREFIX = "micro_op_distance_cdf"
 
-# Axis fonts stay paper-readable; legend stays compact inside the axes.
-PLOT_LABEL_FONT = 26
-PLOT_TICK_FONT = 22
-PLOT_LEGEND_FONT = 15
+# Characterization / IPC bar charts use font 37 on ~24in-wide canvases. This CDF
+# is much narrower, so scale fonts so on-paper text matches those graphs when
+# both are rendered at the same display width.
+CHAR_REF_FIGSIZE = (24.0, 6.5)
+PLOT_FIGSIZE = (10.0, 4.2)
+_FONT_SCALE = PLOT_FIGSIZE[0] / CHAR_REF_FIGSIZE[0]
+PLOT_LABEL_FONT = max(11, round(IPC_AXIS_LABEL_FONT * _FONT_SCALE))
+PLOT_TICK_FONT = max(11, round(IPC_TICK_FONT * _FONT_SCALE))
+PLOT_LEGEND_FONT = max(10, round(IPC_LEGEND_FONT * _FONT_SCALE))
+CDF_REFERENCE_LABEL_FONT = max(10, PLOT_TICK_FONT - 1)
 NOTO_SERIF_FONT_DIR = Path.home() / ".local/share/fonts" / "noto-serif"
 _noto_serif_registered = False
 
@@ -105,15 +114,12 @@ WORKLOAD_COLORS: dict[str, str] = {
 LEGEND_EDGE_WIDTH = 0.8
 LEGEND_FRAME_WIDTH = 0.8
 LEGEND_FRAME_COLOR = "#000000"
-# Paper figure size; legend sits in the empty lower-right of the axes.
-PLOT_FIGSIZE = (10.0, 4.2)
 # (CDF fraction, label, label offset in points from intersection)
 CDF_REFERENCE_LEVELS: tuple[tuple[float, str, tuple[int, int]], ...] = (
     (0.80, "p80", (6, -10)),
     (0.95, "p95", (6, -10)),
 )
 CDF_REFERENCE_COLOR = "#C74632"
-CDF_REFERENCE_LABEL_FONT = 14
 
 WORKLOAD_DISPLAY_NAMES: dict[str, str] = {
     "corebench": "CoreBench",
