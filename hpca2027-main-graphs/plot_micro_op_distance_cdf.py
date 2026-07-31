@@ -66,8 +66,12 @@ LEGACY_CDF_CSV_PREFIX = "micro_op_distance_cdf"
 # Characterization / IPC bar charts use font 37 on ~24in-wide canvases. This CDF
 # is much narrower, so scale fonts so on-paper text matches those graphs when
 # both are rendered at the same display width.
-CHAR_REF_FIGSIZE = (24.0, 6.5)
-PLOT_FIGSIZE = (10.0, 4.2)
+# Height matches the Helios coverage-breakdown aspect ratio (24 x 8).
+CHAR_REF_FIGSIZE = (24.0, 8.0)
+PLOT_FIGSIZE = (
+    10.0,
+    round(10.0 * CHAR_REF_FIGSIZE[1] / CHAR_REF_FIGSIZE[0], 2),
+)
 _FONT_SCALE = PLOT_FIGSIZE[0] / CHAR_REF_FIGSIZE[0]
 PLOT_LABEL_FONT = max(11, round(IPC_AXIS_LABEL_FONT * _FONT_SCALE))
 PLOT_TICK_FONT = max(11, round(IPC_TICK_FONT * _FONT_SCALE))
