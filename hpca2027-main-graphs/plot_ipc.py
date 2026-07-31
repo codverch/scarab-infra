@@ -193,6 +193,7 @@ def rename_workload(workload: str) -> str:
         "appworld": "AppWorld",
         "core_bench": "CoreBench",
         "corebench": "CoreBench",
+        "cachebench": "CacheBench",
         "terminal_bench": "TerminalBench",
         "cachebench": "CacheBench",
         "leveldb": "LevelDB",
@@ -315,6 +316,27 @@ def load_simpoint_trace_weights(
             continue
 
         simpoints_dir = trace_root / workload / "simpoints"
+        selection_file = simpoints_dir / "selection.json"
+        # Prefer selection.json when present: candidate CSVs are often named by
+        # segment id (e.g. memcached/149.csv), while opt.p may use a different
+        # cluster/segment encoding.
+        if selection_file.is_file():
+            import json
+
+            selection = json.loads(selection_file.read_text())
+            for sp in selection.get("simpoints", []):
+                weight = float(sp.get("normalized_weight", sp.get("weight", 0.0)))
+                if weight <= 0:
+                    continue
+                segment = sp.get("segment")
+                if segment is not None:
+                    weights[(workload, str(segment))] = weight
+                cluster = sp.get("cluster")
+                if cluster is not None:
+                    weights.setdefault((workload, str(cluster)), weight)
+            if any(wl == workload for wl, _ in weights):
+                continue
+
         pfile = simpoints_dir / "opt.p"
         wfile = simpoints_dir / "opt.w"
         if not pfile.is_file() or not wfile.is_file():

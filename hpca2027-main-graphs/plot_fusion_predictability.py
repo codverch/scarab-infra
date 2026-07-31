@@ -71,15 +71,17 @@ DEFAULT_CANDIDATES_DIR = Path("/dev/shm/baseline/ideal_fusion_candidates")
 DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "fusion_predictability"
 
 CANDIDATE_WORKLOADS = [
-    "appworld",
     "bfs",
-    "clickhouse",
-    "corebench",
     "dfs",
-    "duckdb",
     "pagerank",
-    "rocksdb",
+    "corebench",
+    "appworld",
     "terminal_bench",
+    "cachebench",
+    "clickhouse",
+    "duckdb",
+    "leveldb",
+    "memcached",
 ]
 
 # Candidate CSV columns we need (see header: load1_pc, load1_data_addr,
@@ -100,7 +102,7 @@ HIGHLY_PREDICTABLE_THRESHOLD = 0.95
 PREDICTABLE_THRESHOLD = 0.80
 
 # Styling aligned with hpca2027-characterization/plot_topdown_backend_stalls.py
-PREDICTABILITY_BAR_COLOR = "#017E7C"
+PREDICTABILITY_BAR_COLOR = "#003262"
 BACKEND_STALLS_BAR_WIDTH = 0.40
 BACKEND_STALLS_BAR_EDGE_WIDTH = 3.0
 BACKEND_STALLS_AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
@@ -712,7 +714,9 @@ def plot_per_app_fraction_bar(
     _apply_backend_stalls_plot_style(axis_font)
 
     by_wl = {r.workload: r for r in reports if r.workload != "Suite average"}
-    ordered = [by_wl[wl] for wl in SIMPOINT_WORKLOADS if wl in by_wl]
+    ordered = [by_wl[wl] for wl in CANDIDATE_WORKLOADS if wl in by_wl]
+    # Keep any unexpected workloads after the canonical order.
+    ordered.extend(r for wl, r in by_wl.items() if wl not in CANDIDATE_WORKLOADS)
     suite = next(r for r in reports if r.workload == "Suite average")
 
     display_apps = [rename_workload(r.workload) for r in ordered] + ["Average"]
