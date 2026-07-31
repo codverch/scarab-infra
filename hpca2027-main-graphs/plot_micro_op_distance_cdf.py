@@ -89,6 +89,7 @@ DEFAULT_WORKLOADS = [
     "corebench",
     "appworld",
     "terminal_bench",
+    "cachebench",
     "clickhouse",
     "duckdb",
     "leveldb",
@@ -110,6 +111,7 @@ WORKLOAD_COLORS: dict[str, str] = {
     "core_bench": "#C74632",
     "appworld": "#E98300",
     "terminal_bench": "#620059",
+    "cachebench": "#0277BD",
     "clickhouse": "#795548",
     "duckdb": "#9475BD",
     "leveldb": "#FEC51D",
@@ -132,6 +134,7 @@ CDF_REFERENCE_LABEL_COLOR = "#000080"  # navy blue (labels)
 
 WORKLOAD_DISPLAY_NAMES: dict[str, str] = {
     "corebench": "CoreBench",
+    "cachebench": "CacheBench",
     "memcached": "Memcached",
 }
 
@@ -171,7 +174,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=DEFAULT_WORKLOADS,
         help=(
             "Workload subset to plot (default: BFS/DFS/PR/CoreBench/AppWorld/"
-            "TerminalBench/ClickHouse/DuckDB/LevelDB/Memcached)."
+            "TerminalBench/CacheBench/ClickHouse/DuckDB/LevelDB/Memcached)."
         ),
     )
     parser.add_argument(
