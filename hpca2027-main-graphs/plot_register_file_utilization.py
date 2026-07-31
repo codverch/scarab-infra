@@ -44,6 +44,7 @@ from plot_ipc import (  # noqa: E402
     BAR_EDGE_WIDTH,
     BASELINE_COLOR,
     DEFAULT_BASELINE_CONFIG,
+    DEFAULT_BASELINE_DIR,
     DEFAULT_BASELINE_IFUSE_DIR,
     DEFAULT_IPC_IFUSE_CONFIG,
     DEFAULT_IPC_IFUSE_DIR,
@@ -64,10 +65,12 @@ from plot_ipc import (  # noqa: E402
     grouped_x_positions,
     load_simpoint_trace_weights,
     order_workloads_by_group,
+    register_noto_serif,
     rename_workload,
 )
 
 IFUSE_STAT_FILE = "ifuse.stat.0.csv"
+CORE_STAT_FILE = "core.stat.0.csv"
 GP_UTIL_NUM = "IFUSE_GP_REG_UTIL_PCT_TOTAL_count"
 GP_OBS = "IFUSE_GP_REG_OCCUPIED_OBSERVATIONS_count"
 GP_OCC_NUM = "IFUSE_GP_REG_OCCUPIED_TOTAL_count"
@@ -75,7 +78,11 @@ EXTRA_NUM = "IFUSE_EXTRA_REG_IN_USE_TOTAL_count"
 EXTRA_OBS = "IFUSE_EXTRA_REG_IN_USE_OBSERVATIONS_count"
 GP_PEAK = "IFUSE_GP_REG_OCCUPIED_PEAK_total_count"
 EXTRA_PEAK = "IFUSE_EXTRA_REG_IN_USE_PEAK_total_count"
-REGISTER_BAR_WIDTH = 0.36
+# core.stat physical GP RF util (baseline / non-ifuse binaries)
+RF_SAMPLES = "REG_FILE_UTIL_SAMPLES_count"
+RF_INT_OCC = "REG_FILE_INT_OCCUPIED_SUM_count"
+RF_INT_CAP = "REG_FILE_INT_PHYS_REGS_SUM_count"
+REGISTER_BAR_WIDTH = 0.48
 Y_LABEL = "Average physical register\nfile utilization (%)"
 NO_FUSION_LABEL = "No fusion"
 IFUSE_LABEL = "I-Fuse"
@@ -310,6 +317,11 @@ def simpoint_register_metrics(
     suite: str,
     subsuite: str,
 ) -> tuple[float, float, float, float, float] | None:
+    """Return (util_pct, avg_occ, avg_extra, gp_peak, extra_peak).
+
+    Prefer ifuse.stat GP counters; fall back to core.stat REG_FILE_* occupancy
+    (used by the standard no-fusion baseline binary).
+    """
     sim_dir = find_simpoint_dir(
         experiment_dir, config, workload, cluster_id, suite=suite, subsuite=subsuite
     )
@@ -325,24 +337,38 @@ def simpoint_register_metrics(
     gp_peak = stat_count_from_csv(stat_csv, GP_PEAK)
     extra_peak = stat_count_from_csv(stat_csv, EXTRA_PEAK)
     if (
-        gp_obs is None
-        or gp_util is None
-        or gp_occ is None
-        or extra_obs is None
-        or extra_total is None
-        or gp_peak is None
-        or extra_peak is None
-        or gp_obs <= 0
-        or extra_obs <= 0
+        gp_obs is not None
+        and gp_util is not None
+        and gp_occ is not None
+        and extra_obs is not None
+        and extra_total is not None
+        and gp_peak is not None
+        and extra_peak is not None
+        and gp_obs > 0
+        and extra_obs > 0
     ):
-        return None
+        return (
+            gp_util / gp_obs,
+            gp_occ / gp_obs,
+            extra_total / extra_obs,
+            gp_peak,
+            extra_peak,
+        )
 
+    # Fallback: core.stat physical int RF util
+    #   util% = 100 * INT_OCCUPIED_SUM / INT_PHYS_REGS_SUM
+    core_stat = sim_dir / CORE_STAT_FILE
+    samples = stat_count_from_csv(core_stat, RF_SAMPLES)
+    occ = stat_count_from_csv(core_stat, RF_INT_OCC)
+    cap = stat_count_from_csv(core_stat, RF_INT_CAP)
+    if samples is None or occ is None or cap is None or samples <= 0 or cap <= 0:
+        return None
     return (
-        gp_util / gp_obs,
-        gp_occ / gp_obs,
-        extra_total / extra_obs,
-        gp_peak,
-        extra_peak,
+        100.0 * occ / cap,
+        occ / samples,
+        0.0,
+        0.0,
+        0.0,
     )
 
 
@@ -801,8 +827,8 @@ def main() -> None:
         type=Path,
         default=None,
         help=(
-            "Baseline experiment directory with ifuse.stat (default: "
-            f"{DEFAULT_BASELINE_IFUSE_DIR})"
+            "Baseline experiment directory (default: baseline-ifuse if present, "
+            f"else {DEFAULT_BASELINE_DIR}; uses core.stat REG_FILE_* or ifuse.stat)"
         ),
     )
     parser.add_argument("--baseline-config", default=DEFAULT_BASELINE_CONFIG)
@@ -823,13 +849,19 @@ def main() -> None:
         "--ifuse-only",
         action="store_true",
         help=(
-            "Plot I-Fuse GP utilization only. Auto-enabled when baseline-ifuse "
-            "results are missing."
+            "Estimate No-fusion bars from I-Fuse extra-reg stats only "
+            "(default: use baseline core.stat / ifuse.stat when available)."
         ),
     )
     args = parser.parse_args()
+    register_noto_serif()
 
-    baseline_dir = args.baseline_dir or DEFAULT_BASELINE_IFUSE_DIR
+    if args.baseline_dir is not None:
+        baseline_dir = args.baseline_dir
+    elif DEFAULT_BASELINE_IFUSE_DIR.is_dir():
+        baseline_dir = DEFAULT_BASELINE_IFUSE_DIR
+    else:
+        baseline_dir = DEFAULT_BASELINE_DIR
     ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
     workloads = [wl for wl in SIMPOINT_WORKLOADS if wl not in set(args.exclude_workloads)]
     output_dir = args.output_dir or DEFAULT_REGISTER_FILE_UTILIZATION_OUTPUT_DIR
@@ -838,7 +870,7 @@ def main() -> None:
     sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
     coverage_report = output_dir / "register_file_utilization_coverage_report.txt"
 
-    ifuse_only = args.ifuse_only or not baseline_dir.is_dir()
+    ifuse_only = bool(args.ifuse_only)
 
     if ifuse_only:
         if not baseline_dir.is_dir():
@@ -920,21 +952,9 @@ def main() -> None:
         "baseline": (baseline_dir, args.baseline_config),
         "ifuse": (ifuse_dir, args.ifuse_config),
     }
-    complete_workloads = check_ifuse_stat_coverage(
-        directories,
-        workloads,
-        sp_weights,
-        suite=DEFAULT_SUITE,
-        subsuite=DEFAULT_SUBSUITE,
-        report_path=coverage_report,
-    )
-    if not complete_workloads:
-        raise SystemExit(
-            "No apps have complete simpoint files with ifuse.stat across baseline and I-Fuse. "
-            f"See {coverage_report}. Baseline runs need the runtime-ifuse Scarab binary with "
-            "--ifuse_runtime_training_enabled 0 (json/hpca2027/baseline_ifuse.json)."
-        )
-
+    # Prefer true side-by-side via compute_workload_register_util (ifuse.stat and/or
+    # core.stat REG_FILE_*). Fall back to the old ifuse.stat-only coverage check
+    # only when that finds complete pairs.
     print("Computing physical register file utilization (No fusion vs I-Fuse)...")
     print(f"  no fusion: {baseline_dir} (config={args.baseline_config})")
     print(f"  ifuse:    {ifuse_dir} (config={args.ifuse_config})")
@@ -942,9 +962,6 @@ def main() -> None:
 
     results: list[RegisterFileResult] = []
     for workload in workloads:
-        if workload not in complete_workloads:
-            print(f"  skip {workload}: incomplete baseline/I-Fuse ifuse.stat coverage")
-            continue
         result = compute_workload_register_util(
             workload,
             baseline_dir,
@@ -956,7 +973,6 @@ def main() -> None:
             subsuite=DEFAULT_SUBSUITE,
         )
         if result is None:
-            print(f"  skip {workload}: missing register utilization stats")
             continue
         results.append(result)
         print(
@@ -965,6 +981,27 @@ def main() -> None:
             f"extra_regs={result.ifuse_avg_extra_regs:5.1f}  "
             f"(simpoints={result.trace_count})"
         )
+
+    if not results:
+        # Last resort: old coverage path requiring ifuse.stat on both sides.
+        complete_workloads = check_ifuse_stat_coverage(
+            directories,
+            workloads,
+            sp_weights,
+            suite=DEFAULT_SUITE,
+            subsuite=DEFAULT_SUBSUITE,
+            report_path=coverage_report,
+        )
+        raise SystemExit(
+            "No workloads with paired baseline+I-Fuse register utilization stats. "
+            f"See {coverage_report}. complete={sorted(complete_workloads)}"
+        )
+
+    with coverage_report.open("w") as rpt:
+        rpt.write("Paired baseline+I-Fuse register-file utilization coverage\n")
+        rpt.write(f"baseline: {baseline_dir}\n")
+        rpt.write(f"ifuse:    {ifuse_dir}\n")
+        rpt.write(f"workloads: {[r.workload for r in results]}\n")
 
     if not results:
         raise SystemExit("No workloads with No fusion and I-Fuse register utilization stats.")
