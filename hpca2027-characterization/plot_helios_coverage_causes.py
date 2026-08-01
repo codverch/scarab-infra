@@ -57,11 +57,13 @@ from plot_ipc import (  # noqa: E402
     SIMPOINT_WORKLOADS,
     find_simpoint_dir,
     load_simpoint_trace_weights,
+    register_noto_serif,
     rename_workload,
 )
 
 HELIOS_FUSED_COLOR = "#CF3054"
-DISTANCE_MISPRED_COLOR = "#FFD700"
+DISTANCE_MISPRED_COLOR = "#D5D5D4"  # light gray: unfused distance misprediction
+DEADLOCK_COLOR = "#4A4A4A"  # dark gray: unfused deadlock avoidance
 
 DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
 DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "helios-coverage-causes"
@@ -72,11 +74,11 @@ COMMITTED_STAT = HELIOS_FUSED_STAT
 IDEAL_FUSED_STAT = "IDEAL_FUSION_FUSED_LOADS_count"
 
 BAR_WIDTH = 0.40
-FIGSIZE = (24.0, 8.0)
+FIGSIZE = (30.0, 11.5)  # match IPC Helios/RFP/Ideal canvas height
 BAR_EDGE_WIDTH = 3.0
 AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
 AVERAGE_SEPARATOR_WIDTH = 3.5
-AXIS_FONT = IPC_TICK_FONT
+AXIS_FONT = IPC_TICK_FONT  # same x/y axis font as IPC speedup plot
 Y_LABEL_PAD = 20
 OUTPUT_DPI = 300
 Y_AXIS_LABEL = (
@@ -89,8 +91,8 @@ Y_AXIS_LABEL = (
 BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
     ("committed_frac", HELIOS_FUSED_COLOR),
     ("head_evicted_frac", DISTANCE_MISPRED_COLOR),
-    ("deadlock_frac", "#D5D5D4"),
-    ("addr_mismatch_frac", "#FF8F00"),
+    ("deadlock_frac", DEADLOCK_COLOR),
+    ("addr_mismatch_frac", "#32CD32"),  # lime
     ("distance_invalid_frac", "#984EA3"),
     ("serializing_frac", "#1B9E77"),
     ("store_hazard_frac", "#A65628"),
@@ -120,7 +122,11 @@ def _apply_plot_style() -> None:
         {
             "font.family": FONT_FAMILY,
             "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
+            "text.color": "black",
+            "axes.labelcolor": "black",
             "axes.labelsize": AXIS_FONT,
+            "xtick.color": "black",
+            "ytick.color": "black",
             "xtick.labelsize": AXIS_FONT,
             "ytick.labelsize": AXIS_FONT,
             "legend.fontsize": IPC_LEGEND_FONT,
@@ -422,17 +428,19 @@ def _style_legend(ax, active_segments: list[tuple[str, str]]) -> None:
         fancybox=False,
         shadow=False,
         loc="lower center",
-        bbox_to_anchor=(0.5, 1.12),
+        bbox_to_anchor=(0.5, 1.04),
         bbox_transform=ax.transAxes,
         borderaxespad=0.0,
         fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
+        labelcolor="black",
         ncol=ncol,
         handlelength=1.4,
         handleheight=1.1,
         columnspacing=1.2,
         framealpha=1.0,
     )
+    legend.set_clip_on(False)
     legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
     legend.get_frame().set_facecolor("white")
     legend.get_frame().set_alpha(1.0)
@@ -481,10 +489,12 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
         ha="right",
         fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
+        color="black",
     )
     for label in ax.get_xticklabels():
         label.set_fontsize(AXIS_FONT)
         label.set_fontfamily(FONT_FAMILY)
+        label.set_color("black")
         if label.get_text() == "Average":
             label.set_weight("bold")
 
@@ -494,17 +504,19 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
         Y_AXIS_LABEL,
         fontsize=AXIS_FONT,
         fontfamily=FONT_FAMILY,
+        color="black",
         labelpad=Y_LABEL_PAD,
     )
     ax.set_ylim(0.0, 105.0)
     ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="both", labelsize=AXIS_FONT)
+    ax.tick_params(axis="both", labelsize=AXIS_FONT, colors="black")
     for label in ax.get_yticklabels():
         label.set_fontsize(AXIS_FONT)
         label.set_fontfamily(FONT_FAMILY)
+        label.set_color("black")
 
-    plt.subplots_adjust(top=0.70, bottom=0.32, left=0.10, right=0.99)
+    plt.subplots_adjust(top=0.68, bottom=0.30, left=0.12, right=0.99)
     _style_legend(ax, active_segments)
 
     for spine in ax.spines.values():
@@ -530,6 +542,7 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
 
 
 def main() -> None:
+    register_noto_serif()
     parser = argparse.ArgumentParser(
         description="Plot how Helios handles ideally-fusible load pairs by workload."
     )
