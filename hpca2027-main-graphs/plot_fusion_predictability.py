@@ -102,14 +102,14 @@ HIGHLY_PREDICTABLE_THRESHOLD = 0.95
 PREDICTABLE_THRESHOLD = 0.80
 
 # Styling aligned with hpca2027-characterization/plot_topdown_backend_stalls.py
-PREDICTABILITY_BAR_COLOR = "#003262"
-LD2_SIZE_PREDICTABILITY_BAR_COLOR = "#FEC51D"
+PREDICTABILITY_BAR_COLOR = "#006B3C"  # Cadmium Green
+LD2_SIZE_PREDICTABILITY_BAR_COLOR = "#93C572"  # Pistachio
 BACKEND_STALLS_BAR_WIDTH = 0.40
 BACKEND_STALLS_BAR_EDGE_WIDTH = 3.0
 BACKEND_STALLS_AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
 BACKEND_STALLS_AVERAGE_SEPARATOR_WIDTH = 3.5
 BACKEND_STALLS_REF_FIGSIZE = (24.0, 6.5)
-BACKEND_STALLS_FIGSIZE = (24.0, 5.5)
+BACKEND_STALLS_FIGSIZE = (24.0, 6.5)
 BACKEND_STALLS_Y_LABEL_PAD = 20
 NOTO_SERIF_FONT_DIR = Path.home() / ".local/share/fonts" / "noto-serif"
 _noto_serif_registered = False
@@ -720,26 +720,39 @@ def _backend_stalls_axis_font() -> int:
     return round(IPC_TICK_FONT * (ref_h / h) ** 0.28)
 
 
-def _apply_backend_stalls_plot_style(axis_font: int) -> None:
+def _backend_stalls_axis_title_font() -> int:
+    """Larger than tick labels for x/y axis titles."""
+    return round(_backend_stalls_axis_font() * 1.4)
+
+
+def _apply_backend_stalls_plot_style(axis_font: int, title_font: int | None = None) -> None:
     import matplotlib.pyplot as plt
 
+    label_font = title_font if title_font is not None else axis_font
     plt.rcParams.update(
         {
             "font.family": FONT_FAMILY,
             "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "axes.labelsize": axis_font,
-            "xtick.labelsize": axis_font,
-            "ytick.labelsize": axis_font,
+            "axes.labelsize": label_font,
+            "xtick.labelsize": label_font,
+            "ytick.labelsize": label_font,
         }
     )
 
 
-def _backend_stalls_tight_x_limits(ax, x_min: float, x_max: float) -> None:
-    left_pad = 0.12
-    right_pad = 0.12
-    half_span = BACKEND_STALLS_BAR_WIDTH / 2.0
-    ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
-    ax.margins(x=0)
+OFFSET_DELTA_YLABEL = (
+    "% of times a specific cache\n"
+    "block offset delta occurs\n"
+    "across all dynamic instances\n"
+    "of a fusible load pair"
+)
+LD2_DOMINANT_SIZE_YLABEL = (
+    "% of times a specific LD2\n"
+    "memory access size occurs\n"
+    "for the most frequent\n"
+    "cache-block offset delta"
+)
+COMBINED_PREDICTABILITY_FIGSIZE = (28.0, 5.5)
 
 
 def plot_per_app_fraction_bar(
@@ -747,16 +760,23 @@ def plot_per_app_fraction_bar(
     *,
     fraction_attr: str,
     ylabel: str,
-    output_path: Path,
+    output_path: Path | None = None,
     bar_color: str = PREDICTABILITY_BAR_COLOR,
+    ax=None,
+    bar_width: float | None = None,
 ) -> None:
-    """Per-app bar chart of a WorkloadReport fraction field (0-1 scaled to %)."""
+    """Per-app bar chart of a WorkloadReport fraction field (0-1 scaled to %).
+
+    If ``ax`` is provided, draw onto that axes and do not create/save a figure.
+    Otherwise create a standalone figure and write ``output_path``.{png,pdf,eps}.
+    """
     import matplotlib.pyplot as plt
     import matplotlib.ticker as mticker
 
     _ensure_noto_serif()
     axis_font = _backend_stalls_axis_font()
-    _apply_backend_stalls_plot_style(axis_font)
+    title_font = _backend_stalls_axis_title_font()
+    _apply_backend_stalls_plot_style(axis_font, title_font)
 
     by_wl = {r.workload: r for r in reports if r.workload != "Suite average"}
     ordered = [by_wl[wl] for wl in CANDIDATE_WORKLOADS if wl in by_wl]
@@ -769,17 +789,242 @@ def plot_per_app_fraction_bar(
         getattr(suite, fraction_attr) * 100.0
     ]
     x = list(range(len(display_apps)))
+    width = BACKEND_STALLS_BAR_WIDTH if bar_width is None else bar_width
 
-    fig, ax = plt.subplots(figsize=BACKEND_STALLS_FIGSIZE)
+    own_fig = ax is None
+    if own_fig:
+        fig, ax = plt.subplots(figsize=BACKEND_STALLS_FIGSIZE)
+    else:
+        fig = ax.figure
+
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
     ax.bar(
         x,
         pct_values,
-        BACKEND_STALLS_BAR_WIDTH,
+        width,
         color=bar_color,
         edgecolor="black",
         linewidth=BACKEND_STALLS_BAR_EDGE_WIDTH,
         zorder=3,
+    )
+
+    if len(display_apps) > 1:
+        ax.axvline(
+            x=len(display_apps) - 1.5,
+            color=BACKEND_STALLS_AVERAGE_SEPARATOR_COLOR,
+            linestyle="--",
+            linewidth=BACKEND_STALLS_AVERAGE_SEPARATOR_WIDTH,
+            zorder=2,
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(
+        display_apps,
+        rotation=45,
+        ha="right",
+        fontsize=title_font,
+        fontfamily=FONT_FAMILY,
+    )
+    for label in ax.get_xticklabels():
+        label.set_fontsize(title_font)
+        label.set_fontfamily(FONT_FAMILY)
+        if label.get_text() == "Average":
+            label.set_weight("bold")
+
+    left_pad = 0.12
+    right_pad = 0.12
+    half_span = width / 2.0
+    ax.set_xlim(x[0] - half_span - left_pad, x[-1] + half_span + right_pad)
+    ax.margins(x=0)
+
+    ax.set_ylabel(
+        ylabel,
+        fontsize=title_font,
+        fontfamily=FONT_FAMILY,
+        labelpad=BACKEND_STALLS_Y_LABEL_PAD,
+    )
+    y_max = max(pct_values) if pct_values else 100.0
+    ymax = min(100.0, max(20.0, (int(y_max / 20) + 1) * 20))
+    ax.set_ylim(0.0, ymax * 1.08)
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
+    # Match x-axis category labels, y-axis title, and y-axis ticks to the same size.
+    ax.tick_params(axis="both", labelsize=title_font)
+    for label in ax.get_xticklabels():
+        label.set_fontsize(title_font)
+        label.set_fontfamily(FONT_FAMILY)
+        if label.get_text() == "Average":
+            label.set_weight("bold")
+    for label in ax.get_yticklabels():
+        label.set_fontsize(title_font)
+        label.set_fontfamily(FONT_FAMILY)
+
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_color("black")
+        spine.set_linewidth(2.5)
+
+    if not own_fig:
+        return
+
+    assert output_path is not None
+    plt.subplots_adjust(top=0.98, bottom=0.32, left=0.10)
+    output_dir = output_path.parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+    stem = output_path.name
+    for ext in ("png", "pdf", "eps"):
+        fig.savefig(
+            output_dir / f"{stem}.{ext}",
+            bbox_inches="tight",
+            pad_inches=0.08,
+            dpi=300,
+        )
+    plt.close(fig)
+
+
+def plot_per_app_single_offset_delta(
+    reports: list[WorkloadReport],
+    output_path: Path,
+) -> None:
+    """Per-app bar chart: mean dominant cache-block offset-delta share across static pairs."""
+    plot_per_app_fraction_bar(
+        reports,
+        fraction_attr="mean_dominant_offset_delta_frac",
+        ylabel=OFFSET_DELTA_YLABEL,
+        output_path=output_path,
+    )
+
+
+def plot_per_app_ld2_dominant_size_share(
+    reports: list[WorkloadReport],
+    output_path: Path,
+) -> None:
+    """Per-app bar chart: mean dominant LD2 mem size share for the dominant offset delta."""
+    plot_per_app_fraction_bar(
+        reports,
+        fraction_attr="mean_ld2_dominant_size_frac",
+        ylabel=LD2_DOMINANT_SIZE_YLABEL,
+        output_path=output_path,
+        bar_color=LD2_SIZE_PREDICTABILITY_BAR_COLOR,
+    )
+
+
+def plot_offset_delta_and_ld2_size_combined(
+    reports: list[WorkloadReport],
+    output_path: Path,
+) -> None:
+    """Side-by-side: offset-delta predictability (left) and LD2 size share (right)."""
+    import matplotlib.pyplot as plt
+
+    _ensure_noto_serif()
+    axis_font = _backend_stalls_axis_font()
+    _apply_backend_stalls_plot_style(axis_font)
+
+    fig, (ax_left, ax_right) = plt.subplots(
+        1,
+        2,
+        figsize=COMBINED_PREDICTABILITY_FIGSIZE,
+        sharey=False,
+    )
+    # Slightly narrower bars so 12 categories remain readable in each panel.
+    combined_bar_width = BACKEND_STALLS_BAR_WIDTH * 0.85
+    plot_per_app_fraction_bar(
+        reports,
+        fraction_attr="mean_dominant_offset_delta_frac",
+        ylabel=OFFSET_DELTA_YLABEL,
+        bar_color=PREDICTABILITY_BAR_COLOR,
+        ax=ax_left,
+        bar_width=combined_bar_width,
+    )
+    plot_per_app_fraction_bar(
+        reports,
+        fraction_attr="mean_ld2_dominant_size_frac",
+        ylabel=LD2_DOMINANT_SIZE_YLABEL,
+        bar_color=LD2_SIZE_PREDICTABILITY_BAR_COLOR,
+        ax=ax_right,
+        bar_width=combined_bar_width,
+    )
+
+    fig.subplots_adjust(top=0.98, bottom=0.32, left=0.06, right=0.99, wspace=0.28)
+    output_dir = output_path.parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+    stem = output_path.name
+    for ext in ("png", "pdf", "eps"):
+        fig.savefig(
+            output_dir / f"{stem}.{ext}",
+            bbox_inches="tight",
+            pad_inches=0.08,
+            dpi=300,
+        )
+    plt.close(fig)
+
+
+# --------------------------------------------------------------------------
+# Grouped dual-axis bars: offset delta + LD2 size on one shared x-axis
+# --------------------------------------------------------------------------
+
+GROUPED_PREDICTABILITY_FIGSIZE = (24.0, 5.5)
+GROUPED_BAR_WIDTH = 0.32
+GROUPED_BAR_OFFSET = 0.18
+OFFSET_DELTA_LEGEND_LABEL = "Cache-block offset delta"
+LD2_SIZE_LEGEND_LABEL = "LD2 memory access size"
+
+
+def plot_offset_delta_ld2_size_grouped_dual_axis(
+    reports: list[WorkloadReport],
+    output_path: Path,
+) -> None:
+    """One shared x-axis with two side-by-side bars per app and dual y-axes.
+
+    Left bar / left y-axis: dominant offset-delta share.
+    Right bar / right y-axis: dominant LD2 mem-size share (at that offset delta).
+    """
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as mticker
+
+    _ensure_noto_serif()
+    axis_font = _backend_stalls_axis_font()
+    _apply_backend_stalls_plot_style(axis_font)
+
+    by_wl = {r.workload: r for r in reports if r.workload != "Suite average"}
+    ordered = [by_wl[wl] for wl in CANDIDATE_WORKLOADS if wl in by_wl]
+    ordered.extend(r for wl, r in by_wl.items() if wl not in CANDIDATE_WORKLOADS)
+    suite = next(r for r in reports if r.workload == "Suite average")
+
+    display_apps = [rename_workload(r.workload) for r in ordered] + ["Average"]
+    offset_pct = [r.mean_dominant_offset_delta_frac * 100.0 for r in ordered] + [
+        suite.mean_dominant_offset_delta_frac * 100.0
+    ]
+    ld2_pct = [r.mean_ld2_dominant_size_frac * 100.0 for r in ordered] + [
+        suite.mean_ld2_dominant_size_frac * 100.0
+    ]
+    x = list(range(len(display_apps)))
+    x_left = [xi - GROUPED_BAR_OFFSET for xi in x]
+    x_right = [xi + GROUPED_BAR_OFFSET for xi in x]
+
+    fig, ax = plt.subplots(figsize=GROUPED_PREDICTABILITY_FIGSIZE)
+    ax_right = ax.twinx()
+
+    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
+    bars_left = ax.bar(
+        x_left,
+        offset_pct,
+        GROUPED_BAR_WIDTH,
+        color=PREDICTABILITY_BAR_COLOR,
+        edgecolor="black",
+        linewidth=BACKEND_STALLS_BAR_EDGE_WIDTH,
+        zorder=3,
+        label=OFFSET_DELTA_LEGEND_LABEL,
+    )
+    bars_right = ax_right.bar(
+        x_right,
+        ld2_pct,
+        GROUPED_BAR_WIDTH,
+        color=LD2_SIZE_PREDICTABILITY_BAR_COLOR,
+        edgecolor="black",
+        linewidth=BACKEND_STALLS_BAR_EDGE_WIDTH,
+        zorder=3,
+        label=LD2_SIZE_LEGEND_LABEL,
     )
 
     if len(display_apps) > 1:
@@ -805,30 +1050,54 @@ def plot_per_app_fraction_bar(
         if label.get_text() == "Average":
             label.set_weight("bold")
 
-    _backend_stalls_tight_x_limits(ax, x[0], x[-1])
+    half_span = GROUPED_BAR_OFFSET + GROUPED_BAR_WIDTH / 2.0
+    ax.set_xlim(x[0] - half_span - 0.12, x[-1] + half_span + 0.12)
+    ax.margins(x=0)
+
+    y_max = max(max(offset_pct, default=100.0), max(ld2_pct, default=100.0))
+    ymax = min(100.0, max(20.0, (int(y_max / 20) + 1) * 20))
+    ylim = (0.0, ymax * 1.08)
+    for axis in (ax, ax_right):
+        axis.set_ylim(*ylim)
+        axis.yaxis.set_major_locator(mticker.MultipleLocator(20))
+        axis.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
 
     ax.set_ylabel(
-        ylabel,
+        OFFSET_DELTA_YLABEL,
         fontsize=axis_font,
         fontfamily=FONT_FAMILY,
         labelpad=BACKEND_STALLS_Y_LABEL_PAD,
     )
-    y_max = max(pct_values) if pct_values else 100.0
-    ymax = min(100.0, max(20.0, (int(y_max / 20) + 1) * 20))
-    ax.set_ylim(0.0, ymax * 1.08)
-    ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
+    ax_right.set_ylabel(
+        LD2_DOMINANT_SIZE_YLABEL,
+        fontsize=axis_font,
+        fontfamily=FONT_FAMILY,
+        labelpad=BACKEND_STALLS_Y_LABEL_PAD,
+    )
     ax.tick_params(axis="both", labelsize=axis_font)
-    for label in ax.get_yticklabels():
+    ax_right.tick_params(axis="y", labelsize=axis_font)
+    for label in list(ax.get_yticklabels()) + list(ax_right.get_yticklabels()):
         label.set_fontsize(axis_font)
         label.set_fontfamily(FONT_FAMILY)
 
-    for spine in ax.spines.values():
+    for spine in list(ax.spines.values()) + list(ax_right.spines.values()):
         spine.set_visible(True)
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
-    plt.subplots_adjust(top=0.98, bottom=0.32, left=0.10)
+    legend = ax.legend(
+        handles=[bars_left, bars_right],
+        labels=[OFFSET_DELTA_LEGEND_LABEL, LD2_SIZE_LEGEND_LABEL],
+        loc="lower left",
+        frameon=True,
+        fontsize=axis_font,
+        prop={"family": FONT_FAMILY, "size": axis_font},
+    )
+    legend.get_frame().set_linewidth(BACKEND_STALLS_BAR_EDGE_WIDTH)
+    legend.get_frame().set_facecolor("white")
+    legend.get_frame().set_edgecolor("black")
+
+    plt.subplots_adjust(top=0.92, bottom=0.32, left=0.10, right=0.90)
     output_dir = output_path.parent
     output_dir.mkdir(parents=True, exist_ok=True)
     stem = output_path.name
@@ -840,43 +1109,6 @@ def plot_per_app_fraction_bar(
             dpi=300,
         )
     plt.close(fig)
-
-
-def plot_per_app_single_offset_delta(
-    reports: list[WorkloadReport],
-    output_path: Path,
-) -> None:
-    """Per-app bar chart: mean dominant cache-block offset-delta share across static pairs."""
-    plot_per_app_fraction_bar(
-        reports,
-        fraction_attr="mean_dominant_offset_delta_frac",
-        ylabel=(
-            "% of times a specific cache\n"
-            "block offset delta occurs\n"
-            "across all dynamic instances\n"
-            "of a fusible load pair"
-        ),
-        output_path=output_path,
-    )
-
-
-def plot_per_app_ld2_dominant_size_share(
-    reports: list[WorkloadReport],
-    output_path: Path,
-) -> None:
-    """Per-app bar chart: mean dominant LD2 mem size share for the dominant offset delta."""
-    plot_per_app_fraction_bar(
-        reports,
-        fraction_attr="mean_ld2_dominant_size_frac",
-        ylabel=(
-            "% of times a specific LD2\n"
-            "memory access size occurs\n"
-            "for the most frequent\n"
-            "cache-block offset delta"
-        ),
-        output_path=output_path,
-        bar_color=LD2_SIZE_PREDICTABILITY_BAR_COLOR,
-    )
 
 
 def plot_unique_delta_histogram(pairs: list[PairAccuracy], output_path: Path) -> None:
@@ -1018,11 +1250,19 @@ def main(argv: list[str] | None = None) -> None:
 
     plot_per_app_single_offset_delta(
         reports,
-        output_dir / "offset_delta_predictability_by_app",
+        output_dir / "offset-delta-predictability",
     )
     plot_per_app_ld2_dominant_size_share(
         reports,
-        output_dir / "ld2_dominant_mem_size_share_by_app",
+        output_dir / "ld2-dominant-mem-size",
+    )
+    plot_offset_delta_and_ld2_size_combined(
+        reports,
+        output_dir / "offset_delta_and_ld2_size_predictability_by_app",
+    )
+    plot_offset_delta_ld2_size_grouped_dual_axis(
+        reports,
+        output_dir / "offset_delta_ld2_size_grouped_by_app",
     )
     if args.with_cdf:
         plot_accuracy_cdf(
@@ -1063,8 +1303,10 @@ def main(argv: list[str] | None = None) -> None:
         "fusion_predictability_pair_summary.csv",
         "fusion_predictability_summary.csv",
         "fusion_predictability_computation_log.txt",
-        "offset_delta_predictability_by_app.png",
-        "ld2_dominant_mem_size_share_by_app.png",
+        "offset-delta-predictability.png",
+        "ld2-dominant-mem-size.png",
+        "offset_delta_and_ld2_size_predictability_by_app.png",
+        "offset_delta_ld2_size_grouped_by_app.png",
         "unique_offset_delta_histogram.png",
     ):
         print(f"  - {output_dir / name}")
