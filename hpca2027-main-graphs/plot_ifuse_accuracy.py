@@ -41,8 +41,8 @@ if str(GRAPH_DIR) not in sys.path:
 
 from plot_ipc import (  # noqa: E402
     AVERAGE_SEPARATOR_COLOR,
+    AVERAGE_SEPARATOR_WIDTH,
     BAR_EDGE_WIDTH,
-    BAR_WIDTH,
     DEFAULT_HELIOS_CONFIG,
     DEFAULT_HELIOS_DIR,
     DEFAULT_IFUSE_ACCURACY_OUTPUT_DIR,
@@ -54,19 +54,28 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_SUBSUITE,
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
+    DEFAULT_WORKLOADS_DB,
     FONT_FAMILY,
     HELIOS_COLOR,
     IFUSE_COLOR,
-    IPC_AXIS_FONT,
     IPC_AXIS_LABEL_FONT,
+    IPC_FIGSIZE,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     RFP_COLOR,
     SIMPOINT_WORKLOADS,
+    _apply_ipc_plot_style,
+    _draw_app_x_tick_guides,
+    _tight_x_limits,
     find_simpoint_dir,
+    grouped_x_positions,
     load_simpoint_trace_weights,
+    register_noto_serif,
     rename_workload,
 )
+
+# Slightly wider bars for the 3-scheme accuracy/MPKI plots.
+ACCURACY_BAR_WIDTH = 0.50
 
 PERIODIC_INST_STAT = "Periodic_Instructions"
 
@@ -375,33 +384,13 @@ def write_computation_log(
 
 
 def _bar_offsets(n: int) -> list[float]:
-    return [(i - (n - 1) / 2.0) * BAR_WIDTH for i in range(n)]
+    return [(i - (n - 1) / 2.0) * ACCURACY_BAR_WIDTH for i in range(n)]
 
 
 def _format_y_tick(y: float, _p: int) -> str:
     if abs(y - round(y)) < 1e-9:
         return f"{int(round(y))}"
     return f"{y:.3f}".rstrip("0").rstrip(".")
-
-
-def _style_legend(ax, *, include_helios: bool, include_rfp: bool, ncol: int) -> None:
-    legend = ax.legend(
-        handles=_legend_handles(include_helios=include_helios, include_rfp=include_rfp),
-        loc="upper center",
-        bbox_to_anchor=(0.5, 1.22),
-        ncol=ncol,
-        frameon=True,
-        fancybox=False,
-        shadow=False,
-        edgecolor="black",
-        framealpha=1.0,
-        handlelength=1.4,
-        handleheight=1.1,
-        columnspacing=1.2,
-    )
-    legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
-    legend.get_frame().set_facecolor("white")
-    legend.get_frame().set_alpha(1.0)
 
 
 def _legend_handles(*, include_helios: bool, include_rfp: bool) -> list:
@@ -422,6 +411,31 @@ def _legend_handles(*, include_helios: bool, include_rfp: bool) -> list:
             )
         )
     return handles
+
+
+def _place_top_legend(ax, handles: list) -> None:
+    legend = ax.legend(
+        handles=handles,
+        frameon=True,
+        fancybox=False,
+        shadow=False,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.02),
+        bbox_transform=ax.transAxes,
+        fontsize=IPC_LEGEND_FONT,
+        edgecolor="black",
+        ncol=len(handles),
+        handlelength=0.95,
+        handleheight=0.95,
+        borderpad=0.55,
+        labelspacing=0.4,
+        columnspacing=1.0,
+        framealpha=1.0,
+    )
+    legend.set_clip_on(False)
+    legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
+    legend.get_frame().set_facecolor("white")
+    legend.get_frame().set_alpha(1.0)
 
 
 def _series_values(
@@ -451,41 +465,50 @@ def _series_values(
     return active
 
 
-def plot_accuracy_bars(
+def _plot_grouped_bars(
     results: list[AccuracyResult],
     output_dir: Path,
     *,
+    attr: str,
+    ylabel: str,
+    stems: tuple[str, ...],
     include_helios: bool,
     include_rfp: bool,
+    y_from_zero: bool,
 ) -> None:
     import matplotlib.pyplot as plt
+    import matplotlib.ticker as mticker
 
     active_series = _series_values(
-        results, "accuracy_pct", include_helios=include_helios, include_rfp=include_rfp
+        results, attr, include_helios=include_helios, include_rfp=include_rfp
+    )
+    ordered_workloads = [result.workload for result in results]
+    _ordered, x_map, avg_x, separator_x = grouped_x_positions(
+        ordered_workloads, n_series=len(active_series)
     )
     display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
-    x = list(range(len(display_apps)))
+    x = [x_map[result.workload] for result in results] + [avg_x]
     offsets = _bar_offsets(len(active_series))
 
-    plt.rcParams.update(
-        {
-            "font.family": FONT_FAMILY,
-            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "font.size": IPC_AXIS_FONT,
-            "axes.labelsize": IPC_AXIS_LABEL_FONT,
-            "xtick.labelsize": IPC_TICK_FONT,
-            "ytick.labelsize": IPC_TICK_FONT,
-            "legend.fontsize": IPC_AXIS_FONT,
-        }
-    )
-    fig, ax = plt.subplots(figsize=(22, 8))
+    _apply_ipc_plot_style()
+    fig_w, fig_h = IPC_FIGSIZE
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h + 1.5))
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
     for offset, (_name, values, color) in zip(offsets, active_series):
+        bar_x = []
+        bar_vals = []
+        for i, val in zip(x, values):
+            if math.isnan(val):
+                continue
+            bar_x.append(i + offset)
+            bar_vals.append(val)
+        if not bar_x:
+            continue
         ax.bar(
-            [i + offset for i in x],
-            [0.0 if math.isnan(val) else val for val in values],
-            BAR_WIDTH,
+            bar_x,
+            bar_vals,
+            ACCURACY_BAR_WIDTH,
             color=color,
             edgecolor="black",
             linewidth=BAR_EDGE_WIDTH,
@@ -494,11 +517,11 @@ def plot_accuracy_bars(
 
     if len(display_apps) > 1:
         ax.axvline(
-            x=len(display_apps) - 1.5,
+            x=separator_x,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
             alpha=0.9,
-            linewidth=2.5,
+            linewidth=AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
@@ -510,11 +533,15 @@ def plot_accuracy_bars(
         fontsize=IPC_TICK_FONT,
         fontfamily=FONT_FAMILY,
     )
+    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
+    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for i, label in enumerate(ax.get_xticklabels()):
+        label.set_fontfamily(FONT_FAMILY)
         if i == len(display_apps) - 1:
-            label.set_weight("bold")
+            label.set_fontweight("bold")
+    _tight_x_limits(ax, x[0], x[-1], n_bars=len(active_series))
 
-    ax.set_ylabel("Predictor accuracy (%)", fontsize=IPC_AXIS_LABEL_FONT, fontfamily=FONT_FAMILY)
+    ax.set_ylabel(ylabel, fontsize=IPC_AXIS_LABEL_FONT, fontfamily=FONT_FAMILY)
 
     finite = [
         v
@@ -522,35 +549,67 @@ def plot_accuracy_bars(
         for v in values
         if not math.isnan(v)
     ]
-    lo = min(finite) if finite else 0.0
-    hi = max(finite) if finite else 100.0
-    span = hi - lo if hi > lo else max(abs(100.0 - hi), 0.01)
-    pad = max(span * 0.35, 0.002)
-    ax.set_ylim(max(0.0, lo - pad), min(100.0, hi + pad))
+    if y_from_zero:
+        hi = max(finite) if finite else 1.0
+        ylim_top = hi * 1.15
+        if hi <= 1.0:
+            step = 0.2 if hi > 0.2 else max(hi / 5.0, 1e-4)
+        elif hi <= 10.0:
+            step = 1.0
+        else:
+            step = 10.0
+        ax.set_ylim(0.0, ylim_top)
+        ax.yaxis.set_major_locator(mticker.MultipleLocator(step))
+    else:
+        lo = min(finite) if finite else 0.0
+        hi = max(finite) if finite else 100.0
+        span = hi - lo if hi > lo else max(abs(100.0 - hi), 0.01)
+        pad = max(span * 0.35, 0.002)
+        ax.set_ylim(max(0.0, lo - pad), min(100.0, hi + pad))
+
     ax.yaxis.set_major_formatter(plt.FuncFormatter(_format_y_tick))
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
+    _draw_app_x_tick_guides(ax, x)
+
+    _place_top_legend(
+        ax, _legend_handles(include_helios=include_helios, include_rfp=include_rfp)
+    )
 
     for spine in ax.spines.values():
         spine.set_visible(True)
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
-    fig.subplots_adjust(top=0.80)
-    _style_legend(
-        ax,
-        include_helios=include_helios,
-        include_rfp=include_rfp,
-        ncol=len(active_series),
-    )
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.78, bottom=0.32, left=0.18, right=0.98)
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    for stem in ("predictor_accuracy", "ifuse_accuracy"):
+    for stem in stems:
         out = output_dir / stem
-        fig.savefig(f"{out}.png", bbox_inches="tight", dpi=300)
-        fig.savefig(f"{out}.pdf", bbox_inches="tight", dpi=300)
+        fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.05, dpi=300)
+        fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.05, dpi=300)
         fig.savefig(f"{out}.eps", bbox_inches="tight", dpi=300)
     plt.close(fig)
+
+
+def plot_accuracy_bars(
+    results: list[AccuracyResult],
+    output_dir: Path,
+    *,
+    include_helios: bool,
+    include_rfp: bool,
+) -> None:
+    _plot_grouped_bars(
+        results,
+        output_dir,
+        attr="accuracy_pct",
+        ylabel="Predictor accuracy (%)",
+        stems=("predictor_accuracy", "ifuse_accuracy"),
+        include_helios=include_helios,
+        include_rfp=include_rfp,
+        y_from_zero=False,
+    )
 
 
 def plot_mpki_bars(
@@ -560,122 +619,20 @@ def plot_mpki_bars(
     include_helios: bool,
     include_rfp: bool,
 ) -> None:
-    import matplotlib.pyplot as plt
-
-    active_series = _series_values(
-        results, "mpki", include_helios=include_helios, include_rfp=include_rfp
+    _plot_grouped_bars(
+        results,
+        output_dir,
+        attr="mpki",
+        ylabel="Mispredictions\nPer Kilo Instructions\n(MPKI)",
+        stems=("predictor_mpki", "ifuse_mpki"),
+        include_helios=include_helios,
+        include_rfp=include_rfp,
+        y_from_zero=True,
     )
-    display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
-    x = list(range(len(display_apps)))
-    offsets = _bar_offsets(len(active_series))
-
-    plt.rcParams.update(
-        {
-            "font.family": FONT_FAMILY,
-            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "font.size": IPC_AXIS_FONT,
-            "axes.labelsize": IPC_AXIS_LABEL_FONT,
-            "xtick.labelsize": IPC_TICK_FONT,
-            "ytick.labelsize": IPC_TICK_FONT,
-            "legend.fontsize": IPC_AXIS_FONT,
-        }
-    )
-    fig, ax = plt.subplots(figsize=(22, 5.5))
-    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
-
-    for offset, (_name, values, color) in zip(offsets, active_series):
-        ax.bar(
-            [i + offset for i in x],
-            [0.0 if math.isnan(val) else val for val in values],
-            BAR_WIDTH,
-            color=color,
-            edgecolor="black",
-            linewidth=BAR_EDGE_WIDTH,
-            zorder=3,
-        )
-
-    if len(display_apps) > 1:
-        ax.axvline(
-            x=len(display_apps) - 1.5,
-            color=AVERAGE_SEPARATOR_COLOR,
-            linestyle="--",
-            alpha=0.9,
-            linewidth=2.5,
-            zorder=2,
-        )
-
-    ax.set_xticks(x)
-    ax.set_xticklabels(
-        display_apps,
-        rotation=45,
-        ha="right",
-        fontsize=IPC_TICK_FONT,
-        fontfamily=FONT_FAMILY,
-    )
-    for i, label in enumerate(ax.get_xticklabels()):
-        if i == len(display_apps) - 1:
-            label.set_weight("bold")
-
-    ax.set_ylabel(
-        "Mispredictions\nPer Kilo Instructions\n(MPKI)",
-        fontsize=IPC_AXIS_LABEL_FONT,
-        fontfamily=FONT_FAMILY,
-    )
-
-    finite = [
-        v
-        for _k, values, _c in active_series
-        for v in values
-        if not math.isnan(v)
-    ]
-    hi = max(finite) if finite else 1.0
-    ax.set_ylim(0.0, hi * 1.12 + max(hi * 0.02, 0.0001))
-    import matplotlib.ticker as mticker
-
-    ax.yaxis.set_major_locator(mticker.MultipleLocator(10))
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(_format_y_tick))
-    for label in ax.get_yticklabels():
-        label.set_fontfamily(FONT_FAMILY)
-
-    for spine in ax.spines.values():
-        spine.set_visible(True)
-        spine.set_color("black")
-        spine.set_linewidth(2.5)
-
-    plt.subplots_adjust(top=0.88, bottom=0.28, left=0.08, right=0.99)
-
-    legend_handles = _legend_handles(include_helios=include_helios, include_rfp=include_rfp)
-    legend = ax.legend(
-        handles=legend_handles,
-        frameon=True,
-        fancybox=False,
-        shadow=False,
-        loc="lower center",
-        bbox_to_anchor=(0.5, 0.96),
-        bbox_transform=ax.transAxes,
-        borderaxespad=0.0,
-        fontsize=IPC_LEGEND_FONT,
-        edgecolor="black",
-        ncol=len(legend_handles),
-        handlelength=1.4,
-        handleheight=1.1,
-        columnspacing=1.2,
-        framealpha=1.0,
-    )
-    legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
-    legend.get_frame().set_facecolor("white")
-    legend.get_frame().set_alpha(1.0)
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-    for stem in ("predictor_mpki", "ifuse_mpki"):
-        out = output_dir / stem
-        fig.savefig(f"{out}.png", bbox_inches="tight", dpi=300)
-        fig.savefig(f"{out}.pdf", bbox_inches="tight", dpi=300)
-        fig.savefig(f"{out}.eps", bbox_inches="tight", dpi=300)
-    plt.close(fig)
 
 
 def main() -> None:
+    register_noto_serif()
     parser = argparse.ArgumentParser(
         description="Plot simpoint-weighted fusion predictor accuracy (%) and MPKI."
     )
@@ -692,6 +649,7 @@ def main() -> None:
     parser.add_argument("--helios-config", default=DEFAULT_HELIOS_CONFIG)
     parser.add_argument("--rfp-config", default=DEFAULT_RFP_CONFIG)
     parser.add_argument("--ifuse-config", default=DEFAULT_IPC_IFUSE_CONFIG)
+    parser.add_argument("--workloads-db", type=Path, default=DEFAULT_WORKLOADS_DB)
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -701,15 +659,23 @@ def main() -> None:
     parser.add_argument("--exclude-workloads", nargs="*", default=["feedsim", "langchain_web"])
     args = parser.parse_args()
 
-    sim_root = args.simulations_root
     helios_dir = args.helios_dir or DEFAULT_HELIOS_DIR
     rfp_dir = args.rfp_dir or DEFAULT_RFP_DIR
     ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
+    if not ifuse_dir.is_dir():
+        fallback = args.simulations_root / "ifuse"
+        if fallback.is_dir():
+            print(f"I-Fuse dir missing ({ifuse_dir}); falling back to {fallback}")
+            ifuse_dir = fallback
     workloads = [wl for wl in SIMPOINT_WORKLOADS if wl not in set(args.exclude_workloads)]
     output_dir = args.output_dir or DEFAULT_IFUSE_ACCURACY_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
+    sp_weights = load_simpoint_trace_weights(
+        args.trace_root,
+        workloads,
+        workloads_db=args.workloads_db,
+    )
 
     print("Computing fusion predictor accuracy...")
     print(f"  helios: {helios_dir} (config={args.helios_config})")

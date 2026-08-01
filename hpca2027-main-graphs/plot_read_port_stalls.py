@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """Simpoint-weighted L1-D read port stall reduction for Helios, RFP, I-Fuse, and ideal fusion.
 
-Counts all L1-D read port unavailable events as:
-  DCACHE_READ_PORT_UNAVAILABLE_ONPATH_count + DCACHE_READ_PORT_UNAVAILABLE_OFFPATH_count
+Counts L1-D bank conflicts as DCACHE_READ_PORT_UNAVAILABLE_ONPATH_count (on-path only;
+pass --include-offpath to add the off-path counter).
 
-All configurations read memory.stat.0.csv. Baseline denominator uses rfp-baseline/.
+With DCACHE_BANKS=8 and DCACHE_READ_PORTS=1, ports are allocated per bank
+(dcache_stage.c:111) and this counter fires iff another access already claimed that
+bank in the same cycle, i.e. it is exactly a bank conflict. The counter also covers
+stores failing to acquire a write port (dcache_stage.c:246).
+
+All configurations read memory.stat.0.csv. Baseline denominator uses baseline/.
 
 Per workload:
   reduction_pct = 100 * (weighted_baseline_stalls - weighted_config_stalls)
@@ -15,7 +20,7 @@ Commands:
 /users/deepmish/miniconda3/envs/scarabinfra/bin/python \
   /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_read_port_stalls.py \
   --simulations-root /users/deepmish/scarab/src/simulations \
-  --baseline-dir /users/deepmish/scarab/src/simulations/rfp-baseline \
+  --baseline-dir /users/deepmish/scarab/src/simulations/baseline \
   --helios-dir /users/deepmish/scarab/src/simulations/helios \
   --rfp-dir /users/deepmish/scarab/src/simulations/rfp \
   --ifuse-dir /users/deepmish/scarab/src/simulations/ifuse \
@@ -38,10 +43,11 @@ if str(GRAPH_DIR) not in sys.path:
     sys.path.insert(0, str(GRAPH_DIR))
 
 from plot_ipc import (  # noqa: E402
-    ARROW_THRESHOLD,
     AVERAGE_SEPARATOR_COLOR,
+    AVERAGE_SEPARATOR_WIDTH,
     BAR_EDGE_WIDTH,
     BAR_WIDTH,
+    DEFAULT_BASELINE_DIR,
     DEFAULT_HELIOS_CONFIG,
     DEFAULT_HELIOS_DIR,
     DEFAULT_IDEAL_CONFIG,
@@ -49,26 +55,32 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_IPC_IFUSE_CONFIG,
     DEFAULT_IPC_IFUSE_DIR,
     DEFAULT_READ_PORT_STALLS_OUTPUT_DIR,
-    DEFAULT_RFP_BASELINE_DIR,
     DEFAULT_RFP_CONFIG,
     DEFAULT_RFP_DIR,
     DEFAULT_SIMULATIONS_ROOT,
     DEFAULT_SUBSUITE,
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
+    DEFAULT_WORKLOADS_DB,
     FONT_FAMILY,
     HELIOS_COLOR,
     IDEAL_FUSION_COLOR,
     IFUSE_COLOR,
     IPC_AXIS_LABEL_FONT,
+    IPC_FIGSIZE,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     RFP_COLOR,
     SIMPOINT_WORKLOADS,
+    _apply_ipc_plot_style,
     _bar_offsets,
+    _draw_app_x_tick_guides,
+    _tight_x_limits,
     check_simpoint_coverage,
     find_simpoint_dir,
+    grouped_x_positions,
     load_simpoint_trace_weights,
+    register_noto_serif,
     rename_workload,
 )
 
@@ -118,10 +130,20 @@ def stat_count_from_csv(stat_csv: Path, stat_name: str) -> float | None:
     return None
 
 
+# On-path only by default: off-path counts scale with speculation depth and branch
+# prediction, which differ across configurations, so including them would mix a
+# speculation artifact into the bank-conflict comparison. Set by --include-offpath.
+INCLUDE_OFFPATH = False
+
+
 def total_read_port_stalls_from_csv(stat_csv: Path) -> float | None:
     onpath = stat_count_from_csv(stat_csv, READ_PORT_UNAVAILABLE_ONPATH_STAT)
+    if onpath is None:
+        return None
+    if not INCLUDE_OFFPATH:
+        return onpath
     offpath = stat_count_from_csv(stat_csv, READ_PORT_UNAVAILABLE_OFFPATH_STAT)
-    if onpath is None or offpath is None:
+    if offpath is None:
         return None
     return onpath + offpath
 
@@ -363,9 +385,9 @@ def write_computation_log(
 ) -> None:
     with path.open("w") as fh:
         fh.write(
-            "L1-D read port stall reduction "
-            "(DCACHE_READ_PORT_UNAVAILABLE_ONPATH_count + "
-            "DCACHE_READ_PORT_UNAVAILABLE_OFFPATH_count)\n"
+            "L1-D bank conflict reduction (DCACHE_READ_PORT_UNAVAILABLE"
+            + ("_ONPATH + _OFFPATH" if INCLUDE_OFFPATH else "_ONPATH, on-path only")
+            + ")\n"
         )
         fh.write("=" * 80 + "\n")
         fh.write(
@@ -465,21 +487,17 @@ def plot_read_port_stall_bars(
         values.append(avg)
         active_series.append((key, values, color))
 
+    ordered_workloads = [result.workload for result in results]
+    _ordered, x_map, avg_x, separator_x = grouped_x_positions(
+        ordered_workloads, n_series=len(active_series)
+    )
     display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
-    x = list(range(len(display_apps)))
+    x = [x_map[result.workload] for result in results] + [avg_x]
     offsets = _bar_offsets(len(active_series))
 
-    plt.rcParams.update(
-        {
-            "font.family": FONT_FAMILY,
-            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "axes.labelsize": IPC_AXIS_LABEL_FONT,
-            "xtick.labelsize": IPC_TICK_FONT,
-            "ytick.labelsize": IPC_TICK_FONT,
-            "legend.fontsize": IPC_LEGEND_FONT,
-        }
-    )
-    fig, ax = plt.subplots(figsize=(24, 6.5))
+    _apply_ipc_plot_style()
+    fig_w, fig_h = IPC_FIGSIZE
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h + 1.5))
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
     for offset, (key, values, color) in zip(offsets, active_series):
@@ -499,38 +517,13 @@ def plot_read_port_stall_bars(
             zorder=3,
         )
 
-    for offset, (key, values, color) in zip(offsets, active_series):
-        if key == "rfp":
-            continue
-        for i, val in enumerate(values):
-            if math.isnan(val) or not (0 <= val < ARROW_THRESHOLD):
-                continue
-            ax.annotate(
-                "",
-                xy=(i + offset, 0),
-                xytext=(i + offset, 5.5),
-                arrowprops=dict(arrowstyle="->", color=color, lw=1.5, mutation_scale=12),
-                zorder=10,
-            )
-            ax.text(
-                i + offset - 0.12,
-                5.5,
-                f"{val:.1f}",
-                ha="center",
-                va="bottom",
-                fontsize=IPC_TICK_FONT,
-                fontfamily=FONT_FAMILY,
-                color=color,
-                zorder=10,
-            )
-
     if len(display_apps) > 1:
         ax.axvline(
-            x=len(display_apps) - 1.5,
+            x=separator_x,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
             alpha=0.9,
-            linewidth=2.5,
+            linewidth=AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
@@ -539,43 +532,56 @@ def plot_read_port_stall_bars(
         display_apps,
         rotation=45,
         ha="right",
+        fontsize=IPC_TICK_FONT,
         fontfamily=FONT_FAMILY,
     )
+    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
+    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for i, label in enumerate(ax.get_xticklabels()):
+        label.set_fontfamily(FONT_FAMILY)
         if i == len(display_apps) - 1:
-            label.set_weight("bold")
+            label.set_fontweight("bold")
+    _tight_x_limits(ax, x[0], x[-1], n_bars=len(active_series))
 
     ax.set_ylabel(
-        "L1-D cache read port stalls reduction (%)\n(normalized to no-fusion)",
+        "Reduction in L1-D\nbank conflicts (%)\n(normalized to\nno-fusion)",
         fontsize=IPC_AXIS_LABEL_FONT,
         fontfamily=FONT_FAMILY,
     )
 
     all_values = [v for _k, values, _c in active_series for v in values if not math.isnan(v)]
     ymax = max(all_values) if all_values else 100.0
-    ax.set_ylim(0.0, ymax * 1.12 + 2.0)
-    ax.yaxis.set_major_locator(mticker.MultipleLocator(10))
+    ylim_top = math.ceil((ymax * 1.15) / 20.0) * 20.0
+    if ylim_top <= ymax:
+        ylim_top += 20.0
+    ax.set_ylim(0.0, ylim_top)
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
+    _draw_app_x_tick_guides(ax, x)
 
-    plt.subplots_adjust(top=0.88, bottom=0.28, left=0.08, right=0.99)
-
+    # Place the legend fully above the plot frame.
     legend = ax.legend(
         handles=_legend_handles(include_helios=include_helios),
         frameon=True,
         fancybox=False,
         shadow=False,
         loc="lower center",
-        bbox_to_anchor=(0.5, 0.96),
+        bbox_to_anchor=(0.5, 1.02),
         bbox_transform=ax.transAxes,
-        borderaxespad=0.0,
         fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
         ncol=len(active_series),
-        handlelength=1.4,
+        handlelength=0.95,
+        handleheight=0.95,
+        borderpad=0.55,
+        labelspacing=0.4,
+        columnspacing=1.0,
+        framealpha=1.0,
     )
-    legend.get_frame().set_linewidth(2.0)
+    legend.set_clip_on(False)
+    legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
     legend.get_frame().set_facecolor("white")
     legend.get_frame().set_alpha(1.0)
 
@@ -584,16 +590,20 @@ def plot_read_port_stall_bars(
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.78, bottom=0.32, left=0.18, right=0.98)
+
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("read_port_stalls",):
         out = output_dir / stem
-        fig.savefig(f"{out}.png", bbox_inches="tight", dpi=300)
-        fig.savefig(f"{out}.pdf", bbox_inches="tight", dpi=300)
+        fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.05, dpi=300)
+        fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.05, dpi=300)
         fig.savefig(f"{out}.eps", bbox_inches="tight", dpi=300)
     plt.close(fig)
 
 
 def main() -> None:
+    register_noto_serif()
     parser = argparse.ArgumentParser(
         description=(
             "Plot simpoint-weighted L1-D read port stall reduction for Helios, RFP, "
@@ -610,7 +620,7 @@ def main() -> None:
         "--baseline-dir",
         type=Path,
         default=None,
-        help="No-fusion baseline directory (default: rfp-baseline)",
+        help="No-fusion baseline directory (default: baseline)",
     )
     parser.add_argument("--helios-dir", type=Path, default=None)
     parser.add_argument("--helios-config", default=DEFAULT_HELIOS_CONFIG)
@@ -628,16 +638,25 @@ def main() -> None:
     parser.add_argument("--baseline-config", default="baseline")
     parser.add_argument("--ifuse-config", default=DEFAULT_IPC_IFUSE_CONFIG)
     parser.add_argument("--ideal-fusion-config", default=DEFAULT_IDEAL_CONFIG)
+    parser.add_argument("--workloads-db", type=Path, default=DEFAULT_WORKLOADS_DB)
     parser.add_argument(
         "--output-dir",
         type=Path,
         default=None,
         help="Plot output directory (default: scarab/src/hpca2027-main-graphs-results/read_port_stalls)",
     )
+    parser.add_argument(
+        "--include-offpath",
+        action="store_true",
+        help="Also count off-path (wrong-path) bank conflicts (default: on-path only)",
+    )
     parser.add_argument("--exclude-workloads", nargs="*", default=["feedsim", "langchain_web"])
     args = parser.parse_args()
 
-    baseline_dir = args.baseline_dir or DEFAULT_RFP_BASELINE_DIR
+    global INCLUDE_OFFPATH
+    INCLUDE_OFFPATH = args.include_offpath
+
+    baseline_dir = args.baseline_dir or DEFAULT_BASELINE_DIR
     helios_dir = args.helios_dir or DEFAULT_HELIOS_DIR
     rfp_dir = args.rfp_dir or DEFAULT_RFP_DIR
     ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
@@ -646,7 +665,11 @@ def main() -> None:
     output_dir = args.output_dir or DEFAULT_READ_PORT_STALLS_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
+    sp_weights = load_simpoint_trace_weights(
+        args.trace_root,
+        workloads,
+        workloads_db=args.workloads_db,
+    )
 
     plot_helios = False
     if args.include_helios:

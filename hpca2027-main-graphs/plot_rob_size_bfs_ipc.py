@@ -28,14 +28,12 @@ if str(GRAPH_DIR) not in sys.path:
     sys.path.insert(0, str(GRAPH_DIR))
 
 from plot_ipc import (  # noqa: E402
-    BAR_EDGE_WIDTH,
     BASELINE_COLOR,
     DEFAULT_SCARAB_ROOT,
     DEFAULT_SIMULATIONS_ROOT,
     DEFAULT_WORKLOADS_DB,
     FONT_FAMILY,
     IFUSE_COLOR,
-    _apply_ipc_plot_style,
     ipc_from_sim_dir,
     register_noto_serif,
 )
@@ -47,11 +45,17 @@ SERIES = (
     ("ifuse", "I-Fuse", IFUSE_COLOR),
 )
 
-# Match plot_topdown_backend_stalls.py exactly so fonts scale the same on the page.
-AXIS_FONT = 37
-BAR_WIDTH = 0.40
-FIGSIZE = (24.0, 7.0)
-Y_LABEL_PAD = 20
+# Compact single-column panel (IEEE ~columnwidth). Not the 24x7 main-graph canvas.
+FIGSIZE = (2.6, 1.2)
+AXIS_FONT = 8
+LEGEND_FONT = 7
+LINE_WIDTH = 0.8
+GRID_WIDTH = 0.6
+BAR_WIDTH = 0.28  # thinner than main-graph 0.44
+GROUP_STEP = 1.05
+Y_LABEL_PAD = 1.5
+Y_HEADROOM = 1.06
+Y_TICKS = (0, 1, 2, 3, 4)
 
 
 
@@ -135,30 +139,31 @@ def plot_bfs_rob_ipc(rows: list[dict[str, object]], output_dir: Path) -> None:
     from matplotlib.patches import Patch
 
     rob_labels = [str(r["rob_size"]) for r in rows]
-    # Evenly space 4 groups across the same ~12-slot span as backend-stalls.
-    n = len(rows)
-    span = 11.0
-    if n == 1:
-        x = [span / 2.0]
-    else:
-        x = [i * (span / (n - 1)) for i in range(n)]
+    x = [i * GROUP_STEP for i in range(len(rows))]
     offsets = [-(BAR_WIDTH / 2.0), BAR_WIDTH / 2.0]
 
     baseline_vals = [float(r["baseline_ipc"]) for r in rows]
     ifuse_vals = [float(r["ifuse_ipc"]) for r in rows]
     series_vals = [baseline_vals, ifuse_vals]
 
-    _apply_ipc_plot_style()
     plt.rcParams.update(
         {
+            "font.family": FONT_FAMILY,
+            "font.size": AXIS_FONT,
             "axes.labelsize": AXIS_FONT,
             "xtick.labelsize": AXIS_FONT,
             "ytick.labelsize": AXIS_FONT,
             "legend.fontsize": AXIS_FONT,
+            "axes.linewidth": LINE_WIDTH,
+            "pdf.fonttype": 42,
+            "ps.fonttype": 42,
         }
     )
     fig, ax = plt.subplots(figsize=FIGSIZE)
-    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
+    ax.grid(
+        True, axis="y", alpha=0.8, linestyle=":", color="black",
+        linewidth=GRID_WIDTH, zorder=0,
+    )
 
     for offset, (_key, _label, color), values in zip(offsets, SERIES, series_vals):
         ax.bar(
@@ -167,21 +172,22 @@ def plot_bfs_rob_ipc(rows: list[dict[str, object]], output_dir: Path) -> None:
             BAR_WIDTH,
             color=color,
             edgecolor="black",
-            linewidth=BAR_EDGE_WIDTH,
+            linewidth=LINE_WIDTH,
             zorder=3,
         )
 
     ax.set_xticks(x)
     ax.set_xticklabels(rob_labels, fontsize=AXIS_FONT, fontfamily=FONT_FAMILY)
     ax.tick_params(axis="both", labelsize=AXIS_FONT)
-    ax.tick_params(axis="x", length=0, pad=8)
+    ax.tick_params(axis="x", length=0, pad=2)
+    ax.tick_params(axis="y", pad=1)
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(AXIS_FONT)
         label.set_fontfamily(FONT_FAMILY)
 
-    # Keep the same data-span density as backend-stalls (~12 category slots on a
-    # 24x7 canvas) so fonts/bars match when the figure is width-scaled on a page.
-    ax.set_xlim(-0.6, 11.2)
+    # Tight x-span around the 4 ROB groups — no filler whitespace.
+    half_span = (len(SERIES) * BAR_WIDTH) / 2.0
+    ax.set_xlim(x[0] - half_span - 0.18, x[-1] + half_span + 0.18)
     ax.margins(x=0)
 
     ax.set_xlabel("ROB size", fontsize=AXIS_FONT, fontfamily=FONT_FAMILY)
@@ -193,14 +199,16 @@ def plot_bfs_rob_ipc(rows: list[dict[str, object]], output_dir: Path) -> None:
     )
 
     ymax = max(max(baseline_vals), max(ifuse_vals))
-    ax.set_ylim(0.0, ymax * 1.15)
+    ax.set_ylim(0.0, ymax * Y_HEADROOM)
+    ax.set_yticks([t for t in Y_TICKS if t <= ymax * Y_HEADROOM])
 
+    # Legend above the frame — at this font it does not fit inside the axes.
     legend = ax.legend(
         handles=[
             Patch(
                 facecolor=color,
                 edgecolor="black",
-                linewidth=BAR_EDGE_WIDTH,
+                linewidth=LINE_WIDTH,
                 label=label,
             )
             for _key, label, color in SERIES
@@ -208,31 +216,35 @@ def plot_bfs_rob_ipc(rows: list[dict[str, object]], output_dir: Path) -> None:
         frameon=True,
         fancybox=False,
         shadow=False,
-        loc="upper right",
-        fontsize=AXIS_FONT,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.01),
+        bbox_transform=ax.transAxes,
+        fontsize=LEGEND_FONT,
         edgecolor="black",
-        ncol=1,
-        handlelength=0.95,
-        handleheight=0.95,
-        borderpad=0.45,
+        ncol=2,
+        handlelength=0.9,
+        handleheight=0.9,
+        borderpad=0.3,
+        handletextpad=0.4,
+        columnspacing=0.9,
         framealpha=1.0,
     )
-    legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
+    legend.set_clip_on(False)
+    legend.get_frame().set_linewidth(LINE_WIDTH)
     legend.get_frame().set_facecolor("white")
 
     for spine in ax.spines.values():
         spine.set_visible(True)
         spine.set_color("black")
-        spine.set_linewidth(2.5)
+        spine.set_linewidth(LINE_WIDTH)
 
-    # Same layout/save path as backend-stalls (no tight crop — preserves scale).
-    plt.subplots_adjust(top=0.90, bottom=0.18, left=0.08, right=0.98)
+    plt.tight_layout(pad=0.2)
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("bfs_rob_size_ipc",):
         out = output_dir / stem
-        fig.savefig(f"{out}.png", pad_inches=0.08, dpi=300)
-        fig.savefig(f"{out}.pdf", pad_inches=0.08, dpi=300)
-        fig.savefig(f"{out}.eps", dpi=300)
+        fig.savefig(f"{out}.png", dpi=300, bbox_inches="tight", pad_inches=0.02)
+        fig.savefig(f"{out}.pdf", dpi=300, bbox_inches="tight", pad_inches=0.02)
+        fig.savefig(f"{out}.eps", dpi=300, bbox_inches="tight", pad_inches=0.02)
     plt.close(fig)
 
 

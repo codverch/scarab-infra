@@ -66,6 +66,7 @@ from plot_ipc import (  # noqa: E402
     IDEAL_FUSION_COLOR,
     IFUSE_COLOR,
     IPC_AXIS_LABEL_FONT,
+    IPC_FIGSIZE,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     RFP_COLOR,
@@ -78,6 +79,7 @@ from plot_ipc import (  # noqa: E402
     grouped_x_positions,
     load_simpoint_trace_weights,
     order_workloads_by_group,
+    register_noto_serif,
     rename_workload,
 )
 
@@ -567,8 +569,7 @@ def plot_fusion_fraction_bars(
         series_values[key] = values
 
     _apply_ipc_plot_style()
-    fig_width = max(22.0, len(x_ticks) * APP_STEP * 1.15 + AVERAGE_GAP)
-    fig, ax = plt.subplots(figsize=(fig_width, 6.5))
+    fig, ax = plt.subplots(figsize=IPC_FIGSIZE)
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
     for (key, _label, color), offset in zip(active_series, offsets):
@@ -602,9 +603,12 @@ def plot_fusion_fraction_bars(
         fontsize=IPC_TICK_FONT,
         fontfamily=FONT_FAMILY,
     )
+    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
+    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for i, label in enumerate(ax.get_xticklabels()):
+        label.set_fontfamily(FONT_FAMILY)
         if i == len(display_apps) - 1:
-            label.set_weight("bold")
+            label.set_fontweight("bold")
 
     _tight_x_limits(ax, x_ticks[0], x_ticks[-1], n_bars=len(active_series))
 
@@ -616,30 +620,30 @@ def plot_fusion_fraction_bars(
     ax.set_ylim(0.0, 100.0)
     ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
-    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
     _draw_app_x_tick_guides(ax, x_ticks)
 
+    # Place the legend fully above the plot frame.
     legend = ax.legend(
         handles=_legend_handles(include_helios=include_helios, include_rfp=include_rfp),
         frameon=True,
         fancybox=False,
         shadow=False,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 1.36),
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.02),
         bbox_transform=ax.transAxes,
         fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
         ncol=len(active_series),
-        handlelength=1.4,
-        handleheight=1.1,
+        handlelength=0.95,
+        handleheight=0.95,
         borderpad=0.55,
         labelspacing=0.4,
-        columnspacing=1.2,
+        columnspacing=1.0,
         framealpha=1.0,
     )
+    legend.set_clip_on(False)
     legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
     legend.get_frame().set_facecolor("white")
     legend.get_frame().set_alpha(1.0)
@@ -650,7 +654,7 @@ def plot_fusion_fraction_bars(
         spine.set_linewidth(2.5)
 
     plt.tight_layout()
-    plt.subplots_adjust(top=0.80, bottom=0.28, right=0.98)
+    plt.subplots_adjust(top=0.78, bottom=0.32, left=0.12, right=0.98)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("fusion_fraction",):
@@ -662,6 +666,7 @@ def plot_fusion_fraction_bars(
 
 
 def main() -> None:
+    register_noto_serif()
     parser = argparse.ArgumentParser(
         description="Plot fraction of on-path memory loads covered by Helios, RFP, I-Fuse, and ideal fusion."
     )

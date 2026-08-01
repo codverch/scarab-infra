@@ -42,6 +42,7 @@ from plot_ipc import (  # noqa: E402
     AVERAGE_SEPARATOR_COLOR,
     AVERAGE_SEPARATOR_WIDTH,
     BAR_EDGE_WIDTH,
+    BAR_WIDTH,
     BASELINE_COLOR,
     DEFAULT_BASELINE_CONFIG,
     DEFAULT_BASELINE_DIR,
@@ -56,6 +57,7 @@ from plot_ipc import (  # noqa: E402
     FONT_FAMILY,
     IFUSE_COLOR,
     IPC_AXIS_LABEL_FONT,
+    IPC_FIGSIZE,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     SIMPOINT_WORKLOADS,
@@ -68,6 +70,7 @@ from plot_ipc import (  # noqa: E402
     register_noto_serif,
     rename_workload,
 )
+import plot_ipc as _plot_ipc  # noqa: E402
 
 IFUSE_STAT_FILE = "ifuse.stat.0.csv"
 CORE_STAT_FILE = "core.stat.0.csv"
@@ -82,7 +85,12 @@ EXTRA_PEAK = "IFUSE_EXTRA_REG_IN_USE_PEAK_total_count"
 RF_SAMPLES = "REG_FILE_UTIL_SAMPLES_count"
 RF_INT_OCC = "REG_FILE_INT_OCCUPIED_SUM_count"
 RF_INT_CAP = "REG_FILE_INT_PHYS_REGS_SUM_count"
-REGISTER_BAR_WIDTH = 0.48
+REGISTER_BAR_WIDTH = 3.0  # thicker bars (2 schemes)
+REGISTER_APP_STEP = 12.0  # keep a gap between apps with wider bars
+REGISTER_AVERAGE_GAP = 3.5  # clear gap between last app and Average
+REGISTER_FIGSIZE = (80.0, IPC_FIGSIZE[1])
+REGISTER_BAR_EDGE_WIDTH = 6.0  # thicker bar/legend/spine outlines
+REGISTER_AVERAGE_SEPARATOR_WIDTH = 8.0  # thicker Average divider
 Y_LABEL = "Average physical register\nfile utilization (%)"
 NO_FUSION_LABEL = "No fusion"
 IFUSE_LABEL = "I-Fuse"
@@ -128,7 +136,7 @@ def _baseline_ifuse_legend_handles(*, include_baseline: bool = True) -> list:
             Patch(
                 facecolor=BASELINE_COLOR,
                 edgecolor="black",
-                linewidth=BAR_EDGE_WIDTH,
+                linewidth=REGISTER_BAR_EDGE_WIDTH,
                 label=NO_FUSION_LABEL,
             )
         )
@@ -136,7 +144,7 @@ def _baseline_ifuse_legend_handles(*, include_baseline: bool = True) -> list:
         Patch(
             facecolor=IFUSE_COLOR,
             edgecolor="black",
-            linewidth=BAR_EDGE_WIDTH,
+            linewidth=REGISTER_BAR_EDGE_WIDTH,
             label=IFUSE_LABEL,
         )
     )
@@ -160,7 +168,7 @@ def _style_register_file_legend(ax, handles: list) -> None:
         handlelength=1.4,
         framealpha=1.0,
     )
-    legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
+    legend.get_frame().set_linewidth(REGISTER_BAR_EDGE_WIDTH)
     legend.get_frame().set_facecolor("white")
     legend.get_frame().set_alpha(1.0)
     for text in legend.get_texts():
@@ -172,7 +180,7 @@ def _finalize_register_file_axes(ax) -> None:
     for spine in ax.spines.values():
         spine.set_visible(True)
         spine.set_color("black")
-        spine.set_linewidth(2.5)
+        spine.set_linewidth(REGISTER_BAR_EDGE_WIDTH)
 
 
 def _save_register_file_figure(fig, output_dir: Path) -> None:
@@ -688,16 +696,25 @@ def plot_register_file_utilization_bars(
     baseline_pct.append(sum(baseline_pct) / len(baseline_pct))
     ifuse_pct.append(sum(ifuse_pct) / len(ifuse_pct))
 
-    _ordered, x_map, avg_x, separator_x = grouped_x_positions(
-        ordered_workloads, n_series=2
-    )
+    # Place apps with REGISTER_APP_STEP; recompute Average with register bar width.
+    old_app_step = _plot_ipc.APP_STEP
+    _plot_ipc.APP_STEP = REGISTER_APP_STEP
+    try:
+        _ordered, x_map, avg_x, separator_x = grouped_x_positions(
+            ordered_workloads, n_series=2
+        )
+    finally:
+        _plot_ipc.APP_STEP = old_app_step
+    last_x = x_map[_ordered[-1]]
+    cluster_half = (2 * REGISTER_BAR_WIDTH) / 2.0
+    avg_x = last_x + cluster_half + REGISTER_AVERAGE_GAP + cluster_half
+    separator_x = last_x + cluster_half + REGISTER_AVERAGE_GAP * 0.5
     display_apps = [rename_workload(wl) for wl in ordered_workloads] + ["Average"]
     x = [x_map[wl] for wl in ordered_workloads] + [avg_x]
     offsets = _register_bar_offsets(2)
 
     _apply_register_file_rcparams()
-    fig_width = max(22.0, len(x) * 1.15 + 1.15)
-    fig, ax = plt.subplots(figsize=(fig_width, 6.5))
+    fig, ax = plt.subplots(figsize=REGISTER_FIGSIZE)
 
     for offset, values, color in (
         (offsets[0], baseline_pct, BASELINE_COLOR),
@@ -709,7 +726,7 @@ def plot_register_file_utilization_bars(
             REGISTER_BAR_WIDTH,
             color=color,
             edgecolor="black",
-            linewidth=BAR_EDGE_WIDTH,
+            linewidth=REGISTER_BAR_EDGE_WIDTH,
             zorder=3,
         )
 
@@ -719,7 +736,7 @@ def plot_register_file_utilization_bars(
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
             alpha=1.0,
-            linewidth=AVERAGE_SEPARATOR_WIDTH,
+            linewidth=REGISTER_AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
@@ -742,12 +759,17 @@ def plot_register_file_utilization_bars(
     )
     _apply_register_file_y_axis(ax)
 
-    _tight_x_limits(ax, x[0], x[-1], n_bars=2)
+    half_span = (2 * REGISTER_BAR_WIDTH) / 2.0
+    # Extra side padding so bars are not flush with the plot edges.
+    left_pad = 2.5
+    right_pad = 2.5
+    ax.set_xlim(x[0] - half_span - left_pad, x[-1] + half_span + right_pad)
+    ax.margins(x=0)
     ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
     ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     _draw_app_x_tick_guides(ax, x)
 
-    plt.subplots_adjust(top=0.90, bottom=0.28, right=0.99)
+    plt.subplots_adjust(top=0.72, bottom=0.30, left=0.12, right=0.98)
     _style_register_file_legend(ax, _baseline_ifuse_legend_handles())
     _finalize_register_file_axes(ax)
     _save_register_file_figure(fig, output_dir)

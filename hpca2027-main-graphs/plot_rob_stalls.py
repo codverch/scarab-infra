@@ -11,7 +11,7 @@ from fetch.stat.0.csv:
   INST_LOST_ROB_STALL_WAIT_FOR_MEMORY_count
   INST_LOST_ROB_STALL_WAIT_FOR_DC_MISS_count
 
-All configurations read fetch.stat.0.csv. Baseline denominator uses rfp-baseline/.
+All configurations read fetch.stat.0.csv. Baseline denominator uses baseline/.
 
 Per workload:
   reduction_pct = 100 * (weighted_baseline_stalls - weighted_config_stalls)
@@ -22,7 +22,7 @@ Commands:
 /users/deepmish/miniconda3/envs/scarabinfra/bin/python \
   /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_rob_stalls.py \
   --simulations-root /users/deepmish/scarab/src/simulations \
-  --baseline-dir /users/deepmish/scarab/src/simulations/rfp-baseline \
+  --baseline-dir /users/deepmish/scarab/src/simulations/baseline \
   --helios-dir /users/deepmish/scarab/src/simulations/helios \
   --rfp-dir /users/deepmish/scarab/src/simulations/rfp \
   --ifuse-dir /users/deepmish/scarab/src/simulations/ifuse \
@@ -51,6 +51,7 @@ from plot_ipc import (  # noqa: E402
     AVERAGE_SEPARATOR_WIDTH,
     BAR_EDGE_WIDTH,
     BAR_WIDTH,
+    DEFAULT_BASELINE_DIR,
     DEFAULT_HELIOS_CONFIG,
     DEFAULT_HELIOS_DIR,
     DEFAULT_IDEAL_CONFIG,
@@ -58,7 +59,6 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_IPC_IFUSE_CONFIG,
     DEFAULT_IPC_IFUSE_DIR,
     DEFAULT_ROB_STALLS_OUTPUT_DIR,
-    DEFAULT_RFP_BASELINE_DIR,
     DEFAULT_RFP_CONFIG,
     DEFAULT_RFP_DIR,
     DEFAULT_SIMULATIONS_ROOT,
@@ -71,6 +71,7 @@ from plot_ipc import (  # noqa: E402
     IDEAL_FUSION_COLOR,
     IFUSE_COLOR,
     IPC_AXIS_LABEL_FONT,
+    IPC_FIGSIZE,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     RFP_COLOR,
@@ -84,6 +85,7 @@ from plot_ipc import (  # noqa: E402
     grouped_x_positions,
     load_simpoint_trace_weights,
     order_workloads_by_group,
+    register_noto_serif,
     rename_workload,
 )
 
@@ -507,8 +509,8 @@ def plot_rob_stall_bars(
     offsets = _bar_offsets(len(active_series))
 
     _apply_ipc_plot_style()
-    fig_width = max(22.0, len(x) * APP_STEP * 1.15 + AVERAGE_GAP)
-    fig, ax = plt.subplots(figsize=(fig_width, 6.5))
+    fig_w, fig_h = IPC_FIGSIZE
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h + 1.5))
     ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
     for offset, (key, values, color) in zip(offsets, active_series):
@@ -543,47 +545,56 @@ def plot_rob_stall_bars(
         display_apps,
         rotation=45,
         ha="right",
+        fontsize=IPC_TICK_FONT,
         fontfamily=FONT_FAMILY,
     )
+    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
+    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for i, label in enumerate(ax.get_xticklabels()):
+        label.set_fontfamily(FONT_FAMILY)
         if i == len(display_apps) - 1:
-            label.set_weight("bold")
+            label.set_fontweight("bold")
     _tight_x_limits(ax, x[0], x[-1], n_bars=len(active_series))
 
     ax.set_ylabel(
-        "ROB stalls reduction (%)\n(normalized to no-fusion)",
+        "Reduction in\nROB stalls (%)\n(normalized to\nno-fusion)",
         fontsize=IPC_AXIS_LABEL_FONT,
         fontfamily=FONT_FAMILY,
     )
 
     all_values = [v for _k, values, _c in active_series for v in values if not math.isnan(v)]
     ymax = max(all_values) if all_values else 100.0
-    ax.set_ylim(0.0, ymax * 1.12 + 2.0)
+    ylim_top = math.ceil((ymax * 1.15) / 20.0) * 20.0
+    if ylim_top <= ymax:
+        ylim_top += 20.0
+    ax.set_ylim(0.0, ylim_top)
     ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
-    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
     _draw_app_x_tick_guides(ax, x)
 
-    plt.subplots_adjust(top=0.88, bottom=0.28, left=0.08, right=0.99)
-
+    # Place the legend fully above the plot frame.
     legend = ax.legend(
         handles=_legend_handles(include_helios=include_helios),
         frameon=True,
         fancybox=False,
         shadow=False,
         loc="lower center",
-        bbox_to_anchor=(0.5, 0.96),
+        bbox_to_anchor=(0.5, 1.02),
         bbox_transform=ax.transAxes,
-        borderaxespad=0.0,
         fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
         ncol=len(active_series),
-        handlelength=1.4,
+        handlelength=0.95,
+        handleheight=0.95,
+        borderpad=0.55,
+        labelspacing=0.4,
+        columnspacing=1.0,
+        framealpha=1.0,
     )
-    legend.get_frame().set_linewidth(2.0)
+    legend.set_clip_on(False)
+    legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
     legend.get_frame().set_facecolor("white")
     legend.get_frame().set_alpha(1.0)
 
@@ -592,16 +603,20 @@ def plot_rob_stall_bars(
         spine.set_color("black")
         spine.set_linewidth(2.5)
 
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.78, bottom=0.32, left=0.18, right=0.98)
+
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("rob_stalls",):
         out = output_dir / stem
-        fig.savefig(f"{out}.png", bbox_inches="tight", dpi=300)
-        fig.savefig(f"{out}.pdf", bbox_inches="tight", dpi=300)
+        fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.05, dpi=300)
+        fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.05, dpi=300)
         fig.savefig(f"{out}.eps", bbox_inches="tight", dpi=300)
     plt.close(fig)
 
 
 def main() -> None:
+    register_noto_serif()
     parser = argparse.ArgumentParser(
         description=(
             "Plot simpoint-weighted ROB stall reduction for Helios, RFP, "
@@ -618,7 +633,7 @@ def main() -> None:
         "--baseline-dir",
         type=Path,
         default=None,
-        help="No-fusion baseline directory (default: rfp-baseline)",
+        help="No-fusion baseline directory (default: baseline)",
     )
     parser.add_argument("--helios-dir", type=Path, default=None)
     parser.add_argument("--helios-config", default=DEFAULT_HELIOS_CONFIG)
@@ -646,7 +661,7 @@ def main() -> None:
     parser.add_argument("--exclude-workloads", nargs="*", default=["feedsim", "langchain_web"])
     args = parser.parse_args()
 
-    baseline_dir = args.baseline_dir or DEFAULT_RFP_BASELINE_DIR
+    baseline_dir = args.baseline_dir or DEFAULT_BASELINE_DIR
     helios_dir = args.helios_dir or DEFAULT_HELIOS_DIR
     rfp_dir = args.rfp_dir or DEFAULT_RFP_DIR
     ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR

@@ -53,6 +53,7 @@ from plot_ipc import (  # noqa: E402
     SIMPOINT_WORKLOADS,
     find_simpoint_dir,
     load_simpoint_trace_weights,
+    register_noto_serif,
     rename_workload,
 )
 
@@ -62,22 +63,24 @@ DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "rfp_coverage_causes"
 RFP_STAT = "rfp.stat.0.csv"
 
 BAR_WIDTH = 0.40
-FIGSIZE = (24.0, 8.0)
+FIGSIZE = (30.0, 11.5)  # match Helios coverage-causes / IPC canvas
 AVERAGE_SEPARATOR_WIDTH = 3.5
-AXIS_FONT = IPC_TICK_FONT
-LEGEND_FONT = IPC_LEGEND_FONT
+# Slightly larger than IPC tick font so axis text matches Helios visual weight
+# after tight bbox (RFP legend labels are longer and widen the PNG).
+AXIS_FONT = max(IPC_TICK_FONT, 60)
+LEGEND_FONT = 42  # slightly smaller than axis; clears multi-line y-label
 Y_LABEL_PAD = 20
 OUTPUT_DPI = 300
 LOAD_BEAT_PLOT_THRESHOLD = 0.005  # hide negligible load-beat slices (<0.5%)
 Y_AXIS_LABEL = (
     "Breakdown of how RFP\n"
-    "handles memory\n"
-    "loads (%)"
+    "handles memory loads (%)"
 )
 
-LOW_CONFIDENCE_COLOR = "#FFD92F"
-RFP_CLR_PREFETCH_NOT_USEFUL = "#D5D5D4"
-RFP_CLR_WRONG_ADDRESS = "#A81423"
+# Match Helios coverage-causes palette choices.
+LOW_CONFIDENCE_COLOR = "#6E6E6E"  # medium-dark gray (lighter than #4A4A4A)
+RFP_CLR_PREFETCH_NOT_USEFUL = "#D5D5D4"  # light gray: load too early
+RFP_CLR_WRONG_ADDRESS = "#32CD32"  # lime: wrong address
 
 # (field, color) — bottom-to-top stack order.
 BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
@@ -90,8 +93,8 @@ BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
 BREAKDOWN_CATEGORIES: dict[str, str] = {
     "covered_frac": "Covered",
     "low_confidence_frac": "Low predictor confidence",
-    "prefetch_not_useful_frac": "Prefetch not useful (load too early)",
-    "wrong_address_frac": "Prefetch not useful (wrong address)",
+    "prefetch_not_useful_frac": "Not useful (load too early)",
+    "wrong_address_frac": "Not useful (wrong address)",
 }
 
 
@@ -446,7 +449,7 @@ def _legend_handles(active_segments: list[tuple[str, str]]) -> list:
     ]
 
 
-def _style_legend(ax, active_segments: list[tuple[str, str]]) -> None:
+def _style_legend(fig, ax, active_segments: list[tuple[str, str]]) -> None:
     ncol = 2 if len(active_segments) > 1 else 1
     legend = ax.legend(
         handles=_legend_handles(active_segments),
@@ -454,17 +457,21 @@ def _style_legend(ax, active_segments: list[tuple[str, str]]) -> None:
         fancybox=False,
         shadow=False,
         loc="lower center",
-        bbox_to_anchor=(0.5, 1.12),
+        bbox_to_anchor=(0.5, 1.06),
         bbox_transform=ax.transAxes,
         borderaxespad=0.0,
         fontsize=LEGEND_FONT,
         edgecolor="black",
+        labelcolor="black",
         ncol=ncol,
         handlelength=1.2,
         handleheight=0.9,
         columnspacing=1.0,
+        handletextpad=0.5,
+        labelspacing=0.35,
         framealpha=1.0,
     )
+    legend.set_clip_on(False)
     legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
     legend.get_frame().set_facecolor("white")
     legend.get_frame().set_alpha(1.0)
@@ -553,8 +560,8 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
         label.set_fontfamily(FONT_FAMILY)
         label.set_color("black")
 
-    plt.subplots_adjust(top=0.70, bottom=0.32, left=0.10, right=0.99)
-    _style_legend(ax, active_segments)
+    plt.subplots_adjust(top=0.68, bottom=0.30, left=0.12, right=0.99)
+    _style_legend(fig, ax, active_segments)
 
     for spine in ax.spines.values():
         spine.set_visible(True)
@@ -579,6 +586,7 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
 
 
 def main() -> None:
+    register_noto_serif()
     parser = argparse.ArgumentParser(
         description="Plot how RFP handles on-path loads by workload."
     )

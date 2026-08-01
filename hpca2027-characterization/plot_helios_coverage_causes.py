@@ -2,9 +2,11 @@
 """Stacked breakdown of how Helios handles ideally-fusible load pairs.
 
 Each bar stacks outcomes as a fraction of IDEAL_FUSION_FUSED_LOADS_count
-(simpoint-weighted). Helios fused is HELIOS_FUSIONS_COMMITTED; unfused
-structural causes partition the remaining ideal pairs in proportion to
-HELIOS_REJECT_* counters (excluding type-disabled rejections).
+(simpoint-weighted):
+  - Covered: HELIOS_FUSIONS_COMMITTED
+  - Not covered: distance misprediction (HEAD_EVICTED)
+  - Not covered: short fusion window (NEST_LIMIT)
+  - Not covered: low prediction confidence (DEADLOCK + other structural)
 
 Example:
 
@@ -52,6 +54,9 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_TRACE_ROOT,
     DEFAULT_WORKLOADS_DB,
     FONT_FAMILY,
+    IFUSE_COLOR,
+    IPC_AXIS_LABEL_FONT,
+    IPC_FIGSIZE,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     SIMPOINT_WORKLOADS,
@@ -62,8 +67,14 @@ from plot_ipc import (  # noqa: E402
 )
 
 HELIOS_FUSED_COLOR = "#CF3054"
-DISTANCE_MISPRED_COLOR = "#D5D5D4"  # light gray: unfused distance misprediction
-DEADLOCK_COLOR = "#4A4A4A"  # dark gray: unfused deadlock avoidance
+# Map Helios reject stats onto the paper's three not-covered buckets:
+#   Covered                  = HELIOS_FUSIONS_COMMITTED
+#   Distance misprediction   = HEAD_EVICTED
+#   Short fusion window      = NEST_LIMIT
+#   Low prediction confidence = DEADLOCK + remaining structural rejects
+DISTANCE_MISPRED_COLOR = "#D5D5D4"  # light gray
+SHORT_WINDOW_COLOR = IFUSE_COLOR  # green (same as I-Fuse accent)
+LOW_CONF_COLOR = "#6E6E6E"  # dark gray
 
 DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
 DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "helios-coverage-causes"
@@ -73,13 +84,18 @@ IDEAL_STAT_FILE = "ideal_fusion.stat.0.csv"
 COMMITTED_STAT = HELIOS_FUSED_STAT
 IDEAL_FUSED_STAT = "IDEAL_FUSION_FUSED_LOADS_count"
 
-BAR_WIDTH = 0.40
-FIGSIZE = (30.0, 11.5)  # match IPC Helios/RFP/Ideal canvas height
-BAR_EDGE_WIDTH = 3.0
+# Match current IPC main-graph canvas / stroke weight, with extra height.
+BAR_WIDTH = 4.5
+APP_STEP = 10.0
+AVERAGE_GAP = 2.4
+FIGSIZE = (IPC_FIGSIZE[0], IPC_FIGSIZE[1] + 6.0)  # taller than IPC
+BAR_EDGE_WIDTH = 7.0  # thicker bar/legend/spine outlines
 AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
-AVERAGE_SEPARATOR_WIDTH = 3.5
-AXIS_FONT = IPC_TICK_FONT  # same x/y axis font as IPC speedup plot
-Y_LABEL_PAD = 20
+AVERAGE_SEPARATOR_WIDTH = 10.0
+AXIS_FONT = IPC_TICK_FONT
+AXIS_LABEL_FONT = IPC_AXIS_LABEL_FONT
+LEGEND_FONT = 90  # between axis ticks and previous oversized legend
+Y_LABEL_PAD = 28
 OUTPUT_DPI = 300
 Y_AXIS_LABEL = (
     "Breakdown of how Helios\n"
@@ -89,31 +105,37 @@ Y_AXIS_LABEL = (
 
 # (field, color) — bottom-to-top stack order.
 BREAKDOWN_SEGMENTS: tuple[tuple[str, str], ...] = (
-    ("committed_frac", HELIOS_FUSED_COLOR),
-    ("head_evicted_frac", DISTANCE_MISPRED_COLOR),
-    ("deadlock_frac", DEADLOCK_COLOR),
-    ("addr_mismatch_frac", "#32CD32"),  # lime
-    ("distance_invalid_frac", "#984EA3"),
-    ("serializing_frac", "#1B9E77"),
-    ("store_hazard_frac", "#A65628"),
+    ("covered_frac", HELIOS_FUSED_COLOR),
+    ("distance_mispred_frac", DISTANCE_MISPRED_COLOR),
+    ("short_window_frac", SHORT_WINDOW_COLOR),
+    ("low_confidence_frac", LOW_CONF_COLOR),
 )
 
 BREAKDOWN_CATEGORIES: dict[str, str] = {
-    "head_evicted_frac": "distance misprediction",
-    "deadlock_frac": "deadlock avoidance",
-    "addr_mismatch_frac": "address mismatch",
-    "distance_invalid_frac": "invalid fusion distance",
-    "serializing_frac": "serializing instruction",
-    "store_hazard_frac": "store hazard",
+    "covered_frac": "Covered",
+    "distance_mispred_frac": "Not covered: distance misprediction",
+    "short_window_frac": "Not covered: short fusion window",
+    "low_confidence_frac": "Not covered: low prediction confidence",
 }
 
+# Raw reject counters (partition the unfused ideal remainder).
 REJECT_STATS: tuple[tuple[str, str], ...] = (
     ("head_evicted_frac", "HELIOS_REJECT_HEAD_EVICTED_count"),
+    ("nest_limit_frac", "HELIOS_REJECT_NEST_LIMIT_count"),
     ("deadlock_frac", "HELIOS_REJECT_DEADLOCK_count"),
     ("addr_mismatch_frac", "HELIOS_REJECT_ADDR_MISMATCH_count"),
     ("distance_invalid_frac", "HELIOS_REJECT_DISTANCE_INVALID_count"),
     ("serializing_frac", "HELIOS_REJECT_SERIALIZING_count"),
     ("store_hazard_frac", "HELIOS_REJECT_STORE_HAZARD_count"),
+)
+DISTANCE_MISPRED_FIELDS: tuple[str, ...] = ("head_evicted_frac",)
+SHORT_WINDOW_FIELDS: tuple[str, ...] = ("nest_limit_frac",)
+LOW_CONFIDENCE_FIELDS: tuple[str, ...] = (
+    "deadlock_frac",
+    "addr_mismatch_frac",
+    "distance_invalid_frac",
+    "serializing_frac",
+    "store_hazard_frac",
 )
 
 
@@ -124,42 +146,34 @@ def _apply_plot_style() -> None:
             "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
             "text.color": "black",
             "axes.labelcolor": "black",
-            "axes.labelsize": AXIS_FONT,
+            "axes.labelsize": AXIS_LABEL_FONT,
             "xtick.color": "black",
             "ytick.color": "black",
             "xtick.labelsize": AXIS_FONT,
             "ytick.labelsize": AXIS_FONT,
-            "legend.fontsize": IPC_LEGEND_FONT,
+            "legend.fontsize": LEGEND_FONT,
         }
     )
 
 
 def _tight_x_limits(ax, x_min: float, x_max: float) -> None:
-    left_pad = 0.12
-    right_pad = 0.12
+    left_pad = 2.5
+    right_pad = 2.5
     half_span = BAR_WIDTH / 2.0
     ax.set_xlim(x_min - half_span - left_pad, x_max + half_span + right_pad)
     ax.margins(x=0)
 
 
 def legend_label(field: str) -> str:
-    if field == "committed_frac":
-        return "Helios fused"
-    category = BREAKDOWN_CATEGORIES.get(field)
-    if category is None:
-        return field
-    return f"Unfused: {category}"
+    return BREAKDOWN_CATEGORIES.get(field, field)
 
 
 @dataclass
 class HeliosBreakdownMetrics:
-    committed_frac: float
-    head_evicted_frac: float
-    deadlock_frac: float
-    addr_mismatch_frac: float
-    distance_invalid_frac: float
-    serializing_frac: float
-    store_hazard_frac: float
+    covered_frac: float
+    distance_mispred_frac: float
+    short_window_frac: float
+    low_confidence_frac: float
 
 
 @dataclass
@@ -196,8 +210,8 @@ def breakdown_from_counts(
     if ideal_fused <= 0:
         return None
 
-    committed_frac = max(0.0, min(1.0, committed / ideal_fused))
-    missed_frac = max(0.0, 1.0 - committed_frac)
+    covered_frac = max(0.0, min(1.0, committed / ideal_fused))
+    missed_frac = max(0.0, 1.0 - covered_frac)
     total_structural = sum(max(0.0, count) for count in reject_counts.values())
 
     reject_fracs: dict[str, float] = {}
@@ -208,14 +222,14 @@ def breakdown_from_counts(
     else:
         reject_fracs = {field: 0.0 for field, _ in REJECT_STATS}
 
+    def _sum_fields(fields: tuple[str, ...]) -> float:
+        return sum(reject_fracs.get(field, 0.0) for field in fields)
+
     return HeliosBreakdownMetrics(
-        committed_frac=committed_frac,
-        head_evicted_frac=reject_fracs["head_evicted_frac"],
-        deadlock_frac=reject_fracs["deadlock_frac"],
-        addr_mismatch_frac=reject_fracs["addr_mismatch_frac"],
-        distance_invalid_frac=reject_fracs["distance_invalid_frac"],
-        serializing_frac=reject_fracs["serializing_frac"],
-        store_hazard_frac=reject_fracs["store_hazard_frac"],
+        covered_frac=covered_frac,
+        distance_mispred_frac=_sum_fields(DISTANCE_MISPRED_FIELDS),
+        short_window_frac=_sum_fields(SHORT_WINDOW_FIELDS),
+        low_confidence_frac=_sum_fields(LOW_CONFIDENCE_FIELDS),
     )
 
 
@@ -329,20 +343,17 @@ def average_breakdown(results: list[WorkloadBreakdown]) -> WorkloadBreakdown:
         workload="Average",
         trace_count=sum(r.trace_count for r in results),
         breakdown=HeliosBreakdownMetrics(
-            committed_frac=mean(lambda m: m.committed_frac),
-            head_evicted_frac=mean(lambda m: m.head_evicted_frac),
-            deadlock_frac=mean(lambda m: m.deadlock_frac),
-            addr_mismatch_frac=mean(lambda m: m.addr_mismatch_frac),
-            distance_invalid_frac=mean(lambda m: m.distance_invalid_frac),
-            serializing_frac=mean(lambda m: m.serializing_frac),
-            store_hazard_frac=mean(lambda m: m.store_hazard_frac),
+            covered_frac=mean(lambda m: m.covered_frac),
+            distance_mispred_frac=mean(lambda m: m.distance_mispred_frac),
+            short_window_frac=mean(lambda m: m.short_window_frac),
+            low_confidence_frac=mean(lambda m: m.low_confidence_frac),
         ),
     )
 
 
 def write_summary_csv(path: Path, results: list[WorkloadBreakdown]) -> None:
-    fields = ["workload", "display_name", "trace_count", "helios_fused_pct"]
-    fields.extend(field for field, _ in BREAKDOWN_SEGMENTS)
+    fields = ["workload", "display_name", "trace_count", "covered_pct"]
+    fields.extend(field for field, _ in BREAKDOWN_SEGMENTS if field != "covered_frac")
 
     with path.open("w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=fields)
@@ -358,10 +369,11 @@ def write_summary_csv(path: Path, results: list[WorkloadBreakdown]) -> None:
                         else rename_workload(row.workload)
                     ),
                     "trace_count": row.trace_count,
-                    "helios_fused_pct": f"{b.committed_frac * 100.0:.2f}",
+                    "covered_pct": f"{b.covered_frac * 100.0:.2f}",
                     **{
                         field: f"{getattr(b, field) * 100.0:.2f}"
                         for field, _ in BREAKDOWN_SEGMENTS
+                        if field != "covered_frac"
                     },
                 }
             )
@@ -372,12 +384,15 @@ def write_computation_log(path: Path, results: list[WorkloadBreakdown]) -> None:
         fh.write("Helios ideally-fusible load pair breakdown\n")
         fh.write("=" * 80 + "\n")
         fh.write(
-            "Helios fused = 100 * weighted(HELIOS_FUSIONS_COMMITTED) "
+            "Covered = 100 * weighted(HELIOS_FUSIONS_COMMITTED) "
             "/ weighted(IDEAL_FUSION_FUSED_LOADS)\n"
         )
         fh.write(
-            "Each unfused segment partitions the remaining ideal pairs in proportion "
-            "to structural HELIOS_REJECT_* counters (type-disabled excluded).\n"
+            "Not-covered remainder partitioned by HELIOS_REJECT_* into:\n"
+            "  distance misprediction   = HEAD_EVICTED\n"
+            "  short fusion window      = NEST_LIMIT\n"
+            "  low prediction confidence = DEADLOCK + ADDR_MISMATCH + "
+            "SERIALIZING + STORE_HAZARD + DISTANCE_INVALID\n"
         )
         fh.write(
             "Helios counts scaled to ideal-fusion Periodic_Instructions when needed.\n\n"
@@ -391,10 +406,14 @@ def write_computation_log(path: Path, results: list[WorkloadBreakdown]) -> None:
             )
             fh.write(f"{row.workload} ({name})\n")
             fh.write(f"  simpoints: {row.trace_count}\n")
-            fh.write(f"  helios fused:    {b.committed_frac * 100.0:6.2f}%\n")
-            fh.write(f"  distance mispred: {b.head_evicted_frac * 100.0:6.2f}%\n")
-            fh.write(f"  deadlock:        {b.deadlock_frac * 100.0:6.2f}%\n")
-            fh.write(f"  addr mismatch:   {b.addr_mismatch_frac * 100.0:6.2f}%\n\n")
+            fh.write(f"  covered:                 {b.covered_frac * 100.0:6.2f}%\n")
+            fh.write(
+                f"  distance misprediction:  {b.distance_mispred_frac * 100.0:6.2f}%\n"
+            )
+            fh.write(f"  short fusion window:     {b.short_window_frac * 100.0:6.2f}%\n")
+            fh.write(
+                f"  low prediction conf.:    {b.low_confidence_frac * 100.0:6.2f}%\n\n"
+            )
 
 
 def _visible_segments(rows: list[WorkloadBreakdown]) -> list[tuple[str, str]]:
@@ -421,17 +440,17 @@ def _legend_handles(active_segments: list[tuple[str, str]]) -> list:
 
 
 def _style_legend(ax, active_segments: list[tuple[str, str]]) -> None:
-    ncol = 2 if len(active_segments) > 1 else 1
+    ncol = 2 if len(active_segments) > 2 else 1
     legend = ax.legend(
         handles=_legend_handles(active_segments),
         frameon=True,
         fancybox=False,
         shadow=False,
         loc="lower center",
-        bbox_to_anchor=(0.5, 1.04),
+        bbox_to_anchor=(0.5, 1.08),
         bbox_transform=ax.transAxes,
         borderaxespad=0.0,
-        fontsize=IPC_LEGEND_FONT,
+        fontsize=LEGEND_FONT,
         edgecolor="black",
         labelcolor="black",
         ncol=ncol,
@@ -450,7 +469,17 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
     avg = average_breakdown(results)
     rows = results + [avg]
     display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
-    x = np.arange(len(display_apps))
+    # IPC-style spacing: apps on APP_STEP, Average after a clear gap.
+    x_apps = np.arange(len(results), dtype=float) * APP_STEP
+    avg_x = (
+        float(x_apps[-1] + BAR_WIDTH / 2.0 + AVERAGE_GAP + BAR_WIDTH / 2.0)
+        if len(x_apps)
+        else 0.0
+    )
+    x = np.append(x_apps, avg_x) if len(x_apps) else np.array([avg_x])
+    separator_x = (
+        float(x_apps[-1] + BAR_WIDTH / 2.0 + AVERAGE_GAP * 0.5) if len(x_apps) else None
+    )
     active_segments = _visible_segments(rows)
 
     _apply_plot_style()
@@ -473,9 +502,9 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
         )
         bottoms += values
 
-    if len(display_apps) > 1:
+    if separator_x is not None:
         ax.axvline(
-            x=len(display_apps) - 1.5,
+            x=separator_x,
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
             linewidth=AVERAGE_SEPARATOR_WIDTH,
@@ -498,11 +527,11 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
         if label.get_text() == "Average":
             label.set_weight("bold")
 
-    _tight_x_limits(ax, x[0], x[-1])
+    _tight_x_limits(ax, float(x[0]), float(x[-1]))
 
     ax.set_ylabel(
         Y_AXIS_LABEL,
-        fontsize=AXIS_FONT,
+        fontsize=AXIS_LABEL_FONT,
         fontfamily=FONT_FAMILY,
         color="black",
         labelpad=Y_LABEL_PAD,
@@ -510,19 +539,20 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
     ax.set_ylim(0.0, 105.0)
     ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="both", labelsize=AXIS_FONT, colors="black")
+    ax.tick_params(axis="x", labelsize=AXIS_FONT, length=0, pad=14, colors="black")
+    ax.tick_params(axis="y", labelsize=AXIS_FONT, colors="black")
     for label in ax.get_yticklabels():
         label.set_fontsize(AXIS_FONT)
         label.set_fontfamily(FONT_FAMILY)
         label.set_color("black")
 
-    plt.subplots_adjust(top=0.68, bottom=0.30, left=0.12, right=0.99)
+    plt.subplots_adjust(top=0.62, bottom=0.30, left=0.12, right=0.98)
     _style_legend(ax, active_segments)
 
     for spine in ax.spines.values():
         spine.set_visible(True)
         spine.set_color("black")
-        spine.set_linewidth(2.5)
+        spine.set_linewidth(BAR_EDGE_WIDTH)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("helios-coverage-causes",):
@@ -596,9 +626,10 @@ def main() -> None:
             continue
         b = row.breakdown
         print(
-            f"  {workload:14s}  fused={b.committed_frac * 100:5.1f}%  "
-            f"head_evict={b.head_evicted_frac * 100:5.1f}%  "
-            f"deadlock={b.deadlock_frac * 100:5.1f}%  "
+            f"  {workload:14s}  covered={b.covered_frac * 100:5.1f}%  "
+            f"dist={b.distance_mispred_frac * 100:5.1f}%  "
+            f"window={b.short_window_frac * 100:5.1f}%  "
+            f"lowconf={b.low_confidence_frac * 100:5.1f}%  "
             f"(simpoints={row.trace_count})"
         )
         results.append(row)
@@ -613,8 +644,10 @@ def main() -> None:
     avg = average_breakdown(results)
     print("\nSummary:")
     print(f"  workloads plotted: {len(results)}")
-    print(f"  mean helios fused: {avg.breakdown.committed_frac * 100:.2f}%")
-    print(f"  mean head evict:   {avg.breakdown.head_evicted_frac * 100:.2f}%")
+    print(f"  mean covered:                 {avg.breakdown.covered_frac * 100:.2f}%")
+    print(f"  mean distance misprediction:  {avg.breakdown.distance_mispred_frac * 100:.2f}%")
+    print(f"  mean short fusion window:     {avg.breakdown.short_window_frac * 100:.2f}%")
+    print(f"  mean low prediction conf.:    {avg.breakdown.low_confidence_frac * 100:.2f}%")
     print("\nOutputs:")
     print(f"  - {output_dir / 'helios-coverage-causes.png'}")
     print(f"  - {output_dir / 'helios-coverage-causes.pdf'}")

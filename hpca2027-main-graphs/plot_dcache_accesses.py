@@ -8,7 +8,7 @@ Counts L1-D array touches as:
 
 Baseline and I-Fuse read memory.stat.0.csv; Helios reads memory.stat.0.csv; RFP also reads
 rfp.stat.0.csv; ideal fusion reads ideal_fusion.stat.0.csv. All schemes use the same baseline
-denominator: DCACHE_ACCESS_* from rfp-baseline/.
+denominator: DCACHE_ACCESS_* from baseline/.
 
 Per workload:
   reduction_pct = 100 * (weighted_baseline_accesses - weighted_config_accesses)
@@ -21,7 +21,7 @@ Commands:
   --simulations-root /users/deepmish/scarab/src/simulations \
   --rfp-dir /users/deepmish/scarab/src/simulations/rfp \
   --helios-dir /users/deepmish/scarab/src/simulations/helios \
-  --dcache-baseline-dir /users/deepmish/scarab/src/simulations/rfp-baseline \
+  --dcache-baseline-dir /users/deepmish/scarab/src/simulations/baseline \
   --ifuse-dir /users/deepmish/scarab/src/simulations/ifuse \
   --ifuse-config datacenter \
   --ideal-fusion-dir /users/deepmish/scarab/src/simulations/ideal-fusion \
@@ -43,6 +43,8 @@ if str(GRAPH_DIR) not in sys.path:
 from plot_ipc import (  # noqa: E402
     AVERAGE_SEPARATOR_COLOR,
     AVERAGE_SEPARATOR_WIDTH,
+    BAR_EDGE_WIDTH,
+    BAR_WIDTH,
     DEFAULT_BASELINE_CONFIG,
     DEFAULT_BASELINE_DIR,
     DEFAULT_DCACHE_ACCESSES_OUTPUT_DIR,
@@ -59,15 +61,18 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_SUBSUITE,
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
+    DEFAULT_WORKLOADS_DB,
     FONT_FAMILY,
     HELIOS_COLOR,
     IDEAL_FUSION_COLOR,
     IFUSE_COLOR,
     IPC_AXIS_LABEL_FONT,
+    IPC_FIGSIZE,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     RFP_COLOR,
     SIMPOINT_WORKLOADS,
+    _apply_ipc_plot_style,
     _apply_speedup_y_grid,
     _apply_speedup_y_ticks,
     _draw_app_x_tick_guides,
@@ -76,8 +81,10 @@ from plot_ipc import (  # noqa: E402
     find_simpoint_dir,
     grouped_x_positions,
     load_simpoint_trace_weights,
+    register_noto_serif,
     rename_workload,
 )
+import plot_ipc as _plot_ipc  # noqa: E402
 
 DCACHE_ACCESS_ONPATH_STAT = "DCACHE_ACCESS_ONPATH_count"
 DCACHE_ACCESS_OFFPATH_STAT = "DCACHE_ACCESS_OFFPATH_count"
@@ -97,7 +104,14 @@ DCACHE_SERIES: tuple[tuple[str, str, str], ...] = (
     ("ideal", "Ideal fusion", IDEAL_FUSION_COLOR),
 )
 
-DCACHE_BAR_WIDTH = 0.36
+DCACHE_BAR_WIDTH = 1.55  # keep bars thick; space apps via APP_STEP below
+DCACHE_APP_STEP = 10  # extra gap between apps (cluster width ≈ 4 * 1.55)
+DCACHE_AVERAGE_GAP = 2.4  # clear gap between last app and Average clusters
+DCACHE_FIGSIZE = (72.0, IPC_FIGSIZE[1])  # widen with APP_STEP so bars stay thick
+DCACHE_TICK_FONT = 120  # x app names + y tick numbers
+DCACHE_AXIS_LABEL_FONT = 120  # y-axis title
+DCACHE_BAR_EDGE_WIDTH = 6.0  # thicker bar/legend/spine outlines
+DCACHE_AVERAGE_SEPARATOR_WIDTH = 8.0  # thicker Average divider
 
 
 @dataclass
@@ -533,25 +547,27 @@ def plot_dcache_reduction_bars(
         active_series.append((label, values, color))
 
     ordered_workloads = [result.workload for result in results]
-    _ordered, x_map, avg_x, separator_x = grouped_x_positions(
-        ordered_workloads, n_series=len(active_series)
-    )
+    old_app_step = _plot_ipc.APP_STEP
+    _plot_ipc.APP_STEP = DCACHE_APP_STEP
+    try:
+        _ordered, x_map, avg_x, separator_x = grouped_x_positions(
+            ordered_workloads, n_series=len(active_series)
+        )
+    finally:
+        _plot_ipc.APP_STEP = old_app_step
+    # Recompute Average/separator using DCACHE bar width (IPC BAR_WIDTH is narrower
+    # and places Average too close to Memcached).
+    last_x = x_map[_ordered[-1]]
+    cluster_half = (len(active_series) * DCACHE_BAR_WIDTH) / 2.0
+    avg_x = last_x + cluster_half + DCACHE_AVERAGE_GAP + cluster_half
+    separator_x = last_x + cluster_half + DCACHE_AVERAGE_GAP * 0.5
     display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
     x = [x_map[result.workload] for result in results] + [avg_x]
     offsets = _bar_offsets(len(active_series))
 
-    plt.rcParams.update(
-        {
-            "font.family": FONT_FAMILY,
-            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "axes.labelsize": IPC_AXIS_LABEL_FONT,
-            "xtick.labelsize": IPC_TICK_FONT,
-            "ytick.labelsize": IPC_TICK_FONT,
-            "legend.fontsize": IPC_LEGEND_FONT,
-        }
-    )
-    fig_width = max(22.0, len(x) * 1.15 + 1.15)
-    fig, ax = plt.subplots(figsize=(fig_width, 6.5))
+    _apply_ipc_plot_style()
+    fig, ax = plt.subplots(figsize=DCACHE_FIGSIZE)
+    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
     for offset, (_label, values, color) in zip(offsets, active_series):
         ax.bar(
@@ -561,7 +577,7 @@ def plot_dcache_reduction_bars(
             label=_label,
             color=color,
             edgecolor="black",
-            linewidth=2.5,
+            linewidth=DCACHE_BAR_EDGE_WIDTH,
             zorder=3,
         )
 
@@ -571,21 +587,35 @@ def plot_dcache_reduction_bars(
             color=AVERAGE_SEPARATOR_COLOR,
             linestyle="--",
             alpha=1.0,
-            linewidth=AVERAGE_SEPARATOR_WIDTH,
+            linewidth=DCACHE_AVERAGE_SEPARATOR_WIDTH,
             zorder=2,
         )
 
     ax.set_xticks(x)
-    ax.set_xticklabels(display_apps, rotation=45, ha="right", fontfamily=FONT_FAMILY)
+    ax.set_xticklabels(
+        display_apps,
+        rotation=45,
+        ha="right",
+        fontsize=DCACHE_TICK_FONT,
+        fontfamily=FONT_FAMILY,
+    )
+    ax.tick_params(axis="x", labelsize=DCACHE_TICK_FONT, length=0, pad=14)
+    ax.tick_params(axis="y", labelsize=DCACHE_TICK_FONT)
     for i, label in enumerate(ax.get_xticklabels()):
+        label.set_fontfamily(FONT_FAMILY)
         if i == len(display_apps) - 1:
-            label.set_weight("bold")
+            label.set_fontweight("bold")
 
-    _tight_x_limits(ax, x[0], x[-1], n_bars=len(active_series))
+    # Use DCACHE bar width for margins (not IPC BAR_WIDTH).
+    left_pad = 0.55
+    right_pad = 0.55
+    half_span = (len(active_series) * DCACHE_BAR_WIDTH) / 2.0
+    ax.set_xlim(x[0] - half_span - left_pad, x[-1] + half_span + right_pad)
+    ax.margins(x=0)
 
     ax.set_ylabel(
         "Reduction in number of\nL1-D cache accesses (%)\n(normalized to no-fusion)",
-        fontsize=IPC_AXIS_LABEL_FONT,
+        fontsize=DCACHE_AXIS_LABEL_FONT,
         fontfamily=FONT_FAMILY,
     )
     ymax = max(value for _label, values, _color in active_series for value in values)
@@ -593,39 +623,44 @@ def plot_dcache_reduction_bars(
     _apply_speedup_y_ticks(ax)
     _apply_speedup_y_grid(ax)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
-    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
     _draw_app_x_tick_guides(ax, x)
 
+    # Place the legend fully above the plot frame.
     legend = ax.legend(
         frameon=True,
         fancybox=False,
         shadow=False,
         loc="lower center",
-        bbox_to_anchor=(0.5, 0.96),
+        bbox_to_anchor=(0.5, 1.02),
         bbox_transform=ax.transAxes,
-        borderaxespad=0.0,
         fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
         ncol=len(active_series),
-        handlelength=1.4,
+        handlelength=0.95,
+        handleheight=0.95,
+        borderpad=0.55,
+        labelspacing=0.4,
+        columnspacing=1.0,
+        framealpha=1.0,
     )
-    legend.get_frame().set_linewidth(2.0)
+    legend.set_clip_on(False)
+    legend.get_frame().set_linewidth(DCACHE_BAR_EDGE_WIDTH)
     legend.get_frame().set_facecolor("white")
     legend.get_frame().set_alpha(1.0)
 
     for spine in ax.spines.values():
         spine.set_visible(True)
         spine.set_color("black")
-        spine.set_linewidth(2.5)
+        spine.set_linewidth(DCACHE_BAR_EDGE_WIDTH)
+
+    # Match IPC layout (avoid tight_layout, which can squeeze bar width).
+    plt.subplots_adjust(top=0.72, bottom=0.30, left=0.12, right=0.98)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("dcache_accesses",):
         out = output_dir / stem
-        plt.tight_layout()
-        plt.subplots_adjust(top=0.95, bottom=0.28, right=0.98)
         fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.05, dpi=300)
         fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.05, dpi=300)
         fig.savefig(f"{out}.eps", bbox_inches="tight", dpi=300)
@@ -633,6 +668,7 @@ def plot_dcache_reduction_bars(
 
 
 def main() -> None:
+    register_noto_serif()
     parser = argparse.ArgumentParser(
         description=(
             "Plot simpoint-weighted L1-D cache access reduction for Helios, RFP, I-Fuse, "
@@ -650,7 +686,7 @@ def main() -> None:
         "--dcache-baseline-dir",
         type=Path,
         default=None,
-        help="Baseline with DCACHE_ACCESS_* stats (default: simulations/rfp-baseline)",
+        help="Baseline with DCACHE_ACCESS_* stats (default: simulations/baseline)",
     )
     parser.add_argument("--rfp-dir", type=Path, default=None)
     parser.add_argument("--helios-dir", type=Path, default=None)
@@ -673,6 +709,7 @@ def main() -> None:
     parser.add_argument("--rfp-config", default=DEFAULT_RFP_CONFIG)
     parser.add_argument("--ifuse-config", default=DEFAULT_IPC_IFUSE_CONFIG)
     parser.add_argument("--ideal-fusion-config", default=DEFAULT_IDEAL_CONFIG)
+    parser.add_argument("--workloads-db", type=Path, default=DEFAULT_WORKLOADS_DB)
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -683,7 +720,7 @@ def main() -> None:
     args = parser.parse_args()
 
     baseline_dir = args.baseline_dir or DEFAULT_BASELINE_DIR
-    dcache_baseline_dir = args.dcache_baseline_dir or DEFAULT_RFP_BASELINE_DIR
+    dcache_baseline_dir = args.dcache_baseline_dir or DEFAULT_BASELINE_DIR
     helios_dir = args.helios_dir or DEFAULT_HELIOS_DIR
     rfp_dir = args.rfp_dir or DEFAULT_RFP_DIR
     ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
@@ -692,7 +729,11 @@ def main() -> None:
     output_dir = args.output_dir or DEFAULT_DCACHE_ACCESSES_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
+    sp_weights = load_simpoint_trace_weights(
+        args.trace_root,
+        workloads,
+        workloads_db=args.workloads_db,
+    )
 
     plot_helios = False
     if args.include_helios:

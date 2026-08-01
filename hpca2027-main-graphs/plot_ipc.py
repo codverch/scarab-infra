@@ -39,6 +39,7 @@ GRAPH_DIR = Path(__file__).resolve().parent
 SCARAB_INFRA_ROOT = GRAPH_DIR.parent
 SCRIPTS_DIR = SCARAB_INFRA_ROOT / "scripts"
 NOTO_SERIF_FONT = GRAPH_DIR / "fonts" / "NotoSerif.ttf"
+NOTO_SERIF_BOLD_FONT = GRAPH_DIR / "fonts" / "NotoSerif-Bold.ttf"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
@@ -99,20 +100,21 @@ AVERAGE_SEPARATOR_COLOR = "#4A4A4A"
 AVERAGE_SEPARATOR_WIDTH = 5.0
 SMALL_BAR_THRESHOLD = 0.5
 BAR_LABEL_GAP = 1.2
-BAR_WIDTH = 0.44
-BAR_EDGE_WIDTH = 2.5
+BAR_WIDTH = 1.55
+BAR_EDGE_WIDTH = 4.5
 FONT_FAMILY = "Noto Serif"  # NotoSerif (fonts-noto-core)
 GROUP_GAP = 0.0
-APP_STEP = 1.9
-AVERAGE_GAP = 1.15
+APP_STEP = 10
+AVERAGE_GAP = 2.4
 AVERAGE_SEPARATOR_FRAC = 0.5
 X_TICK_GUIDE_WIDTH = 2.5
 X_TICK_GUIDE_LENGTH = 0.04
 LEGEND_X_OFFSET = 0.01
-IPC_TICK_FONT = 37
-IPC_AXIS_LABEL_FONT = IPC_TICK_FONT
-IPC_LEGEND_FONT = IPC_TICK_FONT
-IPC_AXIS_FONT = 30
+IPC_TICK_FONT = 120  # x app names + y tick numbers
+IPC_AXIS_LABEL_FONT = 120  # y-axis title ("Speedup (%)...")
+IPC_LEGEND_FONT = IPC_AXIS_LABEL_FONT  # same as axis title
+IPC_AXIS_FONT = 63
+IPC_FIGSIZE = (72.0, 23.0)
 
 
 def register_noto_serif() -> None:
@@ -123,6 +125,8 @@ def register_noto_serif() -> None:
     from matplotlib import font_manager
 
     font_manager.fontManager.addfont(str(NOTO_SERIF_FONT))
+    if NOTO_SERIF_BOLD_FONT.is_file():
+        font_manager.fontManager.addfont(str(NOTO_SERIF_BOLD_FONT))
     FONT_FAMILY = font_manager.FontProperties(fname=str(NOTO_SERIF_FONT)).get_name()
 
 # Backward-compatible aliases used by other hpca2027-main-graphs scripts.
@@ -755,7 +759,11 @@ def _apply_ipc_plot_style() -> None:
             "font.family": "serif",
             "font.serif": [FONT_FAMILY, "NotoSerif", "DejaVu Serif", "serif"],
             "font.size": IPC_AXIS_FONT,
+            "text.color": "black",
+            "axes.labelcolor": "black",
             "axes.labelsize": IPC_AXIS_LABEL_FONT,
+            "xtick.color": "black",
+            "ytick.color": "black",
             "xtick.labelsize": IPC_TICK_FONT,
             "ytick.labelsize": IPC_TICK_FONT,
             "legend.fontsize": IPC_LEGEND_FONT,
@@ -954,17 +962,24 @@ def plot_speedup_bars(
 
     for stem, show_bar_labels, ylim in variants:
         _apply_ipc_plot_style()
-        fig_width = max(22.0, len(x_ticks) * APP_STEP * 1.15 + AVERAGE_GAP)
-        fig, ax = plt.subplots(figsize=(fig_width, 7.0))
+        fig, ax = plt.subplots(figsize=IPC_FIGSIZE)
 
         for series_idx, ((_key, _label, color), offset) in enumerate(zip(series, offsets)):
             wl_to_pct = dict(zip(workloads, series_pct[_key][:-1]))
             avg_pct = series_pct[_key][-1]
             pct_vals = [wl_to_pct[wl] for wl in ordered] + [avg_pct]
             bar_x = [x_map[wl] + offset for wl in ordered] + [avg_x + offset]
+            # Omit bars for missing optional schemes (NaN) instead of drawing zeros.
+            plot_x = [
+                x for x, val in zip(bar_x, pct_vals) if not math.isnan(val)
+            ]
+            plot_heights = [
+                max(0.0, val) for val in pct_vals if not math.isnan(val)
+            ]
+            plot_labels = [val for val in pct_vals if not math.isnan(val)]
             container = ax.bar(
-                bar_x,
-                [0.0 if math.isnan(val) else max(0.0, val) for val in pct_vals],
+                plot_x,
+                plot_heights,
                 BAR_WIDTH,
                 color=color,
                 edgecolor="black",
@@ -975,7 +990,7 @@ def plot_speedup_bars(
                 _annotate_ipc_bar_labels(
                     ax,
                     container,
-                    pct_vals,
+                    plot_labels,
                     fontsize=IPC_AXIS_FONT,
                     label_lane=series_idx,
                     n_label_lanes=len(series),
@@ -998,10 +1013,15 @@ def plot_speedup_bars(
             ha="right",
             fontsize=IPC_TICK_FONT,
             fontfamily=FONT_FAMILY,
+            color="black",
         )
+        ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14, colors="black")
+        ax.tick_params(axis="y", labelsize=IPC_TICK_FONT, colors="black")
         for i, label in enumerate(ax.get_xticklabels()):
+            label.set_fontfamily(FONT_FAMILY)
+            label.set_color("black")
             if i == len(display_apps) - 1:
-                label.set_weight("bold")
+                label.set_fontweight("bold")
 
         _tight_x_limits(ax, x_ticks[0], x_ticks[-1], n_bars=len(series))
 
@@ -1009,6 +1029,7 @@ def plot_speedup_bars(
             "Speedup (%)\n(normalized to\nno-fusion)",
             fontsize=IPC_AXIS_LABEL_FONT,
             fontfamily=FONT_FAMILY,
+            color="black",
         )
         ax.yaxis.set_label_coords(-0.045, 0.5)
         ax.set_ylim(ylim[0], ylim[1])
@@ -1017,24 +1038,24 @@ def plot_speedup_bars(
         _apply_speedup_y_ticks(ax)
         _apply_speedup_y_grid(ax)
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-        ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
-        ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
         for label in ax.get_yticklabels():
             label.set_fontfamily(FONT_FAMILY)
+            label.set_color("black")
         _draw_app_x_tick_guides(ax, x_ticks)
 
-        x_min, x_max = ax.get_xlim()
-        separator_x_frac = (separator_x - x_min) / (x_max - x_min) - LEGEND_X_OFFSET
+        # Legend fully above the plot frame (do not call tight_layout after —
+        # it pulls the legend back into the axes).
         legend = ax.legend(
             handles=_ipc_legend_handles(series),
             frameon=True,
             fancybox=False,
             shadow=False,
-            loc="upper right",
-            bbox_to_anchor=(separator_x_frac, 0.98),
+            loc="lower center",
+            bbox_to_anchor=(0.5, 1.04),
             bbox_transform=ax.transAxes,
             fontsize=IPC_LEGEND_FONT,
             edgecolor="black",
+            labelcolor="black",
             ncol=len(series),
             handlelength=0.95,
             handleheight=0.95,
@@ -1043,6 +1064,7 @@ def plot_speedup_bars(
             columnspacing=1.0,
             framealpha=1.0,
         )
+        legend.set_clip_on(False)
         legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
         legend.get_frame().set_facecolor("white")
         legend.get_frame().set_alpha(1.0)
@@ -1050,14 +1072,13 @@ def plot_speedup_bars(
         for spine in ax.spines.values():
             spine.set_visible(True)
             spine.set_color("black")
-            spine.set_linewidth(2.5)
+            spine.set_linewidth(BAR_EDGE_WIDTH)
 
-        plt.tight_layout()
-        plt.subplots_adjust(top=0.88, bottom=0.28, right=0.98)
+        plt.subplots_adjust(top=0.72, bottom=0.30, left=0.12, right=0.98)
 
         out = output_dir / stem
-        fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.12, dpi=300)
-        fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.12, dpi=300)
+        fig.savefig(f"{out}.png", bbox_inches="tight", pad_inches=0.15, dpi=300)
+        fig.savefig(f"{out}.pdf", bbox_inches="tight", pad_inches=0.15, dpi=300)
         plt.close(fig)
 
 

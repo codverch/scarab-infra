@@ -19,9 +19,12 @@ Commands:
 /users/deepmish/miniconda3/envs/scarabinfra/bin/python \
   /users/deepmish/scarab-infra/hpca2027-main-graphs/plot_load_latency.py \
   --simulations-root /users/deepmish/scarab/src/simulations \
-  --baseline-dir /users/deepmish/scarab/src/simulations/rfp-baseline \
+  --baseline-dir /users/deepmish/scarab/src/simulations/baseline \
+  --helios-dir /users/deepmish/scarab/src/simulations/helios \
+  --rfp-dir /users/deepmish/scarab/src/simulations/rfp \
   --ifuse-dir /users/deepmish/scarab/src/simulations/ifuse \
   --ifuse-config datacenter \
+  --ideal-fusion-dir /users/deepmish/scarab/src/simulations/ideal-fusion \
   --output-dir /users/deepmish/scarab/src/hpca2027-main-graphs-results/load_latency
 """
 
@@ -42,7 +45,9 @@ from plot_ipc import (  # noqa: E402
     AVERAGE_SEPARATOR_COLOR,
     AVERAGE_SEPARATOR_WIDTH,
     BAR_EDGE_WIDTH,
+    BAR_WIDTH,
     DEFAULT_BASELINE_CONFIG,
+    DEFAULT_BASELINE_DIR,
     DEFAULT_HELIOS_CONFIG,
     DEFAULT_HELIOS_DIR,
     DEFAULT_IDEAL_CONFIG,
@@ -57,15 +62,18 @@ from plot_ipc import (  # noqa: E402
     DEFAULT_SUBSUITE,
     DEFAULT_SUITE,
     DEFAULT_TRACE_ROOT,
+    DEFAULT_WORKLOADS_DB,
     FONT_FAMILY,
     HELIOS_COLOR,
     IDEAL_FUSION_COLOR,
     IFUSE_COLOR,
     IPC_AXIS_LABEL_FONT,
+    IPC_FIGSIZE,
     IPC_LEGEND_FONT,
     IPC_TICK_FONT,
     RFP_COLOR,
     SIMPOINT_WORKLOADS,
+    _apply_ipc_plot_style,
     _apply_speedup_y_grid,
     _apply_speedup_y_ticks,
     _draw_app_x_tick_guides,
@@ -74,10 +82,12 @@ from plot_ipc import (  # noqa: E402
     find_simpoint_dir,
     grouped_x_positions,
     load_simpoint_trace_weights,
+    register_noto_serif,
     rename_workload,
 )
 
 LOAD_LATENCY_STAT = "LD_EXEC_MINUS_FETCH_LATENCY_count"
+RETIRE_LOAD_LATENCY_STAT = "LD_RETIRE_MINUS_FETCH_LATENCY_count"
 IDEAL_LOAD_LATENCY_STAT = "LD_RETIRE_MINUS_FETCH_LATENCY_count"
 IFUSE_ALL_LOADS_STAT = "IFUSE_ALL_LOADS_count"
 ONPATH_MEM_LOADS_STAT = "ONPATH_MEM_LOADS_count"
@@ -86,12 +96,18 @@ CORE_STAT_FILE = "core.stat.0.csv"
 IFUSE_STAT_FILE = "ifuse.stat.0.csv"
 IDEAL_STAT_FILE = "ideal_fusion.stat.0.csv"
 
+# Helios fused loads often complete without a normal exec_cycle, so
+# LD_EXEC_MINUS_FETCH wraps as uint64. Prefer retire-fetch for Helios and
+# compare against baseline retire-fetch for that series only.
+_UINT63 = float(1 << 63)
+
 LATENCY_SERIES: tuple[tuple[str, str, str], ...] = (
     ("helios", "Helios", HELIOS_COLOR),
     ("rfp", "RFP", RFP_COLOR),
     ("ifuse", "I-Fuse", IFUSE_COLOR),
 )
-LATENCY_BAR_WIDTH = 0.36
+LATENCY_BAR_WIDTH = 2.4  # thicker bars (3 schemes; cluster ≈ 7.2 vs APP_STEP 10)
+LATENCY_AVERAGE_GAP = 2.8  # clear gap between last app and Average
 
 
 @dataclass
@@ -125,6 +141,13 @@ def stat_count_from_csv(stat_csv: Path, stat_name: str) -> float | None:
                 except ValueError:
                     return None
     return None
+
+
+def _sane_latency_total(value: float | None) -> float | None:
+    """Reject missing/non-positive/uint64-wrapped latency totals."""
+    if value is None or value <= 0.0 or value >= _UINT63:
+        return None
+    return value
 
 
 def simpoint_load_count(
@@ -163,14 +186,21 @@ def simpoint_scheme_load_latency(
     stat_file: str,
     suite: str,
     subsuite: str,
+    prefer_retire: bool = False,
 ) -> float | None:
     sim_dir = find_simpoint_dir(
         experiment_dir, config, workload, cluster_id, suite=suite, subsuite=subsuite
     )
     if sim_dir is None:
         return None
-    stat_name = IDEAL_LOAD_LATENCY_STAT if stat_file == IDEAL_STAT_FILE else LOAD_LATENCY_STAT
-    return stat_count_from_csv(sim_dir / stat_file, stat_name)
+    path = sim_dir / stat_file
+    if prefer_retire or stat_file == IDEAL_STAT_FILE:
+        return _sane_latency_total(stat_count_from_csv(path, RETIRE_LOAD_LATENCY_STAT))
+    exec_total = _sane_latency_total(stat_count_from_csv(path, LOAD_LATENCY_STAT))
+    if exec_total is not None:
+        return exec_total
+    # Fallback when exec-fetch wrapped / missing (common for Helios fused loads).
+    return _sane_latency_total(stat_count_from_csv(path, RETIRE_LOAD_LATENCY_STAT))
 
 
 def _reduction_pct(baseline_avg: float, config_avg: float) -> float:
@@ -282,6 +312,8 @@ def compute_workload_load_latency(
         weighted_ideal += weight * ideal_avg
 
         if include_helios and helios_dir is not None:
+            # Helios exec-fetch is typically uint64-wrapped; use retire-fetch and
+            # compare against baseline retire-fetch so the Helios bar is meaningful.
             helios_latency = simpoint_scheme_load_latency(
                 helios_dir,
                 helios_config,
@@ -290,10 +322,26 @@ def compute_workload_load_latency(
                 stat_file=CORE_STAT_FILE,
                 suite=suite,
                 subsuite=subsuite,
+                prefer_retire=True,
             )
-            if helios_latency is not None and helios_latency > 0:
+            baseline_retire_latency = simpoint_scheme_load_latency(
+                baseline_dir,
+                baseline_config,
+                workload,
+                cluster_id,
+                stat_file=CORE_STAT_FILE,
+                suite=suite,
+                subsuite=subsuite,
+                prefer_retire=True,
+            )
+            if (
+                helios_latency is not None
+                and baseline_retire_latency is not None
+                and helios_latency > 0
+                and baseline_retire_latency > 0
+            ):
                 weighted_helios += weight * (helios_latency / load_count)
-                weighted_helios_baseline += weight * baseline_avg
+                weighted_helios_baseline += weight * (baseline_retire_latency / load_count)
                 helios_trace_count += 1
 
         weight_sum += weight
@@ -391,7 +439,10 @@ def write_computation_log(
         fh.write(
             "Per simpoint:\n"
             "  baseline/rfp/ifuse: LD_EXEC_MINUS_FETCH_LATENCY / on-path-load-count\n"
-            "  ideal fusion:       LD_EXEC_MINUS_FETCH_LATENCY / ONPATH_MEM_LOADS_count\n"
+            "  Helios:             LD_RETIRE_MINUS_FETCH_LATENCY / on-path-load-count\n"
+            "                      (exec-fetch wraps on fused Helios loads; Helios\n"
+            "                      reduction uses baseline retire-fetch as reference)\n"
+            "  ideal fusion:       LD_RETIRE_MINUS_FETCH_LATENCY / ONPATH_MEM_LOADS_count\n"
             "  on-path-load-count: ONPATH_MEM_LOADS_count from ideal_fusion.stat.0.csv "
             "(fallback: IFUSE_ALL_LOADS_count)\n"
             "reduction_pct = 100 * (weighted_baseline_load_latency - weighted_config_load_latency) "
@@ -441,6 +492,8 @@ def _bar_offsets(n: int) -> list[float]:
 def plot_load_latency_reduction_bars(
     results: list[LoadLatencyResult], output_dir: Path, *, include_helios: bool
 ) -> None:
+    import math
+
     import matplotlib.pyplot as plt
 
     active_series: list[tuple[str, list[float], str]] = []
@@ -453,35 +506,45 @@ def plot_load_latency_reduction_bars(
             "ifuse": "ifuse_reduction_pct",
             "ideal": "ideal_reduction_pct",
         }[key]
-        values = [getattr(result, attr) or 0.0 for result in results]
-        values.append(sum(values) / len(values))
+        values: list[float] = []
+        for result in results:
+            val = getattr(result, attr)
+            values.append(float("nan") if val is None else float(val))
+        finite = [v for v in values if not math.isnan(v)]
+        avg = sum(finite) / len(finite) if finite else float("nan")
+        values.append(avg)
         active_series.append((label, values, color))
 
     ordered_workloads = [result.workload for result in results]
     _ordered, x_map, avg_x, separator_x = grouped_x_positions(
         ordered_workloads, n_series=len(active_series)
     )
+    # Recompute Average/separator using latency bar width for clearance.
+    last_x = x_map[_ordered[-1]]
+    cluster_half = (len(active_series) * LATENCY_BAR_WIDTH) / 2.0
+    avg_x = last_x + cluster_half + LATENCY_AVERAGE_GAP + cluster_half
+    separator_x = last_x + cluster_half + LATENCY_AVERAGE_GAP * 0.5
     display_apps = [rename_workload(r.workload) for r in results] + ["Average"]
     x = [x_map[result.workload] for result in results] + [avg_x]
     offsets = _bar_offsets(len(active_series))
 
-    plt.rcParams.update(
-        {
-            "font.family": FONT_FAMILY,
-            "font.serif": [FONT_FAMILY, "DejaVu Serif", "serif"],
-            "axes.labelsize": IPC_AXIS_LABEL_FONT,
-            "xtick.labelsize": IPC_TICK_FONT,
-            "ytick.labelsize": IPC_TICK_FONT,
-            "legend.fontsize": IPC_LEGEND_FONT,
-        }
-    )
-    fig_width = max(22.0, len(x) * 1.15 + 1.15)
-    fig, ax = plt.subplots(figsize=(fig_width, 6.5))
+    _apply_ipc_plot_style()
+    fig, ax = plt.subplots(figsize=IPC_FIGSIZE)
+    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
 
     for offset, (_label, values, color) in zip(offsets, active_series):
+        bar_x = []
+        bar_vals = []
+        for i, val in zip(x, values):
+            if math.isnan(val):
+                continue
+            bar_x.append(i + offset)
+            bar_vals.append(max(0.0, val))
+        if not bar_x:
+            continue
         ax.bar(
-            [i + offset for i in x],
-            [max(0.0, val) for val in values],
+            bar_x,
+            bar_vals,
             LATENCY_BAR_WIDTH,
             color=color,
             edgecolor="black",
@@ -507,32 +570,49 @@ def plot_load_latency_reduction_bars(
         fontsize=IPC_TICK_FONT,
         fontfamily=FONT_FAMILY,
     )
+    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
+    ax.tick_params(axis="y", labelsize=IPC_TICK_FONT)
     for i, label in enumerate(ax.get_xticklabels()):
+        label.set_fontfamily(FONT_FAMILY)
         if i == len(display_apps) - 1:
-            label.set_weight("bold")
+            label.set_fontweight("bold")
 
     ax.set_ylabel(
-        "Load latency reduction\ndue to speculation\n(normalized to no-fusion) (%)",
+        "Load latency\nreduction due to\nspeculation (%)\n(normalized to no-fusion)",
         fontsize=IPC_AXIS_LABEL_FONT,
         fontfamily=FONT_FAMILY,
     )
 
-    ymax = max(value for _label, values, _color in active_series for value in values)
+    plotted = [
+        max(0.0, v)
+        for _label, values, _color in active_series
+        for v in values
+        if not math.isnan(v)
+    ]
+    ymax = max(plotted) if plotted else 100.0
     ax.set_ylim(0.0, ymax * 1.12 + 2.0)
-    _tight_x_limits(ax, x[0], x[-1], n_bars=len(active_series))
+    half_span = (len(active_series) * LATENCY_BAR_WIDTH) / 2.0
+    ax.set_xlim(x[0] - half_span - 0.55, x[-1] + half_span + 0.55)
+    ax.margins(x=0)
     _apply_speedup_y_ticks(ax)
     _apply_speedup_y_grid(ax)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="x", labelsize=IPC_TICK_FONT, length=0, pad=14)
     for label in ax.get_yticklabels():
         label.set_fontfamily(FONT_FAMILY)
     _draw_app_x_tick_guides(ax, x)
 
-    fig.subplots_adjust(left=0.10, bottom=0.28, right=0.99, top=0.90)
-
+    # Place the legend fully above the plot frame.
     legend = ax.legend(
         handles=[
-            plt.Rectangle((0, 0), 1, 1, facecolor=color, edgecolor="black", linewidth=BAR_EDGE_WIDTH, label=label)
+            plt.Rectangle(
+                (0, 0),
+                1,
+                1,
+                facecolor=color,
+                edgecolor="black",
+                linewidth=BAR_EDGE_WIDTH,
+                label=label,
+            )
             for _key, label, color in LATENCY_SERIES
             if not (_key == "helios" and not include_helios)
         ],
@@ -540,14 +620,19 @@ def plot_load_latency_reduction_bars(
         fancybox=False,
         shadow=False,
         loc="lower center",
-        bbox_to_anchor=(0.5, 0.96),
+        bbox_to_anchor=(0.5, 1.02),
         bbox_transform=ax.transAxes,
-        borderaxespad=0.0,
         fontsize=IPC_LEGEND_FONT,
         edgecolor="black",
         ncol=len(active_series),
-        handlelength=1.4,
+        handlelength=0.95,
+        handleheight=0.95,
+        borderpad=0.55,
+        labelspacing=0.4,
+        columnspacing=1.0,
+        framealpha=1.0,
     )
+    legend.set_clip_on(False)
     legend.get_frame().set_linewidth(BAR_EDGE_WIDTH)
     legend.get_frame().set_facecolor("white")
     legend.get_frame().set_alpha(1.0)
@@ -555,7 +640,9 @@ def plot_load_latency_reduction_bars(
     for spine in ax.spines.values():
         spine.set_visible(True)
         spine.set_color("black")
-        spine.set_linewidth(2.5)
+        spine.set_linewidth(BAR_EDGE_WIDTH)
+
+    plt.subplots_adjust(top=0.72, bottom=0.30, left=0.12, right=0.98)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     for stem in ("load_latency",):
@@ -567,6 +654,7 @@ def plot_load_latency_reduction_bars(
 
 
 def main() -> None:
+    register_noto_serif()
     parser = argparse.ArgumentParser(
         description=(
             "Plot simpoint-weighted total load exec-fetch latency reduction for I-Fuse vs "
@@ -583,7 +671,7 @@ def main() -> None:
         "--baseline-dir",
         type=Path,
         default=None,
-        help="No-fusion baseline directory (default: rfp-baseline)",
+        help="No-fusion baseline directory (default: baseline)",
     )
     parser.add_argument("--helios-dir", type=Path, default=None)
     parser.add_argument("--rfp-dir", type=Path, default=None)
@@ -595,6 +683,7 @@ def main() -> None:
     parser.add_argument("--rfp-config", default=DEFAULT_RFP_CONFIG)
     parser.add_argument("--ifuse-config", default=DEFAULT_IPC_IFUSE_CONFIG)
     parser.add_argument("--ideal-fusion-config", default=DEFAULT_IDEAL_CONFIG)
+    parser.add_argument("--workloads-db", type=Path, default=DEFAULT_WORKLOADS_DB)
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -604,7 +693,7 @@ def main() -> None:
     parser.add_argument("--exclude-workloads", nargs="*", default=["feedsim", "langchain_web"])
     args = parser.parse_args()
 
-    baseline_dir = args.baseline_dir or DEFAULT_RFP_BASELINE_DIR
+    baseline_dir = args.baseline_dir or DEFAULT_BASELINE_DIR
     helios_dir = args.helios_dir or DEFAULT_HELIOS_DIR
     rfp_dir = args.rfp_dir or DEFAULT_RFP_DIR
     ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
@@ -613,7 +702,11 @@ def main() -> None:
     output_dir = args.output_dir or DEFAULT_LOAD_LATENCY_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    sp_weights = load_simpoint_trace_weights(args.trace_root, workloads)
+    sp_weights = load_simpoint_trace_weights(
+        args.trace_root,
+        workloads,
+        workloads_db=args.workloads_db,
+    )
 
     print("Computing total load exec-fetch latency reductions...")
     print(f"  baseline: {baseline_dir} (config={args.baseline_config})")
@@ -680,7 +773,13 @@ def main() -> None:
     if not results:
         raise SystemExit("No workloads with complete load latency data.")
 
-    include_helios = any(result.helios_reduction_pct is not None for result in results)
+    include_helios = True
+    if all(result.helios_reduction_pct is None for result in results):
+        print(
+            "\nWARNING: Helios sims lack LD_EXEC_MINUS_FETCH_LATENCY_count "
+            "(binary predated that counter). Helios bars omitted until Helios is re-run."
+        )
+        include_helios = False
     write_summary_csv(output_dir / "load_latency_summary.csv", results, include_helios=include_helios)
     write_computation_log(
         output_dir / "load_latency_computation_log.txt", results, include_helios=include_helios
