@@ -2749,31 +2749,31 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":50000000,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
         },
         "simpoints":[
           {
-            "cluster_id":60,
+            "cluster_id":94,
             "segment_id":0,
-            "weight":0.184211
+            "weight":0.0288912
           },
           {
-            "cluster_id":12,
-            "segment_id":1,
-            "weight":0.118421
-          },
-          {
-            "cluster_id":18,
+            "cluster_id":103,
             "segment_id":2,
-            "weight":0.513158
+            "weight":0.0176982
           },
           {
-            "cluster_id":1,
+            "cluster_id":96,
+            "segment_id":3,
+            "weight":0.0674129
+          },
+          {
+            "cluster_id":17,
             "segment_id":4,
-            "weight":0.184211
+            "weight":0.885998
           }
         ]
       },
@@ -2905,31 +2905,31 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":50000000,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
         },
         "simpoints":[
           {
-            "cluster_id":29,
-            "segment_id":0,
-            "weight":0.131579
-          },
-          {
-            "cluster_id":33,
-            "segment_id":1,
-            "weight":0.157895
-          },
-          {
-            "cluster_id":57,
-            "segment_id":2,
-            "weight":0.197368
-          },
-          {
             "cluster_id":8,
-            "segment_id":3,
-            "weight":0.513158
+            "segment_id":0,
+            "weight":0.529412
+          },
+          {
+            "cluster_id":28,
+            "segment_id":1,
+            "weight":0.372549
+          },
+          {
+            "cluster_id":96,
+            "segment_id":2,
+            "weight":0.0686274
+          },
+          {
+            "cluster_id":94,
+            "segment_id":4,
+            "weight":0.0294118
           }
         ]
       },
@@ -3031,31 +3031,36 @@
           "memtrace":{
             "image_name":"allbench_traces",
             "segment_size":30000000,
-            "warmup":50000000,
+            "warmup":20000000,
             "trace_type":"trace_then_cluster",
             "whole_trace_file":null
           }
         },
         "simpoints":[
           {
-            "cluster_id":38,
+            "cluster_id":97,
             "segment_id":0,
-            "weight":0.118258
+            "weight":0.0181195
           },
           {
-            "cluster_id":6,
+            "cluster_id":94,
             "segment_id":1,
-            "weight":0.144537
+            "weight":0.036239
           },
           {
-            "cluster_id":25,
+            "cluster_id":91,
             "segment_id":2,
-            "weight":0.0656987
+            "weight":0.842556
           },
           {
-            "cluster_id":76,
+            "cluster_id":107,
             "segment_id":3,
-            "weight":0.671506
+            "weight":0.0396669
+          },
+          {
+            "cluster_id":99,
+            "segment_id":4,
+            "weight":0.0634182
           }
         ]
       },
@@ -4949,6 +4954,25 @@
             "cluster_id":185,
             "segment_id":2,
             "weight":0.855721
+          }
+        ]
+      },
+      "cachebench":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":10000000,
+            "warmup":20000000,
+            "trace_type":"trace_then_cluster",
+            "whole_trace_file":null
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":0,
+            "segment_id":0,
+            "weight":1.0
           }
         ]
       }

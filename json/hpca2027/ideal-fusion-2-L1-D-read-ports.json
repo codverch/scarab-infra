@@ -1,0 +1,78 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "ideal-fusion-2-L1-D-read-ports",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/scarab-wt/hpca2027-ideal-fusion/src",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab-wt/hpca2027-ideal-fusion",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/ifuse/simpoint_traces",
+  "workload_db": "baseline.json",
+  "top_simpoint": false,
+  "_comment": "L1-D read-port sensitivity (2 ports) for ideal-fusion on scarab branch hpca2027-ideal-fusion; same golden_cove config as json/hpca2027/ideal-fusion.json except --dcache_read_ports. Ideal fusion pass 2 (fused loads). Outputs: simulations/ideal-fusion/<app>/<cluster_id>/. Candidates from /dev/shm/baseline/ideal_fusion_candidates/.",
+  "simulations": [
+    {
+      "suite": "datacenter",
+      "subsuite": "datacenter",
+      "workload": [
+        "bfs",
+        "dfs",
+        "pagerank",
+        "corebench",
+        "appworld",
+        "terminal_bench",
+        "cachebench",
+        "clickhouse",
+        "duckdb",
+        "leveldb",
+        "memcached"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "ideal-fusion-2-L1-D-read-ports": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/ideal-fusion-2-L1-D-read-ports/scarab/bin --ideal_fusion_pass 2 --ideal_fusion_log /dev/shm/baseline/ideal_fusion_candidates/{workload}/{cluster_id}.csv --dcache_read_ports 2",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": [
+      "ideal-fusion-2-L1-D-read-ports"
+    ]
+  },
+  "visualize": {
+    "baseline": "ideal-fusion-2-L1-D-read-ports",
+    "configs": [],
+    "counters": [
+      "IPC"
+    ],
+    "average": false
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 16384
+  },
+  "perf_analyze": {
+    "baseline": "ideal-fusion-2-L1-D-read-ports",
+    "counters": [
+      "IPC"
+    ],
+    "stat_groups": [
+      "bp",
+      "fetch",
+      "core"
+    ],
+    "compare_all_stats": false,
+    "drift_top_workloads": 4,
+    "drift_top_simpoints": 5,
+    "prompt_budget_tokens": 12000,
+    "threshold_pct": 2.0,
+    "analyzer_cli_cmd": "codex"
+  }
+}
