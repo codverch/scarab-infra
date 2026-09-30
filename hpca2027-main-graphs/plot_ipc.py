@@ -96,6 +96,8 @@ RFP_COLOR = "#663399"
 IFUSE_COLOR = "#69F336"
 BASELINE_COLOR = "#808080"
 IDEAL_FUSION_COLOR = "#006D6F"
+# Darker shade of IFUSE_COLOR, so the delayed variant reads as a sibling of I-Fuse.
+IFUSE_1CYCLE_COLOR = "#2E8B22"
 AVERAGE_SEPARATOR_COLOR = "#4A4A4A"
 AVERAGE_SEPARATOR_WIDTH = 5.0
 SMALL_BAR_THRESHOLD = 0.5
@@ -140,6 +142,14 @@ IPC_SERIES: tuple[tuple[str, str, str], ...] = (
     ("ideal_fusion", "Ideal fusion", IDEAL_FUSION_COLOR),
 )
 
+# I-Fuse where LOAD2's dependents wake one cycle after LOAD1 instead of in the
+# same cycle. It is kept out of IPC_SERIES because other plot_*.py scripts
+# import IPC_SERIES, and only this plot has results for it.
+IFUSE_1CYCLE_SERIES = ("ifuse_1cycle", "1-cycle-delayed I-Fuse", IFUSE_1CYCLE_COLOR)
+MAIN_IPC_SERIES: tuple[tuple[str, str, str], ...] = (
+    *IPC_SERIES[:3], IFUSE_1CYCLE_SERIES, IPC_SERIES[3],
+)
+
 DEFAULT_TRACE_ROOT = Path("/dev/shm/baseline/simpoint_traces")
 DEFAULT_SUITE = "datacenter"
 DEFAULT_SUBSUITE = "datacenter"
@@ -172,6 +182,7 @@ DEFAULT_RFP_BASELINE_DIR = DEFAULT_SIMULATIONS_ROOT / "rfp-baseline"
 DEFAULT_IFUSE_DIR = DEFAULT_SIMULATIONS_ROOT / "ifuse-tt512-threshold-100"
 DEFAULT_IPC_IFUSE_DIR = DEFAULT_IFUSE_DIR
 DEFAULT_IDEAL_DIR = DEFAULT_SIMULATIONS_ROOT / "ideal-fusion"
+DEFAULT_IFUSE_1CYCLE_DIR = DEFAULT_SIMULATIONS_ROOT / "ifuse-1-cycle-delayed"
 
 DEFAULT_BASELINE_CONFIG = "baseline"
 DEFAULT_HELIOS_CONFIG = "helios"
@@ -179,6 +190,7 @@ DEFAULT_RFP_CONFIG = "rfp"
 DEFAULT_IFUSE_CONFIG = "ifuse"
 DEFAULT_IPC_IFUSE_CONFIG = "datacenter"
 DEFAULT_IDEAL_CONFIG = "ideal-fusion"
+DEFAULT_IFUSE_1CYCLE_CONFIG = "ifuse-1-cycle-delayed"
 
 
 def rename_workload(workload: str) -> str:
@@ -1101,12 +1113,14 @@ def main() -> None:
     parser.add_argument("--rfp-dir", type=Path, default=None)
     parser.add_argument("--ifuse-dir", type=Path, default=None)
     parser.add_argument("--ideal-fusion-dir", type=Path, default=None)
+    parser.add_argument("--ifuse-1cycle-dir", type=Path, default=None)
     parser.add_argument("--trace-root", type=Path, default=DEFAULT_TRACE_ROOT)
     parser.add_argument("--baseline-stats-csv", type=Path, default=None)
     parser.add_argument("--helios-stats-csv", type=Path, default=None)
     parser.add_argument("--rfp-stats-csv", type=Path, default=None)
     parser.add_argument("--ifuse-stats-csv", type=Path, default=None)
     parser.add_argument("--ideal-fusion-stats-csv", type=Path, default=None)
+    parser.add_argument("--ifuse-1cycle-stats-csv", type=Path, default=None)
     parser.add_argument("--baseline-config", default=DEFAULT_BASELINE_CONFIG)
     parser.add_argument("--helios-config", default=DEFAULT_HELIOS_CONFIG)
     parser.add_argument("--rfp-config", default=DEFAULT_RFP_CONFIG)
@@ -1116,6 +1130,7 @@ def main() -> None:
         help="Config name for I-Fuse simpoint paths (default: datacenter).",
     )
     parser.add_argument("--ideal-fusion-config", default=DEFAULT_IDEAL_CONFIG)
+    parser.add_argument("--ifuse-1cycle-config", default=DEFAULT_IFUSE_1CYCLE_CONFIG)
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -1148,7 +1163,7 @@ def main() -> None:
         default=None,
         metavar="SCHEME",
         help=(
-            "IPC series to plot (subset of: helios, rfp, ifuse, ideal_fusion). "
+            "IPC series to plot (subset of: helios, rfp, ifuse, ifuse_1cycle, ideal_fusion). "
             "Default: all series."
         ),
     )
@@ -1160,11 +1175,11 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    scheme_keys = tuple(args.schemes) if args.schemes else tuple(key for key, _, _ in IPC_SERIES)
-    unknown = [key for key in scheme_keys if key not in {k for k, _, _ in IPC_SERIES}]
+    scheme_keys = tuple(args.schemes) if args.schemes else tuple(key for key, _, _ in MAIN_IPC_SERIES)
+    unknown = [key for key in scheme_keys if key not in {k for k, _, _ in MAIN_IPC_SERIES}]
     if unknown:
         raise SystemExit(f"Unknown scheme(s): {', '.join(unknown)}")
-    active_series = tuple(entry for entry in IPC_SERIES if entry[0] in scheme_keys)
+    active_series = tuple(entry for entry in MAIN_IPC_SERIES if entry[0] in scheme_keys)
     if not active_series:
         raise SystemExit("No schemes selected for plotting.")
 
@@ -1174,6 +1189,7 @@ def main() -> None:
     rfp_dir = args.rfp_dir or DEFAULT_RFP_DIR
     ifuse_dir = args.ifuse_dir or DEFAULT_IPC_IFUSE_DIR
     ideal_dir = args.ideal_fusion_dir or DEFAULT_IDEAL_DIR
+    ifuse_1cycle_dir = args.ifuse_1cycle_dir or DEFAULT_IFUSE_1CYCLE_DIR
 
     if args.all_simpoint_traces:
         candidate_workloads = discover_simpoint_trace_workloads(args.trace_root)
@@ -1200,6 +1216,7 @@ def main() -> None:
     rfp_csv = optional_stats_csv(rfp_dir, args.rfp_stats_csv)
     ifuse_csv = optional_stats_csv(ifuse_dir, args.ifuse_stats_csv)
     ideal_csv = optional_stats_csv(ideal_dir, args.ideal_fusion_stats_csv)
+    ifuse_1cycle_csv = optional_stats_csv(ifuse_1cycle_dir, args.ifuse_1cycle_stats_csv)
 
     print("Loading IPC (collected_stats.csv + sim directories)...")
     print(f"  baseline:     {baseline_dir} (config={args.baseline_config})")
@@ -1207,6 +1224,7 @@ def main() -> None:
     print(f"  rfp:          {rfp_dir} (config={args.rfp_config})")
     print(f"  ifuse:        {ifuse_dir} (config={args.ifuse_config})")
     print(f"  ideal fusion: {ideal_dir} (config={args.ideal_fusion_config})")
+    print(f"  ifuse 1-cycle: {ifuse_1cycle_dir} (config={args.ifuse_1cycle_config})")
     print(f"  output:       {output_dir}")
 
     baseline_ipc = load_experiment_ipc(
@@ -1234,6 +1252,11 @@ def main() -> None:
         stats_csv=ideal_csv, suite=DEFAULT_SUITE, subsuite=DEFAULT_SUBSUITE,
         label="ideal fusion",
     )
+    ifuse_1cycle_ipc = load_experiment_ipc(
+        ifuse_1cycle_dir, args.ifuse_1cycle_config, sp_weights, workloads,
+        stats_csv=ifuse_1cycle_csv, suite=DEFAULT_SUITE, subsuite=DEFAULT_SUBSUITE,
+        label="ifuse 1-cycle",
+    )
 
     ipc_by_label = {
         "baseline": baseline_ipc,
@@ -1241,6 +1264,7 @@ def main() -> None:
         "rfp": rfp_ipc,
         "ifuse": ifuse_ipc,
         "ideal_fusion": ideal_ipc,
+        "ifuse_1cycle": ifuse_1cycle_ipc,
     }
     all_directories = {
         "baseline": (baseline_dir, args.baseline_config),
@@ -1248,6 +1272,7 @@ def main() -> None:
         "rfp": (rfp_dir, args.rfp_config),
         "ifuse": (ifuse_dir, args.ifuse_config),
         "ideal_fusion": (ideal_dir, args.ideal_fusion_config),
+        "ifuse_1cycle": (ifuse_1cycle_dir, args.ifuse_1cycle_config),
     }
     directories = {
         key: all_directories[key]
