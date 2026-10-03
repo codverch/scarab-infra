@@ -1,0 +1,62 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "hpca2027-revision-baseline",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/hpca2027-revision",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline",
+  "top_simpoint": false,
+  "_comment": "Golden Cove baseline, ROB 352 vs 512 (default). Helios SPEC2017 speed_int fixed-region traces; 500M instructions from instruction 1, no warmup.",
+  "simulations": [
+    {
+      "suite": "spec2017",
+      "subsuite": "speed_int_helios",
+      "workload": [
+        "gcc_s",
+        "gcc_s_2",
+        "gcc_s_3",
+        "leela_s",
+        "mcf_s",
+        "omnetpp_s",
+        "xalancbmk_s"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 0
+    }
+  ],
+  "configurations": {
+    "baseline-rob352": {
+      "_comment": "Golden Cove with the ROB reduced to 352 entries.",
+      "params": "--inst_limit 500000000 --node_table_size 352",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "baseline-rob512": {
+      "_comment": "Golden Cove as-is (PARAMS.golden_cove: node_table_size 512).",
+      "params": "--inst_limit 500000000",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "baseline-rob512",
+    "configs": [],
+    "counters": [
+      "IPC"
+    ],
+    "average": false
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 4096
+  }
+}
