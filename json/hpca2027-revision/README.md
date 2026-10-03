@@ -25,3 +25,24 @@
 `workloads/workloads_db.json`. Rerun it after a reboot wipes `/dev/shm`.
 
 Raw simulation output: `/users/deepmish/hpca2027-revision/simulations/<config>/<app>/20/`.
+
+## helios: Helios at ROB 512 vs 352
+
+| Config | Params |
+|--------|--------|
+| `rob512_baseline` | `PARAMS.in` (Golden Cove, `node_table_size 512`), Helios off |
+| `rob512_helios` | `PARAMS.in`, `--helios_do_fusion 1` (other Helios knobs at branch defaults) |
+| `rob352_baseline` | `PARAMS.in` + `--node_table_size 352`, Helios off |
+| `rob352_helios` | `PARAMS.in` + `--node_table_size 352 --helios_do_fusion 1` |
+
+- **Workloads / window:** same traces and methodology as `baseline` above
+  (500M instructions from instruction 1, no warmup).
+- **Scarab:** branch `hpca2027-revision-helios`.
+
+```bash
+./json/hpca2027-revision/helios.sh                     # register traces + build + launch all 28 sims
+./json/hpca2027-revision/helios.sh --status
+./json/hpca2027-revision/helios.sh --package <dir>     # e.g. scarab/results/hpca2027-revision-helios
+```
+
+Raw simulation output: `/users/deepmish/hpca2027-revision-runs/simulations/<config>/<app>/20/`.

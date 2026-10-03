@@ -1,0 +1,76 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "in",
+  "experiment": "helios-rob",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/hpca2027-revision-runs",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline",
+  "top_simpoint": false,
+  "_comment": "HPCA2027 revision: Helios ROB sensitivity on SPEC CPU2017 speed int. Golden Cove (PARAMS.in) with only node_table_size (ROB) changed. Each trace is one fixed 550M-instruction region; the first 500M instructions are simulated with no warmup (--full_warmup 0). Scarab branch hpca2027-revision-helios. Launch with json/hpca2027-revision/helios.sh.",
+  "simulations": [
+    {
+      "suite": "spec2017",
+      "subsuite": "speed_int_helios",
+      "workload": [
+        "gcc_s",
+        "gcc_s_2",
+        "gcc_s_3",
+        "leela_s",
+        "mcf_s",
+        "omnetpp_s",
+        "xalancbmk_s"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 0
+    }
+  ],
+  "configurations": {
+    "rob512_baseline": {
+      "params": "--inst_limit 500000000 --node_table_size 512",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "rob512_helios": {
+      "params": "--inst_limit 500000000 --node_table_size 512 --helios_do_fusion 1",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 512
+    },
+    "rob352_baseline": {
+      "params": "--inst_limit 500000000 --node_table_size 352",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "rob352_helios": {
+      "params": "--inst_limit 500000000 --node_table_size 352 --helios_do_fusion 1",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 512
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "rob512_baseline",
+    "configs": [
+      "rob512_baseline",
+      "rob512_helios",
+      "rob352_baseline",
+      "rob352_helios"
+    ],
+    "counters": [
+      "IPC"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 8192
+  }
+}
