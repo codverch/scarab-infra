@@ -9,7 +9,7 @@
   "scarab_build": "opt",
   "traces_dir": "/dev/shm/baseline",
   "top_simpoint": false,
-  "_comment": "HPCA2027 revision: Helios on the MICRO'22 paper baseline (scarab/src/PARAMS.helios_paper, Table II) on SPEC CPU2017 speed int. Each trace is one fixed Helios region; the first 500M instructions are simulated with no warmup, as in the paper. Scarab branch hpca2027-revision-helios. Launch with json/hpca2027-revision/helios_paper.sh.",
+  "_comment": "HPCA2027 revision: Helios on the MICRO'22 paper baseline (scarab/src/PARAMS.helios_paper, Table II) on SPEC CPU2017 speed int. Each trace is one fixed Helios region; Scarab warms up on the first 20M instructions and measures the next 100M (--full_warmup 20000000, --inst_limit 120000000). Scarab branch hpca2027-revision-helios. Launch with json/hpca2027-revision/helios_paper.sh.",
   "simulations": [
     {
       "suite": "spec2017",
@@ -27,18 +27,18 @@
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
-      "warmup": 0
+      "warmup": 20000000
     }
   ],
   "configurations": {
     "no_fusion": {
-      "params": "--inst_limit 500000000 --helios_do_fusion 0",
+      "params": "--inst_limit 120000000 --helios_do_fusion 0",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 0
     },
     "helios": {
-      "params": "--inst_limit 500000000 --helios_do_fusion 1",
+      "params": "--inst_limit 120000000 --helios_do_fusion 1",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 512

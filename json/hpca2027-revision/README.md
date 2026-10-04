@@ -85,7 +85,8 @@ script. Raw simulation output: `~/scarab/src/simulations/<config>/<app>/20/`.
   of Sunny Cove. It is copied from the scarab working tree at launch.
 - **Workloads:** all nine Helios fixed-region traces
   (`deepsjeng_s exchange2_s gcc_s gcc_s_2 gcc_s_3 leela_s mcf_s omnetpp_s xalancbmk_s`).
-- **Window:** 500M instructions from instruction 1, no warmup, as in the paper.
+- **Window:** warm up on the first 20M instructions, then measure the next 100M.
+  Results use Scarab's `Periodic` (post-warmup) numbers.
 - **Scarab:** branch `hpca2027-revision-helios`.
 
 ```bash

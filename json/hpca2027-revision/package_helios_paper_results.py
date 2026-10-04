@@ -6,8 +6,8 @@ descriptor and writes:
 
   <out>/<app>/<config>/   every file from the run dir (all *.stat.0.out/.csv, PARAMS.in,
                           PARAMS.out, sim.log, ...)
-  <out>/summary.csv       cycles, instructions, IPC and Helios counters per app x config,
-                          plus Helios speedup over no_fusion
+  <out>/summary.csv       cycles, instructions, IPC and Helios counters per app x config over
+                          the measured (post-warmup) interval, plus Helios speedup over no_fusion
 
 Usage: package_helios_paper_results.py --descriptor json/hpca2027-revision/helios_paper.json \
            [--out ~/scarab/src/hpca2027-revision/helios-paper-config]
@@ -33,10 +33,12 @@ HELIOS_COUNTERS = (
 
 
 def read_ipc(run: Path) -> tuple[int, int, float]:
+    # Periodic covers only the measured interval after the warmup dump;
+    # Cumulative would include the warmup instructions.
     text = (run / "core.stat.0.out").read_text()
-    m = re.search(r"Cumulative:\s+Cycles:\s+(\d+)\s+Instructions:\s+(\d+)\s+IPC:\s+([\d.]+)", text)
+    m = re.search(r"Periodic:\s+Cycles:\s+(\d+)\s+Instructions:\s+(\d+)\s+IPC:\s+([\d.]+)", text)
     if not m:
-        raise ValueError(f"no Cumulative line in {run / 'core.stat.0.out'}")
+        raise ValueError(f"no Periodic line in {run / 'core.stat.0.out'}")
     return int(m[1]), int(m[2]), float(m[3])
 
 
@@ -45,12 +47,17 @@ def read_counters(run: Path) -> dict[str, int]:
     for f in run.glob("*.stat.0.csv"):
         for line in f.read_text().splitlines():
             parts = [p.strip() for p in line.split(",")]
-            if len(parts) == 3 and parts[0].endswith("_total_count"):
+            # <stat>_count is the post-warmup interval; <stat>_total_count includes warmup.
+            if len(parts) == 3 and parts[0].endswith("_count") and not parts[0].endswith("_total_count"):
                 try:
-                    stats[parts[0][: -len("_total_count")]] = int(parts[2])
+                    stats[parts[0][: -len("_count")]] = int(parts[2])
                 except ValueError:
                     pass
     return stats
+
+
+def _read(f: Path) -> str:
+    return f.read_text() if f.exists() else ""
 
 
 def main() -> None:
@@ -70,7 +77,7 @@ def main() -> None:
         ipc = {}
         for cfg in configs:
             runs = sorted(p for p in (sims_root / cfg / app).glob("*") if p.is_dir())
-            if not runs or not (runs[0] / "core.stat.0.out").exists():
+            if not runs or "Periodic" not in _read(runs[0] / "core.stat.0.out"):
                 missing.append(f"{cfg}/{app}")
                 continue
             run = runs[0]

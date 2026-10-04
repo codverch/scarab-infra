@@ -8,8 +8,8 @@
 #
 # Workloads: deepsjeng_s exchange2_s gcc_s gcc_s_2 gcc_s_3 leela_s mcf_s
 #            omnetpp_s xalancbmk_s
-# Each trace is a single fixed Helios region; the first 500M instructions are
-# simulated with no warmup, as in the paper.
+# Each trace is a single fixed Helios region: warm up on the first 20M
+# instructions, then measure the next 100M.
 #
 # Usage:
 #   ./json/hpca2027-revision/helios_paper.sh             # register + build (if needed) + sim
@@ -75,6 +75,11 @@ for sim in desc["simulations"]:
         slot = db.setdefault(suite, {}).setdefault(subsuite, {})
         if app not in slot:
             slot[app] = entry
+            changed = True
+        # sci rejects a sim warmup above the registered one; raise it if needed.
+        mt = slot[app]["simulation"]["memtrace"]
+        if warmup and mt["warmup"] < warmup:
+            mt["warmup"] = warmup
             changed = True
         print(f"  {suite}/{subsuite}/{app}: {[z.name for z in zips]}")
 if changed:
