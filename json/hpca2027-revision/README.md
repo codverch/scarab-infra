@@ -104,7 +104,7 @@ Raw simulation output: `/users/deepmish/hpca2027-revision-runs/simulations/<conf
 
 | Config | Params |
 |--------|--------|
-| `helios_paper_ifuse` | `PARAMS.helios_paper`, `--ifuse_fusion_distance 352 --ifuse_apt_match_policy 0 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 9` |
+| `helios_paper_ifuse` | `PARAMS.helios_paper`, `--ifuse_fusion_distance 352 --ifuse_apt_match_policy 0 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 16` |
 
 - **Processor / workloads / window:** same as `helios_paper` above; fusion
   distance matches the 352-entry ROB.
