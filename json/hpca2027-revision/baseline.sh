@@ -91,6 +91,9 @@ plot_topdown() {
   "${HOME}/miniconda3/envs/scarabinfra/bin/python" \
     "${INFRA_DIR}/json/hpca2027-revision/plot_backend_stalls.py" \
     --results "${RESULTS_DIR}" --apps "${APPS[@]}"
+  "${HOME}/miniconda3/envs/scarabinfra/bin/python" \
+    "${INFRA_DIR}/json/hpca2027-revision/plot_backend_stalls_paper.py" \
+    --results "${RESULTS_DIR}" --apps "${APPS[@]}"
 }
 
 cd "${INFRA_DIR}"
