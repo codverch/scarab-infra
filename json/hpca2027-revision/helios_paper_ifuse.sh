@@ -7,8 +7,8 @@
 #
 # Workloads: deepsjeng_s exchange2_s gcc_s gcc_s_2 gcc_s_3 leela_s mcf_s
 #            omnetpp_s xalancbmk_s
-# Each trace is a single fixed Helios region; the first 500M instructions are
-# simulated with no warmup, as in the paper.
+# Each trace is a single fixed Helios region; instructions 1-120M are simulated
+# with the first 20M as warmup, so stats cover the next 100M.
 #
 # Usage:
 #   ./json/hpca2027-revision/helios_paper_ifuse.sh             # register + build (if needed) + sim

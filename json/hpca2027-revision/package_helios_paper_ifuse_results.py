@@ -6,7 +6,8 @@ descriptor and writes:
 
   <out>/<app>/            every file from the run dir (all *.stat.0.out/.csv, PARAMS.in,
                           PARAMS.out, sim.log, ...)
-  <out>/summary.csv       cycles, instructions, IPC and I-Fuse counters per app
+  <out>/summary.csv       cycles, instructions, IPC and I-Fuse counters per app over the
+                          measured window, i.e. after the full_warmup stats reset
 
 Usage: package_helios_paper_ifuse_results.py --descriptor json/hpca2027-revision/helios_paper_ifuse.json \
            [--out ~/scarab/src/hpca2027-revision/helios-paper-config-ifuse]
@@ -17,10 +18,9 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import shutil
 from pathlib import Path
-
-from package_helios_paper_results import read_counters, read_ipc
 
 IFUSE_COUNTERS = (
     "IFUSE_FUSED_LOADS",
@@ -30,6 +30,29 @@ IFUSE_COUNTERS = (
     "IFUSE_MISPREDICTED_LOADS",
     "IFUSE_TRAINING_PAIRS_DISCOVERED",
 )
+
+
+def read_ipc(run: Path) -> tuple[int, int, float]:
+    """Cycles, instructions and IPC after warmup (the Periodic line)."""
+    text = (run / "core.stat.0.out").read_text()
+    m = re.search(r"Periodic:\s+Cycles:\s+(\d+)\s+Instructions:\s+(\d+)\s+IPC:\s+([\d.]+)", text)
+    if not m:
+        raise ValueError(f"no Periodic line in {run / 'core.stat.0.out'}")
+    return int(m[1]), int(m[2]), float(m[3])
+
+
+def read_counters(run: Path) -> dict[str, int]:
+    """Counters after warmup (<stat>_count; <stat>_total_count includes warmup)."""
+    stats = {}
+    for f in run.glob("*.stat.0.csv"):
+        for line in f.read_text().splitlines():
+            parts = [p.strip() for p in line.split(",")]
+            if len(parts) == 3 and parts[0].endswith("_count") and not parts[0].endswith("_total_count"):
+                try:
+                    stats[parts[0][: -len("_count")]] = int(parts[2])
+                except ValueError:
+                    pass
+    return stats
 
 
 def main() -> None:

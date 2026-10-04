@@ -104,10 +104,13 @@ Raw simulation output: `/users/deepmish/hpca2027-revision-runs/simulations/<conf
 
 | Config | Params |
 |--------|--------|
-| `helios_paper_ifuse` | `PARAMS.helios_paper`, `--ifuse_fusion_distance 352 --ifuse_apt_match_policy 0 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 16` |
+| `helios_paper_ifuse` | `PARAMS.helios_paper`, `--ifuse_fusion_distance 352 --ifuse_apt_match_policy 0 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 16`, `--inst_limit 120000000 --full_warmup 20000000` |
 
-- **Processor / workloads / window:** same as `helios_paper` above; fusion
-  distance matches the 352-entry ROB.
+- **Processor / workloads:** same as `helios_paper` above; fusion distance
+  matches the 352-entry ROB.
+- **Window:** instructions 1-120M, the first 20M as warmup, so stats cover 100M.
+- **FCT:** ideal and never evicts, so it is sized at 2^16 rows; gcc, deepsjeng and
+  omnetpp overflow 512 rows, and apps that fit behave identically.
 - **Scarab:** branch `hpca2027-revision-ifuse`.
 
 ```bash
