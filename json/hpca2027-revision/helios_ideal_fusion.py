@@ -16,6 +16,9 @@ Usage (from the scarab-infra root):
   ./json/hpca2027-revision/helios_ideal_fusion.py status
   ./json/hpca2027-revision/helios_ideal_fusion.py package   # -> scarab/results/hpca2027-revision-ideal-fusion/
 
+  --robs 512 runs only ROB 512 (default: 352 512). CANDIDATES_DIR=<dir>
+  puts the pass-1 candidate logs elsewhere (e.g. tmpfs).
+
 Pass-1 candidates are kept gzip-compressed (~1 GB each) on disk at
 CANDIDATES_DIR/rob<N>/<benchmark>/20.csv.gz, outside tmpfs. Raw simulation
 output: <scarab>/src/simulations/helios_spec17_ideal_fusion_pass<P>_rob<N>/.
@@ -247,18 +250,31 @@ def package() -> int:
         for rob in ROB_SIZES) + " |"
     head = " | ".join(f"Base {r} | Ideal {r} | Speedup {r} | Fused {r}" for r in ROB_SIZES)
     align = "|---" + "|---:" * 4 * len(ROB_SIZES) + "|"
-    s_n, l_n = ROB_SIZES
+    opts = "" if ROB_SIZES == [352, 512] else " --robs " + " ".join(map(str, ROB_SIZES))
+    env = f"CANDIDATES_DIR={CANDIDATES_DIR} " if CANDIDATES_DIR != Path.home() / "ideal_fusion_candidates" else ""
+    rerun = "\n".join(f"{env}./json/hpca2027-revision/helios_ideal_fusion.py {step}{opts}{c}" for step, c in
+                       (("run", "       # register traces, pass 1, pass 2"), ("status", ""),
+                        ("package", "   # regenerate this directory")))
+    robs_title = " vs ".join(str(r) for r in ROB_SIZES)
+    rob_rows = "\n".join(
+        f"| ROB {r} | Golden Cove as-is (`--node_table_size {r}`) |" if r == 512 else
+        f"| ROB {r} | Golden Cove with `--node_table_size {r}`; nothing else changed |"
+        for r in ROB_SIZES)
+    windows = " / ".join(str(r) for r in ROB_SIZES)
+    layout = "\n".join(
+        f"rob-{r}/baseline/<benchmark>/       pass 1: Scarab stats (*.stat.0.csv), PARAMS.out, sim.log\n"
+        f"rob-{r}/ideal-fusion/<benchmark>/   pass 2: same"
+        for r in ROB_SIZES)
 
-    readme = f"""# HPCA 2027 revision: ideal load fusion, Golden Cove ROB {s_n} vs {l_n}
+    readme = f"""# HPCA 2027 revision: ideal load fusion, Golden Cove ROB {robs_title}
 
 ## Setup
 
 | | |
 |---|---|
 | Core | Golden Cove (`src/PARAMS.golden_cove`) |
-| ROB {l_n} | Golden Cove as-is (`--node_table_size {l_n}`) |
-| ROB {s_n} | Golden Cove with `--node_table_size {s_n}`; nothing else changed |
-| Fusion | Ideal load-load fusion: two on-path loads to the same 64 B cache block, with no intervening store to it, within a window equal to the ROB size ({s_n} / {l_n} µops). Each load fuses at most once; a LOAD2 pairs with the oldest eligible LOAD1 |
+{rob_rows}
+| Fusion | Ideal load-load fusion: two on-path loads to the same 64 B cache block, with no intervening store to it, within a window equal to the ROB size ({windows} µops). Each load fuses at most once; a LOAD2 pairs with the oldest eligible LOAD1 |
 | Workloads | SPEC CPU2017 speed_int, Helios fixed-region traces ([dataset](https://huggingface.co/datasets/harry1332/helios-spec2017-fixed-region-20261002)) |
 | Window | {INST_LIMIT // 1_000_000}M instructions from instruction 1, no warmup (Helios methodology) |
 | Scarab branch | `hpca2027-revision-ideal-fusion` |
@@ -285,9 +301,7 @@ when the older load (LOAD1) completes.
 ## Layout
 
 ```
-rob-{s_n}/baseline/<benchmark>/       pass 1: Scarab stats (*.stat.0.csv), PARAMS.out, sim.log
-rob-{s_n}/ideal-fusion/<benchmark>/   pass 2: same
-rob-{l_n}/...                         same, for ROB {l_n}
+{layout}
 summary.csv                       IPC, speedup and fused-load share per benchmark
 candidates.csv                    size and SHA-256 of each pass-1 candidate log
 ```
@@ -306,9 +320,7 @@ are kept outside the repo; `candidates.csv` lists their checksums.
 ```bash
 cd ~/scarab && git checkout hpca2027-revision-ideal-fusion
 cd ~/scarab-infra && git checkout hpca2027-revision
-./json/hpca2027-revision/helios_ideal_fusion.py run       # register traces, pass 1, pass 2
-./json/hpca2027-revision/helios_ideal_fusion.py status
-./json/hpca2027-revision/helios_ideal_fusion.py package   # regenerate this directory
+{rerun}
 ```
 """
     (RESULTS_DIR / "README.md").write_text(readme)
@@ -324,7 +336,9 @@ def main() -> int:
     ap.add_argument("step", choices=["run", "status", "package"])
     ap.add_argument("--inst-limit", type=int, default=INST_LIMIT)
     ap.add_argument("--tag", default="", help="prefix for experiment and candidate dirs (e.g. smoke_)")
+    ap.add_argument("--robs", type=int, nargs="+", default=ROB_SIZES, help="ROB sizes to run (default: 352 512)")
     a = ap.parse_args()
+    ROB_SIZES[:] = a.robs
     if a.step == "run":
         run(a.inst_limit, a.tag)
     elif a.step == "status":
