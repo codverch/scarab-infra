@@ -1,0 +1,60 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "helios_paper",
+  "experiment": "helios-paper-config-ifuse",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/hpca2027-revision-runs",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline",
+  "top_simpoint": false,
+  "_comment": "HPCA2027 revision: runtime I-Fuse on the MICRO'22 Helios paper baseline (scarab/src/PARAMS.helios_paper, Table II) on SPEC CPU2017 speed int. Each trace is one fixed Helios region; the first 500M instructions are simulated with no warmup, as in the paper. Fusion distance matches the 352-entry ROB. Scarab branch hpca2027-revision-ifuse. Launch with json/hpca2027-revision/helios_paper_ifuse.sh.",
+  "simulations": [
+    {
+      "suite": "spec2017",
+      "subsuite": "speed_int_helios",
+      "workload": [
+        "deepsjeng_s",
+        "exchange2_s",
+        "gcc_s",
+        "gcc_s_2",
+        "gcc_s_3",
+        "leela_s",
+        "mcf_s",
+        "omnetpp_s",
+        "xalancbmk_s"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 0
+    }
+  ],
+  "configurations": {
+    "helios_paper_ifuse": {
+      "params": "--inst_limit 500000000 --ifuse_fusion_distance 352 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 9",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 512
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "helios_paper_ifuse",
+    "configs": [
+      "helios_paper_ifuse"
+    ],
+    "counters": [
+      "IPC",
+      "IFUSE_FUSED_LOADS",
+      "IFUSE_CORRECT_PREDICTIONS",
+      "IFUSE_INCORRECT_PREDICTIONS"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 8192
+  }
+}

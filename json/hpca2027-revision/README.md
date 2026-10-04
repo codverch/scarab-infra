@@ -99,3 +99,21 @@ script. Raw simulation output: `~/scarab/src/simulations/<config>/<app>/20/`.
 speedup over `no_fusion`, Helios counters).
 
 Raw simulation output: `/users/deepmish/hpca2027-revision-runs/simulations/<config>/<app>/20/`.
+
+## helios_paper_ifuse: runtime I-Fuse on the Helios paper baseline
+
+| Config | Params |
+|--------|--------|
+| `helios_paper_ifuse` | `PARAMS.helios_paper`, `--ifuse_fusion_distance 352 --ifuse_apt_match_policy 0 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 9` |
+
+- **Processor / workloads / window:** same as `helios_paper` above; fusion
+  distance matches the 352-entry ROB.
+- **Scarab:** branch `hpca2027-revision-ifuse`.
+
+```bash
+./json/hpca2027-revision/helios_paper_ifuse.sh            # register traces + build + launch all 9 sims
+./json/hpca2027-revision/helios_paper_ifuse.sh --status
+./json/hpca2027-revision/helios_paper_ifuse.sh --package  # -> scarab/src/hpca2027-revision/helios-paper-config-ifuse/<app>/
+```
+
+Raw simulation output: `/users/deepmish/hpca2027-revision-runs/simulations/helios_paper_ifuse/<app>/20/`.
