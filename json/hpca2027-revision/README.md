@@ -117,3 +117,22 @@ Raw simulation output: `/users/deepmish/hpca2027-revision-runs/simulations/<conf
 ```
 
 Raw simulation output: `/users/deepmish/hpca2027-revision-runs/simulations/helios_paper_ifuse/<app>/20/`.
+
+## helios_paper_baseline: baseline on the Helios paper config
+
+| Config | Params |
+|--------|--------|
+| `helios_paper_baseline` | `PARAMS.helios_paper`, no fusion |
+
+- **Processor / workloads / window:** same as `helios_paper` above.
+- **Scarab:** branch `hpca2027-revision-baseline`.
+
+```bash
+./json/hpca2027-revision/helios_paper_baseline.sh            # fetch + register traces, build, launch all 9 sims
+./json/hpca2027-revision/helios_paper_baseline.sh --status
+./json/hpca2027-revision/helios_paper_baseline.sh --package  # -> scarab/src/hpca2027-revision/helios-paper-config-baseline/<app>/
+```
+
+`--fetch` (run automatically) downloads any missing trace to `/dev/shm/baseline/<app>/traces/simp/20.zip`.
+
+Raw simulation output: `/users/deepmish/hpca2027-revision-runs/simulations/helios_paper_baseline/<app>/20/`.
