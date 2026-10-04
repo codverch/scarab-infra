@@ -14974,6 +14974,44 @@
             "weight":1.0
           }
         ]
+      },
+      "deepsjeng_s":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":10000000,
+            "warmup":0,
+            "whole_trace_file":null,
+            "trace_type":"trace_then_cluster"
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":20,
+            "segment_id":0,
+            "weight":1.0
+          }
+        ]
+      },
+      "exchange2_s":{
+        "simulation":{
+          "prioritized_mode":"memtrace",
+          "memtrace":{
+            "image_name":"allbench_traces",
+            "segment_size":10000000,
+            "warmup":0,
+            "whole_trace_file":null,
+            "trace_type":"trace_then_cluster"
+          }
+        },
+        "simpoints":[
+          {
+            "cluster_id":20,
+            "segment_id":0,
+            "weight":1.0
+          }
+        ]
       }
     }
   },

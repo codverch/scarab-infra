@@ -1,0 +1,64 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "helios_paper",
+  "experiment": "helios-paper-config",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/hpca2027-revision-runs",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline",
+  "top_simpoint": false,
+  "_comment": "HPCA2027 revision: Helios on the MICRO'22 paper baseline (scarab/src/PARAMS.helios_paper, Table II) on SPEC CPU2017 speed int. Each trace is one fixed Helios region; the first 500M instructions are simulated with no warmup, as in the paper. Scarab branch hpca2027-revision-helios. Launch with json/hpca2027-revision/helios_paper.sh.",
+  "simulations": [
+    {
+      "suite": "spec2017",
+      "subsuite": "speed_int_helios",
+      "workload": [
+        "deepsjeng_s",
+        "exchange2_s",
+        "gcc_s",
+        "gcc_s_2",
+        "gcc_s_3",
+        "leela_s",
+        "mcf_s",
+        "omnetpp_s",
+        "xalancbmk_s"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 0
+    }
+  ],
+  "configurations": {
+    "no_fusion": {
+      "params": "--inst_limit 500000000 --helios_do_fusion 0",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "helios": {
+      "params": "--inst_limit 500000000 --helios_do_fusion 1",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 512
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "no_fusion",
+    "configs": [
+      "no_fusion",
+      "helios"
+    ],
+    "counters": [
+      "IPC"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 8192
+  }
+}
