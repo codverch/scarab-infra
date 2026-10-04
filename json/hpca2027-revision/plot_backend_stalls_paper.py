@@ -10,6 +10,8 @@ stall cycles. Data comes from the packaged results
 Writes to <results>/backend_stalls/:
     backend-resource-stalls.{png,pdf}              stacked RAT/ROB/LQ/SQ
     backend-resource-stalls-by-resource.{png,pdf}  one panel per resource
+and <results>/rob_head/rob-head-load-retire-stalls.{png,pdf,csv}: % of cycles
+retirement is blocked by a load at the ROB head that missed L1D.
 """
 
 import argparse
@@ -185,6 +187,109 @@ def plot_by_resource(results, output_dir: Path) -> None:
     plt.close(fig)
 
 
+ROB_HEAD_STEM = "rob-head-load-retire-stalls"
+# (label, color) bottom to top. Scarab naming: dcache = L1D, mlc = L2, "l1" = LLC.
+ROB_HEAD_SEGMENTS = (
+    ("Load served by L2/LLC", "#6E6E6E"),
+    ("Load served by DRAM", brs.REG_FILE_COLOR),
+)
+
+
+def rob_head_load(path: Path) -> tuple:
+    """% of cycles retirement is blocked because the ROB-head op is a load
+    that missed L1D (RET_BLOCKED_DC_MISS; engine_info.dcmiss is set only for
+    MEM_LD), split by RET_BLOCKED_L1_ACCESS (served by L2/LLC) and the rest
+    (missed the LLC, served by DRAM)."""
+    get = lambda s: float(brs.stat_count_from_csv(path, s) or 0.0)
+    cycles = get("NODE_CYCLE_count")
+    total = get("RET_BLOCKED_DC_MISS_count")
+    on_chip = get("RET_BLOCKED_L1_ACCESS_count")
+    return (100.0 * on_chip / cycles, 100.0 * (total - on_chip) / cycles)
+
+
+def plot_rob_head_load(results_dir: Path, apps, robs, output_dir: Path) -> None:
+    np, plt, mticker = brs.np, brs.plt, brs.mticker
+    from matplotlib.patches import Patch
+
+    data = {r: {a: rob_head_load(results_dir / f"rob-{r}" / a / "core.stat.0.csv") for a in apps}
+            for r in robs}
+    for r in robs:
+        data[r]["Average"] = tuple(sum(data[r][a][i] for a in apps) / len(apps) for i in range(2))
+    rows = list(apps) + ["Average"]
+    labels = [brs.display_name(w) for w in rows]
+    x_apps = np.arange(len(apps), dtype=float) * brs.APP_STEP
+    cluster_half = brs.BAR_OFFSET + brs.BAR_WIDTH / 2.0
+    avg_x = float(x_apps[-1] + 2.0 * cluster_half + brs.AVERAGE_GAP)
+    x = np.append(x_apps, avg_x)
+    separator_x = float(x_apps[-1] + cluster_half + brs.AVERAGE_GAP * 0.5)
+
+    brs._apply_plot_style()
+    fig, ax = plt.subplots(figsize=brs.FIGSIZE)
+    ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=2.0, zorder=0)
+    for (cfg, _, hatch), offset, r in zip(brs.CONFIGS, (-brs.BAR_OFFSET, brs.BAR_OFFSET), robs):
+        bottoms = np.zeros(len(rows))
+        for i, (_, color) in enumerate(ROB_HEAD_SEGMENTS):
+            values = np.array([data[r][w][i] for w in rows])
+            ax.bar(x + offset, values, brs.BAR_WIDTH, bottom=bottoms, color=color,
+                   edgecolor="black", linewidth=SEGMENT_EDGE_WIDTH, hatch=hatch, zorder=3)
+            bottoms += values
+        ax.bar(x + offset, bottoms, brs.BAR_WIDTH, fill=False, edgecolor="black",
+               linewidth=brs.BAR_EDGE_WIDTH, zorder=4)
+
+    ax.axvline(x=separator_x, color=brs.AVERAGE_SEPARATOR_COLOR, linestyle="--",
+               linewidth=brs.AVERAGE_SEPARATOR_WIDTH, zorder=2)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha="right", color="black")
+    for label in ax.get_xticklabels():
+        label.set_fontsize(brs.AXIS_FONT)
+        label.set_fontfamily(brs.plot_ipc.FONT_FAMILY)
+        if label.get_text() == "Average":
+            label.set_weight("bold")
+    ax.set_xlim(x[0] - cluster_half - 2.5, x[-1] + cluster_half + 2.5)
+    ax.margins(x=0)
+    ax.set_ylabel("Retire stall cycles,\nload at ROB\nhead (%)", fontsize=brs.AXIS_LABEL_FONT,
+                  fontfamily=brs.plot_ipc.FONT_FAMILY, color="black", labelpad=brs.Y_LABEL_PAD)
+    ax.set_ylim(0.0, 100.0)
+    ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
+    ax.tick_params(axis="x", labelsize=brs.AXIS_FONT, length=0, pad=14, colors="black")
+    ax.tick_params(axis="y", labelsize=brs.AXIS_FONT, colors="black")
+    for label in ax.get_yticklabels():
+        label.set_fontfamily(brs.plot_ipc.FONT_FAMILY)
+    plt.subplots_adjust(top=0.62, bottom=0.30, left=0.12, right=0.98)
+
+    handles = [Patch(facecolor=c, edgecolor="black", linewidth=brs.BAR_EDGE_WIDTH, label=l)
+               for l, c in ROB_HEAD_SEGMENTS]
+    handles += [Patch(facecolor="white", edgecolor="black", linewidth=brs.BAR_EDGE_WIDTH,
+                      hatch=h, label=l) for _, l, h in brs.CONFIGS]
+    legend = ax.legend(handles=handles, frameon=True, fancybox=False, loc="lower center",
+                       bbox_to_anchor=(0.5, 1.08), bbox_transform=ax.transAxes,
+                       borderaxespad=0.0, fontsize=brs.LEGEND_FONT, edgecolor="black",
+                       ncol=2, handlelength=1.4, handleheight=1.1, columnspacing=1.2)
+    legend.set_clip_on(False)
+    legend.get_frame().set_linewidth(brs.BAR_EDGE_WIDTH)
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_color("black")
+        spine.set_linewidth(brs.BAR_EDGE_WIDTH)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for ext in ("png", "pdf"):
+        fig.savefig(output_dir / f"{ROB_HEAD_STEM}.{ext}", dpi=brs.OUTPUT_DPI,
+                    bbox_inches="tight", pad_inches=0.08)
+    plt.close(fig)
+
+    import csv
+    with (output_dir / f"{ROB_HEAD_STEM}.csv").open("w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["benchmark", "rob"] + [f"{l} (% cycles)" for l, _ in ROB_HEAD_SEGMENTS]
+                   + ["Total (% cycles)"])
+        for wl in rows:
+            for r in robs:
+                a, b = data[r][wl]
+                w.writerow([wl, r, f"{a:.2f}", f"{b:.2f}", f"{a + b:.2f}"])
+
+
 def load_counts(path: Path) -> dict:
     counts = dict.fromkeys(brs.STATS, 0.0)
     for stat in brs.STATS:
@@ -223,7 +328,9 @@ def main() -> int:
     out = args.results / "backend_stalls"
     plot_breakdown(results, out)
     plot_by_resource(results, out)
+    plot_rob_head_load(args.results, args.apps, robs, args.results / "rob_head")
     print(f"Wrote {out}/{brs.OUTPUT_STEM}.{{png,pdf}}, {PANEL_STEM}.{{png,pdf}}")
+    print(f"Wrote {args.results}/rob_head/{ROB_HEAD_STEM}.{{png,pdf,csv}}")
     return 0
 
 
