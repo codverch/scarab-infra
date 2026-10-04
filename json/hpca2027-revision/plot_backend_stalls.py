@@ -5,12 +5,19 @@ Same attribution as hpca2027-characterization/plot_backend_resource_stalls.py:
 each bar stacks the % of cycles in which rename/allocation is blocked, by the
 backend resource that blocked it (core.stat.0.csv):
 
-  Register file full  = MAP_STAGE_STALL_ITSELF
-  ROB / LQ / SQ full  = MAP_STAGE_STALLED split in proportion to
-                        FULL_WINDOW_STALL, LSQ_FULL_LOAD_QUEUE, LSQ_FULL_STORE_QUEUE
-  Other               = MAP_STAGE_STALLED not covered by those counters
+  RAT       = MAP_STAGE_STALL_ITSELF (rename blocked: no free physical register)
+  ROB/LQ/SQ = MAP_STAGE_STALLED split in proportion to
+              FULL_WINDOW_STALL, LSQ_FULL_LOAD_QUEUE, LSQ_FULL_STORE_QUEUE
+  Other     = MAP_STAGE_STALLED not covered by those counters (CSV only;
+              0 in every run)
 
-Writes <results>/backend_stalls/backend_stalls.{png,pdf} and backend_stalls.csv.
+Scarab never blocks allocation on a full issue queue (ops wait in the ROB),
+so there is no IQ component.
+
+Writes to <results>/backend_stalls/:
+    backend_stalls.{png,pdf}            RAT / ROB / LQ / SQ stacked
+    backend_stalls_rob_lq_sq.{png,pdf}  ROB, LQ, SQ zoomed (one panel each)
+    backend_stalls.csv
 """
 
 import argparse
@@ -26,14 +33,14 @@ from matplotlib.patches import Patch
 STATS = ("NODE_CYCLE", "MAP_STAGE_STALL_ITSELF", "MAP_STAGE_STALLED",
          "FULL_WINDOW_STALL", "LSQ_FULL_LOAD_QUEUE", "LSQ_FULL_STORE_QUEUE")
 # (label, color) in stack order, bottom to top. Reference categorical palette,
-# fixed order; "Other" is neutral.
+# fixed order.
 SEGMENTS = [
-    ("Register file full", "#2a78d6"),
-    ("ROB full", "#eb6834"),
-    ("Load queue full", "#1baf7a"),
-    ("Store queue full", "#eda100"),
-    ("Other", "#b5b3ad"),
+    ("RAT", "#2a78d6"),
+    ("ROB", "#eb6834"),
+    ("LQ", "#1baf7a"),
+    ("SQ", "#eda100"),
 ]
+CSV_ONLY = ["Other"]
 TEXT, TEXT_MUTED, GRID, SURFACE = "#0b0b0b", "#52514e", "#e4e3df", "#ffffff"
 
 
@@ -70,14 +77,15 @@ def main() -> int:
                 for a in args.apps} for r in robs}
     for r in robs:
         data[r]["Average"] = [sum(data[r][a][i] for a in args.apps) / len(args.apps)
-                              for i in range(len(SEGMENTS))]
+                              for i in range(len(SEGMENTS) + len(CSV_ONLY))]
     groups = args.apps + ["Average"]
     out = args.results / "backend_stalls"
     out.mkdir(exist_ok=True)
 
     with (out / "backend_stalls.csv").open("w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["benchmark", "rob"] + [f"{l} (% cycles)" for l, _ in SEGMENTS] + ["Total (% cycles)"])
+        w.writerow(["benchmark", "rob"] + [f"{l} (% cycles)" for l in [l for l, _ in SEGMENTS] + CSV_ONLY]
+                   + ["Total (% cycles)"])
         for g in groups:
             for r in robs:
                 vals = data[r][g]
@@ -87,12 +95,13 @@ def main() -> int:
     fig, ax = plt.subplots(figsize=(12.5, 4.6))
     fig.patch.set_facecolor(SURFACE)
     ax.set_facecolor(SURFACE)
-    ymax = max(sum(data[r][g]) for r in robs for g in groups)
+    n = len(SEGMENTS)
+    ymax = max(sum(data[r][g][:n]) for r in robs for g in groups)
     for gi, g in enumerate(groups):
         for ri, r in enumerate(robs):
             x = gi + (ri - 0.5) * (bar_w + gap)
             bottom = 0.0
-            for v, (_, color) in zip(data[r][g], SEGMENTS):
+            for v, (_, color) in zip(data[r][g][:n], SEGMENTS):
                 ax.bar(x, v, bar_w, bottom=bottom, color=color, edgecolor=SURFACE, linewidth=1.5)
                 bottom += v
             ax.text(x, bottom + ymax * 0.01, f"{bottom:.0f}", ha="center", va="bottom",
@@ -120,7 +129,37 @@ def main() -> int:
     fig.tight_layout(rect=(0, 0.03, 1, 1))
     for ext in ("png", "pdf"):
         fig.savefig(out / f"backend_stalls.{ext}", dpi=200)
-    print(f"Wrote {out}/backend_stalls.{{png,pdf}}, backend_stalls.csv")
+    plt.close(fig)
+
+    # ROB / LQ / SQ are < ~1% of cycles and vanish in the stacked chart:
+    # one small panel each, own y-scale, ROB 352 vs 512 side by side.
+    rob_colors = {robs[0]: "#b5b3ad", robs[-1]: "#52514e"}
+    fig, axes = plt.subplots(1, 3, figsize=(14, 3.6), sharex=True)
+    fig.patch.set_facecolor(SURFACE)
+    for ax, idx in zip(axes, (1, 2, 3)):
+        ax.set_facecolor(SURFACE)
+        label = SEGMENTS[idx][0]
+        for ri, r in enumerate(robs):
+            xs = [gi + (ri - 0.5) * (bar_w + gap) for gi in range(len(groups))]
+            ax.bar(xs, [data[r][g][idx] for g in groups], bar_w, color=rob_colors[r],
+                   edgecolor=SURFACE, linewidth=1.5, label=f"ROB {r}")
+        ax.set_title(f"{label} full", loc="left", fontsize=11, color=TEXT)
+        ax.set_xticks(range(len(groups)))
+        ax.set_xticklabels(groups, rotation=40, ha="right", fontsize=9, color=TEXT)
+        ax.tick_params(axis="x", length=0)
+        ax.tick_params(axis="y", labelsize=9, colors=TEXT_MUTED)
+        ax.yaxis.grid(True, color=GRID, linewidth=0.8)
+        ax.set_axisbelow(True)
+        for side in ("top", "right", "left"):
+            ax.spines[side].set_visible(False)
+        ax.spines["bottom"].set_color(GRID)
+    axes[0].set_ylabel("Cycles allocation is blocked (%)", fontsize=10, color=TEXT)
+    axes[-1].legend(loc="upper right", frameon=False, fontsize=9, labelcolor=TEXT)
+    fig.tight_layout()
+    for ext in ("png", "pdf"):
+        fig.savefig(out / f"backend_stalls_rob_lq_sq.{ext}", dpi=200)
+    plt.close(fig)
+    print(f"Wrote {out}/backend_stalls.{{png,pdf}}, backend_stalls_rob_lq_sq.{{png,pdf}}, backend_stalls.csv")
     return 0
 
 
