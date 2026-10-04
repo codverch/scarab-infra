@@ -17,6 +17,7 @@
 #   ./baseline.sh --register      # only register traces in workloads_db.json
 #   ./baseline.sh --status        # sim progress
 #   ./baseline.sh --package       # package results into the scarab repo
+#   ./baseline.sh --topdown       # top-down plots into <results>/topdown/
 #   ./baseline.sh --kill          # kill running sims
 
 set -euo pipefail
@@ -83,16 +84,23 @@ package_results() {
     --apps "${APPS[@]}"
 }
 
+plot_topdown() {
+  "${HOME}/miniconda3/envs/scarabinfra/bin/python" \
+    "${INFRA_DIR}/json/hpca2027-revision/plot_topdown.py" \
+    --results "${RESULTS_DIR}" --apps "${APPS[@]}"
+}
+
 cd "${INFRA_DIR}"
 case "${1:-}" in
   --register) register_traces ;;
   --status)   ./sci --status "${DESCRIPTOR}" ;;
   --kill)     ./sci --kill "${DESCRIPTOR}" ;;
-  --package)  package_results ;;
+  --package)  package_results && plot_topdown ;;
+  --topdown)  plot_topdown ;;
   "")
     register_traces
     mkdir -p "${ROOT_DIR}"
     ./sci --sim "${DESCRIPTOR}"
     ;;
-  *) sed -n '2,21p' "$0"; exit 1 ;;
+  *) sed -n '2,22p' "$0"; exit 1 ;;
 esac
