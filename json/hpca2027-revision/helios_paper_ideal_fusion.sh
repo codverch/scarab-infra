@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # HPCA2027 revision: ideal load fusion on the Helios MICRO'22 paper baseline
 # =============================================================================
-# Processor: scarab/src/PARAMS.helios_paper (paper Table II), read from the
-# scarab working tree at launch. Fusion window = the 352-entry ROB.
+# Processor: scarab/src/PARAMS.helios_paper (paper Table II, Ramulator DRAM),
+# read from the scarab working tree at launch. Fusion window = the 352-entry ROB.
 #
 # Two passes, run in order:
 #   pass 1  logs every fusible load pair to tmpfs
@@ -12,8 +12,8 @@
 #
 # Workloads: deepsjeng_s exchange2_s gcc_s gcc_s_2 gcc_s_3 leela_s mcf_s
 #            omnetpp_s xalancbmk_s
-# Each trace is a single fixed Helios region; the first 500M instructions are
-# simulated with no warmup, as in the paper.
+# Each trace is a single fixed Helios region; each run warms up for 20M
+# instructions from instruction 1, then measures the next 100M.
 #
 # Usage:
 #   ./json/hpca2027-revision/helios_paper_ideal_fusion.sh             # register + build + pass 1 + pass 2

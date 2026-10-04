@@ -9,7 +9,7 @@
   "scarab_build": "opt",
   "traces_dir": "/dev/shm/baseline",
   "top_simpoint": false,
-  "_comment": "HPCA2027 revision: ideal load fusion pass 2 on the MICRO'22 Helios paper baseline (scarab/src/PARAMS.helios_paper, Table II) on SPEC CPU2017 speed int. Pass 2 replays the pass-1 pairs and models their fusion. Fusion window = the 352-entry ROB. Each trace is one fixed Helios region; the first 500M instructions are simulated with no warmup, as in the paper. Candidates live in tmpfs (application_dir, mounted at /tmp_home/application). Scarab branch hpca2027-revision-ideal-fusion. Launch with json/hpca2027-revision/helios_paper_ideal_fusion.sh.",
+  "_comment": "HPCA2027 revision: ideal load fusion pass 2 on the MICRO'22 Helios paper baseline (scarab/src/PARAMS.helios_paper, Table II, Ramulator DRAM) on SPEC CPU2017 speed int. Pass 2 replays the pass-1 pairs and models their fusion. Fusion window = the 352-entry ROB. Each trace is one fixed Helios region; each run warms up for 20M instructions from instruction 1, then measures the next 100M (inst_limit 120M). Candidates live in tmpfs (application_dir, mounted at /tmp_home/application). Scarab branch hpca2027-revision-ideal-fusion. Launch with json/hpca2027-revision/helios_paper_ideal_fusion.sh.",
   "simulations": [
     {
       "suite": "spec2017",
@@ -27,12 +27,12 @@
       ],
       "cluster_id": null,
       "simulation_type": "memtrace",
-      "warmup": 0
+      "warmup": 20000000
     }
   ],
   "configurations": {
     "helios_paper_ideal_fusion_pass2": {
-      "params": "--inst_limit 500000000 --ideal_fusion_pass 2 --ideal_fusion_distance 352 --ideal_fusion_log /tmp_home/application/helios_paper/{workload}/{cluster_id}.csv.gz",
+      "params": "--inst_limit 120000000 --ideal_fusion_pass 2 --ideal_fusion_distance 352 --ideal_fusion_log /tmp_home/application/helios_paper/{workload}/{cluster_id}.csv.gz",
       "binary": "scarab_current",
       "slurm_options": "",
       "memory_overhead_mb": 512
