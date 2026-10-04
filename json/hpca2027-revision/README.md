@@ -124,7 +124,9 @@ Raw simulation output: `/users/deepmish/hpca2027-revision-runs/simulations/helio
 |--------|--------|
 | `helios_paper_baseline` | `PARAMS.helios_paper`, no fusion |
 
-- **Processor / workloads / window:** same as `helios_paper` above.
+- **Processor / workloads:** same as `helios_paper` above.
+- **Window:** 20M-instruction warmup, then 100M measured instructions
+  (`--inst_limit 120000000`, `warmup 20000000`).
 - **Scarab:** branch `hpca2027-revision-baseline`.
 
 ```bash

@@ -7,8 +7,8 @@
 #
 # Workloads: deepsjeng_s exchange2_s gcc_s gcc_s_2 gcc_s_3 leela_s mcf_s
 #            omnetpp_s xalancbmk_s
-# Each trace is a single fixed Helios region; the first 500M instructions are
-# simulated with no warmup, as in the paper.
+# Each trace is a single fixed Helios region; the first 20M instructions warm
+# up and the next 100M are measured (--inst_limit 120000000 counts both).
 #
 # Usage:
 #   ./json/hpca2027-revision/helios_paper_baseline.sh             # register + build (if needed) + sim
@@ -50,7 +50,8 @@ fetch_traces() {
 # Register the raw traces (<traces_dir>/<app>/traces/simp/<id>.zip) under the
 # <suite>/<subsuite>/<app> layout sci expects, using relative symlinks so they
 # resolve inside the Docker trace mount, and add single-region workloads_db entries.
-# Existing entries (e.g. from baseline.sh, which registers the same traces) are kept.
+# Existing entries (e.g. from baseline.sh, which registers the same traces) are kept,
+# but their warmup is raised to this descriptor's, since sci rejects a larger one.
 register_traces() {
   python3 - "${DESCRIPTOR_JSON}" "${INFRA_DIR}/workloads/workloads_db.json" <<'PY'
 import json, os, sys
@@ -90,6 +91,10 @@ for sim in desc["simulations"]:
         slot = db.setdefault(suite, {}).setdefault(subsuite, {})
         if app not in slot:
             slot[app] = entry
+            changed = True
+        mt = slot[app]["simulation"]["memtrace"]
+        if (mt.get("warmup") or 0) < warmup:
+            mt["warmup"] = warmup
             changed = True
         print(f"  {suite}/{subsuite}/{app}: {[z.name for z in zips]}")
 if changed:

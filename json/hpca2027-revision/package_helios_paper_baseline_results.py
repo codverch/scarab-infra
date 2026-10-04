@@ -6,7 +6,8 @@ descriptor and writes:
 
   <out>/<app>/            every file from the run dir (all *.stat.0.out/.csv, PARAMS.in,
                           PARAMS.out, sim.log, ...)
-  <out>/summary.csv       cycles, instructions, and IPC per app
+  <out>/summary.csv       cycles, instructions and IPC per app over the measured window
+                          (the Periodic line, which excludes the warmup)
 
 Usage: package_helios_paper_baseline_results.py --descriptor json/hpca2027-revision/helios_paper_baseline.json \
            [--out ~/scarab/src/hpca2027-revision/helios-paper-config-baseline]
@@ -17,10 +18,17 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import shutil
 from pathlib import Path
 
-from package_helios_paper_results import read_ipc
+
+def read_measured_ipc(run: Path) -> tuple[int, int, float]:
+    text = (run / "core.stat.0.out").read_text()
+    m = re.search(r"Periodic:\s+Cycles:\s+(\d+)\s+Instructions:\s+(\d+)\s+IPC:\s+([\d.]+)", text)
+    if not m:
+        raise ValueError(f"no Periodic line in {run / 'core.stat.0.out'}")
+    return int(m[1]), int(m[2]), float(m[3])
 
 
 def main() -> None:
@@ -46,7 +54,7 @@ def main() -> None:
         if dst.exists():
             shutil.rmtree(dst)
         shutil.copytree(run, dst, symlinks=False)
-        cycles, insts, ipc = read_ipc(run)
+        cycles, insts, ipc = read_measured_ipc(run)
         rows.append({"app": app, "cycles": cycles, "instructions": insts, "ipc": ipc})
 
     out.mkdir(parents=True, exist_ok=True)
