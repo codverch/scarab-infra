@@ -17,7 +17,7 @@
 #   ./baseline.sh --register      # only register traces in workloads_db.json
 #   ./baseline.sh --status        # sim progress
 #   ./baseline.sh --package       # package results into the scarab repo
-#   ./baseline.sh --topdown       # top-down plots into <results>/topdown/
+#   ./baseline.sh --topdown       # top-down + backend stall plots into <results>/
 #   ./baseline.sh --kill          # kill running sims
 
 set -euo pipefail
@@ -87,6 +87,9 @@ package_results() {
 plot_topdown() {
   "${HOME}/miniconda3/envs/scarabinfra/bin/python" \
     "${INFRA_DIR}/json/hpca2027-revision/plot_topdown.py" \
+    --results "${RESULTS_DIR}" --apps "${APPS[@]}"
+  "${HOME}/miniconda3/envs/scarabinfra/bin/python" \
+    "${INFRA_DIR}/json/hpca2027-revision/plot_backend_stalls.py" \
     --results "${RESULTS_DIR}" --apps "${APPS[@]}"
 }
 
