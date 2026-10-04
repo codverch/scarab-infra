@@ -7,7 +7,9 @@ per app (ROB 352 solid, ROB 512 hatched), same attribution of allocation
 stall cycles. Data comes from the packaged results
 (<results>/rob-<N>/<app>/core.stat.0.csv).
 
-Writes <results>/backend_stalls/backend-resource-stalls.{png,pdf}.
+Writes to <results>/backend_stalls/:
+    backend-resource-stalls.{png,pdf}              stacked RAT/ROB/LQ/SQ
+    backend-resource-stalls-by-resource.{png,pdf}  one panel per resource
 """
 
 import argparse
@@ -110,6 +112,79 @@ def plot_breakdown(results, output_dir: Path) -> None:
     plt.close(fig)
 
 
+PANEL_FONT = 60
+PANEL_EDGE = 3.5
+PANEL_STEM = "backend-resource-stalls-by-resource"
+
+
+def plot_by_resource(results, output_dir: Path) -> None:
+    """One small panel per resource (RAT, ROB, LQ, SQ), each on its own
+    y-scale, two bars per app (ROB 352 solid, ROB 512 hatched)."""
+    np, plt, mticker = brs.np, brs.plt, brs.mticker
+    from matplotlib.patches import Patch
+
+    rows = results + [brs.average_result(results)]
+    labels = [brs.display_name(r.workload) for r in rows]
+    x_apps = np.arange(len(results), dtype=float) * brs.APP_STEP
+    cluster_half = brs.BAR_OFFSET + brs.BAR_WIDTH / 2.0
+    avg_x = float(x_apps[-1] + 2.0 * cluster_half + brs.AVERAGE_GAP)
+    x = np.append(x_apps, avg_x)
+    separator_x = float(x_apps[-1] + cluster_half + brs.AVERAGE_GAP * 0.5)
+    segments = [(f, c) for f, c in brs.BREAKDOWN_SEGMENTS if f != "other_pct"]
+
+    brs._apply_plot_style()
+    plt.rcParams.update({"hatch.linewidth": 2.0})
+    fig, axes = plt.subplots(2, 2, figsize=(40, 22), sharex=True)
+    for ax, (field, color) in zip(axes.flat, segments):
+        ax.grid(True, axis="y", alpha=0.8, linestyle=":", color="black", linewidth=1.5, zorder=0)
+        peak = 0.0
+        for (cfg, _, hatch), offset in zip(brs.CONFIGS, (-brs.BAR_OFFSET, brs.BAR_OFFSET)):
+            values = np.array([getattr(r.breakdowns[cfg], field) for r in rows])
+            peak = max(peak, values.max())
+            ax.bar(x + offset, values, brs.BAR_WIDTH, color=color, edgecolor="black",
+                   linewidth=PANEL_EDGE, hatch=hatch, zorder=3)
+        ax.axvline(x=separator_x, color=brs.AVERAGE_SEPARATOR_COLOR, linestyle="--",
+                   linewidth=PANEL_EDGE * 1.4, zorder=2)
+        ax.set_title(brs.BREAKDOWN_CATEGORIES[field], loc="left", fontsize=PANEL_FONT,
+                     fontfamily=brs.plot_ipc.FONT_FAMILY, fontweight="bold", pad=18)
+        ax.set_ylim(0.0, peak * 1.15 if peak > 0 else 1.0)
+        ax.yaxis.set_major_locator(mticker.MaxNLocator(4))
+        ax.tick_params(axis="y", labelsize=PANEL_FONT * 0.85, colors="black")
+        ax.tick_params(axis="x", length=0, pad=10, colors="black")
+        for label in ax.get_yticklabels():
+            label.set_fontfamily(brs.plot_ipc.FONT_FAMILY)
+        for spine in ax.spines.values():
+            spine.set_color("black")
+            spine.set_linewidth(PANEL_EDGE)
+        ax.set_xlim(x[0] - cluster_half - 2.5, x[-1] + cluster_half + 2.5)
+
+    for ax in axes[-1]:
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, rotation=45, ha="right", color="black")
+        for label in ax.get_xticklabels():
+            label.set_fontsize(PANEL_FONT * 0.85)
+            label.set_fontfamily(brs.plot_ipc.FONT_FAMILY)
+            if label.get_text() == "Average":
+                label.set_weight("bold")
+    for ax in axes[:, 0]:
+        ax.set_ylabel("Allocation stall\ncycles (%)", fontsize=PANEL_FONT,
+                      fontfamily=brs.plot_ipc.FONT_FAMILY, color="black", labelpad=16)
+
+    handles = [Patch(facecolor="white", edgecolor="black", linewidth=PANEL_EDGE, hatch=h, label=l)
+               for _, l, h in brs.CONFIGS]
+    legend = fig.legend(handles=handles, loc="upper center", ncol=len(handles), frameon=True,
+                        fancybox=False, edgecolor="black", fontsize=PANEL_FONT,
+                        bbox_to_anchor=(0.5, 1.0), handlelength=1.6, handleheight=1.1,
+                        prop={"family": brs.plot_ipc.FONT_FAMILY, "size": PANEL_FONT})
+    legend.get_frame().set_linewidth(PANEL_EDGE)
+    fig.tight_layout(rect=(0, 0, 1, 0.92), h_pad=3.0, w_pad=4.0)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for ext in ("png", "pdf"):
+        fig.savefig(output_dir / f"{PANEL_STEM}.{ext}", dpi=200, bbox_inches="tight", pad_inches=0.08)
+    plt.close(fig)
+
+
 def load_counts(path: Path) -> dict:
     counts = dict.fromkeys(brs.STATS, 0.0)
     for stat in brs.STATS:
@@ -147,7 +222,8 @@ def main() -> int:
     brs.register_noto_serif()
     out = args.results / "backend_stalls"
     plot_breakdown(results, out)
-    print(f"Wrote {out}/{brs.OUTPUT_STEM}.{{png,pdf}}")
+    plot_by_resource(results, out)
+    print(f"Wrote {out}/{brs.OUTPUT_STEM}.{{png,pdf}}, {PANEL_STEM}.{{png,pdf}}")
     return 0
 
 
