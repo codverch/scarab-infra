@@ -1,0 +1,49 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "helios_paper",
+  "experiment": "helios-paper-config-ifuse-tt50-pen20",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/hpca2027-revision-runs",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline",
+  "top_simpoint": false,
+  "_comment": "HPCA2027 revision: 1-cycle-delayed I-Fuse on the Helios paper config (same as helios_paper_ifuse.json) with training threshold 50 and FCT misprediction penalty 20, on leela only.",
+  "simulations": [
+    {
+      "suite": "spec2017",
+      "subsuite": "speed_int_helios",
+      "workload": [
+        "leela_s"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 0
+    }
+  ],
+  "configurations": {
+    "helios_paper_ifuse_tt50_pen20": {
+      "params": "--inst_limit 120000000 --full_warmup 20000000 --ifuse_fusion_distance 352 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 50 --ifuse_fct_hash_bits 16 --ifuse_fct_mispred_conf_penalty 20",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 512
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "helios_paper_ifuse_tt50_pen20",
+    "configs": [
+      "helios_paper_ifuse_tt50_pen20"
+    ],
+    "counters": [
+      "IPC"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 8192
+  }
+}
