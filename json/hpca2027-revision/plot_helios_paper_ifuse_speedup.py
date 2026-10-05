@@ -3,9 +3,9 @@
 
 Reads summary.csv files committed in the scarab repo (100M measured instructions after
 20M warmup, PARAMS.helios_paper) and draws them in the style of
-hpca2027-main-graphs/plot_ipc.py's speedup bars: I-Fuse with same-cycle LOAD2 wake-up
-and 1-cycle-delayed I-Fuse, each normalized to the no-fusion baseline. Average is the
-arithmetic mean of the per-app speedups, as in plot_ipc.py.
+hpca2027-main-graphs/plot_ipc.py's speedup bars: 1-cycle-delayed I-Fuse next to ideal
+fusion, each normalized to the no-fusion baseline. Average is the arithmetic mean of the
+per-app speedups, as in plot_ipc.py.
 
 Writes <out>/speedup.{png,pdf} and speedup-labeled.{png,pdf}.
 
@@ -27,11 +27,13 @@ import plot_ipc  # noqa: E402
 
 RESULTS = "src/hpca2027-revision"
 BASELINE = ("origin/hpca2027-revision-baseline", f"{RESULTS}/helios-paper-config-baseline/summary.csv")
-IFUSE_SUMMARY = f"{RESULTS}/helios-paper-config-ifuse/summary.csv"
-# key, legend label, color, scarab commit holding that run's summary.csv
+# key, legend label, color, scarab ref, summary.csv path, IPC column
 SERIES = (
-    ("ifuse", "I-Fuse", plot_ipc.IFUSE_COLOR, "14f33aacb"),
-    ("ifuse_1cycle", "1-cycle-delayed I-Fuse", plot_ipc.IFUSE_1CYCLE_COLOR, "a0565667f"),
+    ("ifuse_1cycle", "1-cycle-delayed I-Fuse", plot_ipc.IFUSE_1CYCLE_COLOR,
+     "a0565667f", f"{RESULTS}/helios-paper-config-ifuse/summary.csv", "ipc"),
+    ("ideal_fusion", "Ideal fusion", plot_ipc.IDEAL_FUSION_COLOR,
+     "origin/hpca2027-revision-ideal-fusion", f"{RESULTS}/helios-paper-config-ideal-fusion/summary.csv",
+     "ipc_ideal_fusion"),
 )
 APP_LABELS = {
     "deepsjeng_s": "deepsjeng",
@@ -45,13 +47,13 @@ APP_LABELS = {
     "xalancbmk_s": "xalancbmk",
 }
 BAR_WIDTH = 2.6
-Y_STEP = 1.0  # speedups here are a few percent, so ticks every 1% instead of plot_ipc's 10%
+# Speedups here are a few percent, so ticks every 1% (2% past 5%) instead of plot_ipc's 10%.
 
 
-def read_ipc(scarab: Path, ref: str, path: str) -> dict[str, float]:
+def read_ipc(scarab: Path, ref: str, path: str, column: str = "ipc") -> dict[str, float]:
     text = subprocess.run(["git", "-C", str(scarab), "show", f"{ref}:{path}"],
                           check=True, capture_output=True, text=True).stdout
-    return {r["app"]: float(r["ipc"]) for r in csv.DictReader(io.StringIO(text))}
+    return {r["app"]: float(r[column]) for r in csv.DictReader(io.StringIO(text))}
 
 
 def plot(workloads: list[str], pct: list[list[float]], out_dir: Path) -> None:
@@ -66,20 +68,22 @@ def plot(workloads: list[str], pct: list[list[float]], out_dir: Path) -> None:
     x_ticks = x_apps + [avg_x]
     labels = [APP_LABELS.get(w, w) for w in workloads] + ["Average"]
     top = max(max(v) for v in series_all)
-    handles = tuple((key, label, color) for key, label, color, _ in SERIES)
+    handles = tuple((key, label, color) for key, label, color, *_ in SERIES)
 
     for stem, labeled in (("speedup-labeled", True), ("speedup", False)):
         p._apply_ipc_plot_style()
         fig, ax = plt.subplots(figsize=p.IPC_FIGSIZE)
-        ymax = int(top / Y_STEP) + 1 + (2 if labeled else 0)
+        ymax_pct = top * (1.25 if labeled else 1.0)
+        step = 1.0 if ymax_pct <= 5.0 else 2.0
+        ymax = int(ymax_pct / step) + 1
         # As in plot_ipc.py, negative speedups draw at zero and keep their label.
-        for lane, ((_, _, color, _), vals, off) in enumerate(
+        for lane, ((_, _, color, *_), vals, off) in enumerate(
                 zip(SERIES, series_all, (-BAR_WIDTH / 2, BAR_WIDTH / 2))):
             bars = ax.bar([x + off for x in x_ticks], [max(0.0, v) for v in vals], BAR_WIDTH,
                           color=color, edgecolor="black", linewidth=p.BAR_EDGE_WIDTH, zorder=3)
             if labeled:
                 for x, v, bar in zip(x_ticks, vals, bars):
-                    ax.text(x + off, max(0.0, v) + 0.03 * ymax, f"{v:+.1f}", ha="center", va="bottom",
+                    ax.text(x + off, max(0.0, v) + 0.03 * ymax * step, f"{v:+.1f}", ha="center", va="bottom",
                             rotation=90, fontsize=p.IPC_AXIS_FONT, fontfamily=p.FONT_FAMILY,
                             color="black", zorder=4)
 
@@ -96,9 +100,9 @@ def plot(workloads: list[str], pct: list[list[float]], out_dir: Path) -> None:
         ax.set_ylabel("Speedup (%)\n(normalized to\nno-fusion)", fontsize=p.IPC_AXIS_LABEL_FONT,
                       fontfamily=p.FONT_FAMILY, color="black")
         ax.yaxis.set_label_coords(-0.045, 0.5)
-        ax.set_ylim(0.0, ymax * Y_STEP)
-        ax.yaxis.set_major_locator(mticker.MultipleLocator(Y_STEP))
-        ax.yaxis.set_minor_locator(mticker.MultipleLocator(Y_STEP / 2))
+        ax.set_ylim(0.0, ymax * step)
+        ax.yaxis.set_major_locator(mticker.MultipleLocator(step))
+        ax.yaxis.set_minor_locator(mticker.MultipleLocator(step / 2))
         ax.tick_params(axis="y", which="minor", length=0)
         p._apply_speedup_y_grid(ax)
         ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
@@ -132,8 +136,8 @@ def main() -> None:
     base = read_ipc(args.scarab, *BASELINE)
     workloads = list(base)
     pct = []
-    for _, label, _, ref in SERIES:
-        ipc = read_ipc(args.scarab, ref, IFUSE_SUMMARY)
+    for _, label, _, ref, path, column in SERIES:
+        ipc = read_ipc(args.scarab, ref, path, column)
         vals = [(ipc[w] / base[w] - 1.0) * 100.0 for w in workloads]
         pct.append(vals)
         print(f"{label}: average speedup {sum(vals) / len(vals):+.2f}%")
