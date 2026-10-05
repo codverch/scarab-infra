@@ -1,0 +1,59 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "helios_paper",
+  "experiment": "helios-paper-config-ideal-fusion-stores-pass1",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/hpca2027-revision-runs",
+  "application_dir": "/dev/shm/baseline/ideal_fusion_candidates",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline",
+  "top_simpoint": false,
+  "_comment": "HPCA2027 revision: ideal load + store fusion (--ideal_fusion_stores 1: store pairs with no store in between, as in Helios) pass 1 on the MICRO'22 Helios paper baseline (scarab/src/PARAMS.helios_paper, Table II, Ramulator DRAM) on SPEC CPU2017 speed int. Pass 1 logs every fusible load pair (no timing change, so it is also the no-fusion baseline). Fusion window = the 352-entry ROB. Each trace is one fixed Helios region; each run warms up for 20M instructions from instruction 1, then measures the next 100M (inst_limit 120M). Candidates live in tmpfs (application_dir, mounted at /tmp_home/application). Scarab branch hpca2027-revision-ideal-fusion. Launch with json/hpca2027-revision/helios_paper_ideal_fusion.sh --stores.",
+  "simulations": [
+    {
+      "suite": "spec2017",
+      "subsuite": "speed_int_helios",
+      "workload": [
+        "deepsjeng_s",
+        "exchange2_s",
+        "gcc_s",
+        "gcc_s_2",
+        "gcc_s_3",
+        "leela_s",
+        "mcf_s",
+        "omnetpp_s",
+        "xalancbmk_s"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "helios_paper_ideal_fusion_stores_pass1": {
+      "params": "--inst_limit 120000000 --ideal_fusion_pass 1 --ideal_fusion_distance 352 --ideal_fusion_stores 1 --ideal_fusion_log /tmp_home/application/helios_paper_stores/{workload}/{cluster_id}.csv.gz",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 512
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "helios_paper_ideal_fusion_stores_pass1",
+    "configs": [
+      "helios_paper_ideal_fusion_stores_pass1"
+    ],
+    "counters": [
+      "IPC",
+      "IDEAL_FUSION_FUSED_LOADS",
+      "IDEAL_FUSION_LOADS_PARTICIPATED"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 8192
+  }
+}
