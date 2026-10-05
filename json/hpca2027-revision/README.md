@@ -110,6 +110,7 @@ Raw simulation output: `/users/deepmish/hpca2027-revision-runs/simulations/<conf
 - **Processor / workloads:** same as `helios_paper` above; fusion distance
   matches the 352-entry ROB.
 - **Window:** instructions 1-120M, the first 20M as warmup, so stats cover 100M.
+- **LOAD2 wake:** LOAD2's dependents wake one cycle after LOAD1 (scarab `0febd4bd8`).
 - **FCT:** ideal and never evicts, so it is sized at 2^16 rows; gcc, deepsjeng and
   omnetpp overflow 512 rows, and apps that fit behave identically.
 - **Scarab:** branch `hpca2027-revision-ifuse`.

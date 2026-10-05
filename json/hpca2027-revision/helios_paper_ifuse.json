@@ -9,7 +9,7 @@
   "scarab_build": "opt",
   "traces_dir": "/dev/shm/baseline",
   "top_simpoint": false,
-  "_comment": "HPCA2027 revision: runtime I-Fuse on the MICRO'22 Helios paper baseline (scarab/src/PARAMS.helios_paper, Table II) on SPEC CPU2017 speed int. Each trace is one fixed Helios region; instructions 1-120M are simulated with the first 20M as warmup (inst_limit 120M, full_warmup 20M), so stats cover 100M instructions. Fusion distance matches the 352-entry ROB. The FCT is an ideal table that never evicts and exits when full, so ifuse_fct_hash_bits is 16; apps that fit in 512 rows behave identically. Scarab branch hpca2027-revision-ifuse. Launch with json/hpca2027-revision/helios_paper_ifuse.sh.",
+  "_comment": "HPCA2027 revision: runtime I-Fuse on the MICRO'22 Helios paper baseline (scarab/src/PARAMS.helios_paper, Table II) on SPEC CPU2017 speed int. Each trace is one fixed Helios region; instructions 1-120M are simulated with the first 20M as warmup (inst_limit 120M, full_warmup 20M), so stats cover 100M instructions. Fusion distance matches the 352-entry ROB; LOAD2's dependents wake one cycle after LOAD1. The FCT is an ideal table that never evicts and exits when full, so ifuse_fct_hash_bits is 16; apps that fit in 512 rows behave identically. Scarab branch hpca2027-revision-ifuse. Launch with json/hpca2027-revision/helios_paper_ifuse.sh.",
   "simulations": [
     {
       "suite": "spec2017",

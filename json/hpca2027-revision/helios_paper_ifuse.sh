@@ -3,7 +3,8 @@
 # =============================================================================
 # Processor: scarab/src/PARAMS.helios_paper (paper Table II), read from the
 # scarab working tree at launch.
-#   helios_paper_ifuse  runtime I-Fuse, fusion distance = ROB (352)
+#   helios_paper_ifuse  runtime I-Fuse, fusion distance = ROB (352), LOAD2
+#                       dependents wake one cycle after LOAD1
 #
 # Workloads: deepsjeng_s exchange2_s gcc_s gcc_s_2 gcc_s_3 leela_s mcf_s
 #            omnetpp_s xalancbmk_s
