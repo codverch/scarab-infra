@@ -2,10 +2,14 @@
 """Plot I-Fuse speedup over no fusion on the Helios paper config.
 
 Reads summary.csv files committed in the scarab repo (100M measured instructions after
-20M warmup, PARAMS.helios_paper) and plots IPC_ifuse / IPC_no_fusion - 1 per app plus
-the geomean, for same-cycle and 1-cycle-delayed LOAD2 wake-up.
+20M warmup, PARAMS.helios_paper) and draws them in the style of
+hpca2027-main-graphs/plot_ipc.py's speedup bars: I-Fuse with same-cycle LOAD2 wake-up
+and 1-cycle-delayed I-Fuse, each normalized to the no-fusion baseline. Average is the
+arithmetic mean of the per-app speedups, as in plot_ipc.py.
 
-Usage: plot_helios_paper_ifuse_speedup.py [--scarab ~/scarab] [--out <png>]
+Writes <out>/speedup.{png,pdf} and speedup-labeled.{png,pdf}.
+
+Usage: plot_helios_paper_ifuse_speedup.py [--scarab ~/scarab] [--out <dir>]
 """
 
 from __future__ import annotations
@@ -13,22 +17,35 @@ from __future__ import annotations
 import argparse
 import csv
 import io
-import math
 import subprocess
+import sys
 from pathlib import Path
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+INFRA = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(INFRA / "hpca2027-main-graphs"))
+import plot_ipc  # noqa: E402
 
 RESULTS = "src/hpca2027-revision"
 BASELINE = ("origin/hpca2027-revision-baseline", f"{RESULTS}/helios-paper-config-baseline/summary.csv")
-SERIES = [
-    # label, git ref, path, color
-    ("I-Fuse (same-cycle LOAD2 wake)", "14f33aacb", f"{RESULTS}/helios-paper-config-ifuse/summary.csv", "#2a78d6"),
-    ("I-Fuse (1-cycle-delayed LOAD2 wake)", "a0565667f", f"{RESULTS}/helios-paper-config-ifuse/summary.csv", "#eb6834"),
-]
+IFUSE_SUMMARY = f"{RESULTS}/helios-paper-config-ifuse/summary.csv"
+# key, legend label, color, scarab commit holding that run's summary.csv
+SERIES = (
+    ("ifuse", "I-Fuse", plot_ipc.IFUSE_COLOR, "14f33aacb"),
+    ("ifuse_1cycle", "1-cycle-delayed I-Fuse", plot_ipc.IFUSE_1CYCLE_COLOR, "a0565667f"),
+)
+APP_LABELS = {
+    "deepsjeng_s": "deepsjeng",
+    "exchange2_s": "exchange2",
+    "gcc_s": "gcc-1",
+    "gcc_s_2": "gcc-2",
+    "gcc_s_3": "gcc-3",
+    "leela_s": "leela",
+    "mcf_s": "mcf",
+    "omnetpp_s": "omnetpp",
+    "xalancbmk_s": "xalancbmk",
+}
+BAR_WIDTH = 2.6
+Y_STEP = 1.0  # speedups here are a few percent, so ticks every 1% instead of plot_ipc's 10%
 
 
 def read_ipc(scarab: Path, ref: str, path: str) -> dict[str, float]:
@@ -37,51 +54,94 @@ def read_ipc(scarab: Path, ref: str, path: str) -> dict[str, float]:
     return {r["app"]: float(r["ipc"]) for r in csv.DictReader(io.StringIO(text))}
 
 
+def plot(workloads: list[str], pct: list[list[float]], out_dir: Path) -> None:
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as mticker
+
+    p = plot_ipc
+    series_all = [vals + [sum(vals) / len(vals)] for vals in pct]
+    x_apps = [i * p.APP_STEP for i in range(len(workloads))]
+    avg_x = x_apps[-1] + BAR_WIDTH + p.AVERAGE_GAP + BAR_WIDTH
+    separator_x = x_apps[-1] + BAR_WIDTH + p.AVERAGE_GAP * p.AVERAGE_SEPARATOR_FRAC
+    x_ticks = x_apps + [avg_x]
+    labels = [APP_LABELS.get(w, w) for w in workloads] + ["Average"]
+    top = max(max(v) for v in series_all)
+    handles = tuple((key, label, color) for key, label, color, _ in SERIES)
+
+    for stem, labeled in (("speedup-labeled", True), ("speedup", False)):
+        p._apply_ipc_plot_style()
+        fig, ax = plt.subplots(figsize=p.IPC_FIGSIZE)
+        ymax = int(top / Y_STEP) + 1 + (2 if labeled else 0)
+        # As in plot_ipc.py, negative speedups draw at zero and keep their label.
+        for lane, ((_, _, color, _), vals, off) in enumerate(
+                zip(SERIES, series_all, (-BAR_WIDTH / 2, BAR_WIDTH / 2))):
+            bars = ax.bar([x + off for x in x_ticks], [max(0.0, v) for v in vals], BAR_WIDTH,
+                          color=color, edgecolor="black", linewidth=p.BAR_EDGE_WIDTH, zorder=3)
+            if labeled:
+                for x, v, bar in zip(x_ticks, vals, bars):
+                    ax.text(x + off, max(0.0, v) + 0.03 * ymax, f"{v:+.1f}", ha="center", va="bottom",
+                            rotation=90, fontsize=p.IPC_AXIS_FONT, fontfamily=p.FONT_FAMILY,
+                            color="black", zorder=4)
+
+        ax.axvline(x=separator_x, color=p.AVERAGE_SEPARATOR_COLOR, linestyle="--",
+                   linewidth=p.AVERAGE_SEPARATOR_WIDTH, zorder=2)
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=p.IPC_TICK_FONT,
+                           fontfamily=p.FONT_FAMILY, color="black")
+        ax.get_xticklabels()[-1].set_fontweight("bold")
+        ax.tick_params(axis="x", labelsize=p.IPC_TICK_FONT, length=0, pad=14, colors="black")
+        ax.tick_params(axis="y", labelsize=p.IPC_TICK_FONT, colors="black")
+        ax.set_xlim(x_apps[0] - BAR_WIDTH, avg_x + 1.5 * BAR_WIDTH)
+
+        ax.set_ylabel("Speedup (%)\n(normalized to\nno-fusion)", fontsize=p.IPC_AXIS_LABEL_FONT,
+                      fontfamily=p.FONT_FAMILY, color="black")
+        ax.yaxis.set_label_coords(-0.045, 0.5)
+        ax.set_ylim(0.0, ymax * Y_STEP)
+        ax.yaxis.set_major_locator(mticker.MultipleLocator(Y_STEP))
+        ax.yaxis.set_minor_locator(mticker.MultipleLocator(Y_STEP / 2))
+        ax.tick_params(axis="y", which="minor", length=0)
+        p._apply_speedup_y_grid(ax)
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
+        for label in ax.get_yticklabels():
+            label.set_fontfamily(p.FONT_FAMILY)
+        p._draw_app_x_tick_guides(ax, x_ticks)
+
+        legend = ax.legend(handles=p._ipc_legend_handles(handles), frameon=True, fancybox=False,
+                           loc="lower center", bbox_to_anchor=(0.5, 1.04), bbox_transform=ax.transAxes,
+                           fontsize=p.IPC_LEGEND_FONT, edgecolor="black", ncol=len(SERIES),
+                           handlelength=0.95, handleheight=0.95, borderpad=0.55, columnspacing=1.0)
+        legend.set_clip_on(False)
+        legend.get_frame().set_linewidth(p.BAR_EDGE_WIDTH)
+        for spine in ax.spines.values():
+            spine.set_color("black")
+            spine.set_linewidth(p.BAR_EDGE_WIDTH)
+
+        plt.subplots_adjust(top=0.72, bottom=0.30, left=0.12, right=0.98)
+        for ext in ("png", "pdf"):
+            fig.savefig(out_dir / f"{stem}.{ext}", bbox_inches="tight", pad_inches=0.15, dpi=300)
+        plt.close(fig)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--scarab", type=Path, default=Path.home() / "scarab")
     ap.add_argument("--out", type=Path)
     args = ap.parse_args()
-    out = args.out or args.scarab / RESULTS / "helios-paper-config-ifuse/speedup_vs_no_fusion.png"
+    out = args.out or args.scarab / RESULTS / "helios-paper-config-ifuse"
 
     base = read_ipc(args.scarab, *BASELINE)
-    apps = list(base)
-    series = []
-    for label, ref, path, color in SERIES:
-        ipc = read_ipc(args.scarab, ref, path)
-        sp = [ipc[a] / base[a] for a in apps]
-        gm = math.exp(sum(map(math.log, sp)) / len(sp))
-        series.append((label, color, [100 * (s - 1) for s in sp] + [100 * (gm - 1)]))
-        print(f"{label}: geomean {100 * (gm - 1):+.2f}%")
-    names = apps + ["geomean"]
+    workloads = list(base)
+    pct = []
+    for _, label, _, ref in SERIES:
+        ipc = read_ipc(args.scarab, ref, IFUSE_SUMMARY)
+        vals = [(ipc[w] / base[w] - 1.0) * 100.0 for w in workloads]
+        pct.append(vals)
+        print(f"{label}: average speedup {sum(vals) / len(vals):+.2f}%")
 
-    plt.rcParams.update({"font.size": 9, "axes.edgecolor": "#52514e", "axes.labelcolor": "#0b0b0b",
-                         "xtick.color": "#52514e", "ytick.color": "#52514e"})
-    fig, ax = plt.subplots(figsize=(7.5, 3.0), dpi=200)
-    fig.patch.set_facecolor("#fcfcfb")
-    ax.set_facecolor("#fcfcfb")
-    width = 0.36
-    for i, (label, color, vals) in enumerate(series):
-        xs = [x + (i - 0.5) * (width + 0.02) for x in range(len(names))]
-        ax.bar(xs, vals, width, color=color, label=f"{label}, geomean {vals[-1]:+.2f}%", zorder=3)
-    ax.axhline(0, color="#52514e", linewidth=0.8, zorder=4)
-    ax.axvline(len(apps) - 0.5, color="#c3c2b7", linewidth=0.8, linestyle=":")
-    ax.set_xticks(range(len(names)), names, rotation=30, ha="right")
-    ax.set_ylabel("Speedup over no fusion (%)")
-    ax.yaxis.grid(True, color="#e4e3df", linewidth=0.6, zorder=0)
-    for s in ("top", "right"):
-        ax.spines[s].set_visible(False)
-    ax.legend(frameon=False, fontsize=8, loc="upper left", ncol=1)
-    lo = min(min(v) for _, _, v in series)
-    hi = max(max(v) for _, _, v in series)
-    pad = 0.15 * (hi - lo)
-    ax.set_ylim(lo - pad, hi + 4 * pad)
-    ax.set_title("I-Fuse on the Helios paper config (SPEC CPU2017 speed int, 100M after 20M warmup)",
-                 fontsize=9, color="#0b0b0b", loc="left")
-    fig.tight_layout()
-    out.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out, facecolor=fig.get_facecolor())
-    print(f"Wrote {out}")
+    plot_ipc.register_noto_serif()
+    out.mkdir(parents=True, exist_ok=True)
+    plot(workloads, pct, out)
+    print(f"Wrote {out}/speedup.{{png,pdf}}, speedup-labeled.{{png,pdf}}")
 
 
 if __name__ == "__main__":
