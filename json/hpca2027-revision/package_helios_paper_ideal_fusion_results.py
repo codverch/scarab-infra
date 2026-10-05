@@ -6,6 +6,7 @@ Reads <root_dir>/simulations/<config>/<app>/<cluster>/ for both passes and write
   <out>/<app>/            every file from the pass-2 (ideal fusion) run dir (all
                           *.stat.0.out/.csv, PARAMS.in, PARAMS.out, sim.log, ...);
                           sim.log drops heartbeat and unmapped-instruction lines
+  <out>/no-fusion/<app>/  the same for the pass-1 run, the no-fusion baseline
   <out>/summary.csv       pass-1 (no-fusion) and pass-2 IPC, speedup and fusion counters per app
 
 IPC is Periodic_Instructions / Periodic_Cycles from core.stat.0.csv: the
@@ -98,6 +99,11 @@ def main() -> None:
             shutil.rmtree(dst)
         shutil.copytree(r2, dst, symlinks=False)
         trim_sim_log(dst / "sim.log")
+        base = out / "no-fusion" / app
+        if base.exists():
+            shutil.rmtree(base)
+        shutil.copytree(r1, base, symlinks=False)
+        trim_sim_log(base / "sim.log")
         _, _, ipc1 = read_ipc(r1)
         cycles, insts, ipc2 = read_ipc(r2)
         counters = read_counters(r2)

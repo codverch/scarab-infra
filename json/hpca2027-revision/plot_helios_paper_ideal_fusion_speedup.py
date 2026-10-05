@@ -5,6 +5,9 @@ Reads <results>/summary.csv (written by package_helios_paper_ideal_fusion_result
 and draws it in the style of hpca2027-main-graphs/plot_ipc.py's speedup bars.
 Average is the arithmetic mean of the per-app speedups, as in plot_ipc.py.
 
+When helios-paper-config-ideal-fusion-stores/summary.csv exists (the
+--stores run), it also draws ideal fusion with store-pair fusion.
+
 Next to each of our bars it draws the OracleFusion speedup the Helios paper
 reports for the same benchmark (Singh et al., MICRO'22, Figure 10). The paper
 prints no per-app numbers, so these were read from the figure's vector
@@ -54,37 +57,40 @@ HELIOS_PAPER_ORACLE_IPC = {
     "omnetpp_s": ("620.omnetpp", 1.105),
     "xalancbmk_s": ("623.xalancbmk", 1.055),
 }
-SERIES = (
-    ("ideal_fusion", "Ideal fusion (ours)", plot_ipc.IDEAL_FUSION_COLOR),
-    ("paper_oracle", "Helios paper OracleFusion (Fig. 10)", plot_ipc.HELIOS_COLOR),
-)
-BAR_WIDTH = 2.6
+IDEAL_FUSION = ("ideal_fusion", "Ideal fusion (ours)", plot_ipc.IDEAL_FUSION_COLOR)
+# Lighter teal: ideal load fusion plus store-pair fusion (--ideal_fusion_stores 1).
+IDEAL_FUSION_STORES = ("ideal_fusion_stores", "Ideal fusion + store fusion (ours)", "#7FC4C4")
+PAPER_ORACLE = ("paper_oracle", "Helios paper OracleFusion (Fig. 10)", plot_ipc.HELIOS_COLOR)
+STORES_RESULTS = "helios-paper-config-ideal-fusion-stores"
 
 
-def plot(workloads: list[str], pct: list[float], paper_pct: list[float], out_dir: Path) -> None:
+def plot(workloads: list[str], series: list[tuple], values: list[list[float]], out_dir: Path) -> None:
+    """series[i] is (key, label, color); values[i] holds per-app speedups in %."""
     import matplotlib.pyplot as plt
 
     p = plot_ipc
-    ours_all = pct + [sum(pct) / len(pct)]
-    paper_all = paper_pct + [sum(paper_pct) / len(paper_pct)]
+    n = len(series)
+    bar_w = 5.2 / n
+    offsets = [(i - (n - 1) / 2) * bar_w for i in range(n)]
+    all_vals = [v + [sum(v) / len(v)] for v in values]
     x_apps = [i * p.APP_STEP for i in range(len(workloads))]
-    avg_x = x_apps[-1] + BAR_WIDTH + p.AVERAGE_GAP + BAR_WIDTH
-    separator_x = x_apps[-1] + BAR_WIDTH + p.AVERAGE_GAP * p.AVERAGE_SEPARATOR_FRAC
+    half = n * bar_w / 2
+    avg_x = x_apps[-1] + half + p.AVERAGE_GAP + half
+    separator_x = x_apps[-1] + half + p.AVERAGE_GAP * p.AVERAGE_SEPARATOR_FRAC
     x_ticks = x_apps + [avg_x]
     labels = [APP_LABELS.get(w, w) for w in workloads] + ["Average"]
-    top = max(ours_all + paper_all)
+    top = max(max(v) for v in all_vals)
 
     for stem, labeled in (("speedup-labeled", True), ("speedup", False)):
         p._apply_ipc_plot_style()
         fig, ax = plt.subplots(figsize=p.IPC_FIGSIZE)
         # As in plot_ipc.py, negative speedups draw at zero and keep their label.
-        for lane, ((_, _, color), vals, off) in enumerate(
-                zip(SERIES, (ours_all, paper_all), (-BAR_WIDTH / 2, BAR_WIDTH / 2))):
-            bars = ax.bar([x + off for x in x_ticks], [max(0.0, v) for v in vals], BAR_WIDTH,
+        for lane, ((_, _, color), vals, off) in enumerate(zip(series, all_vals, offsets)):
+            bars = ax.bar([x + off for x in x_ticks], [max(0.0, v) for v in vals], bar_w,
                           color=color, edgecolor="black", linewidth=p.BAR_EDGE_WIDTH, zorder=3)
             if labeled:
                 p._annotate_ipc_bar_labels(ax, bars, vals, fontsize=p.IPC_AXIS_FONT,
-                                           label_lane=lane, n_label_lanes=len(SERIES))
+                                           label_lane=lane, n_label_lanes=n)
                 # plot_ipc's labeler skips negatives; label them just above the axis.
                 for x, v in zip(x_ticks, vals):
                     if v < 0:
@@ -100,7 +106,7 @@ def plot(workloads: list[str], pct: list[float], paper_pct: list[float], out_dir
         ax.get_xticklabels()[-1].set_fontweight("bold")
         ax.tick_params(axis="x", labelsize=p.IPC_TICK_FONT, length=0, pad=14, colors="black")
         ax.tick_params(axis="y", labelsize=p.IPC_TICK_FONT, colors="black")
-        ax.set_xlim(x_apps[0] - BAR_WIDTH, avg_x + 1.5 * BAR_WIDTH)
+        ax.set_xlim(x_apps[0] - half - 1.0, avg_x + half + 1.0)
 
         ax.set_ylabel("Speedup (%)\n(normalized to\nno-fusion)", fontsize=p.IPC_AXIS_LABEL_FONT,
                       fontfamily=p.FONT_FAMILY, color="black")
@@ -113,9 +119,9 @@ def plot(workloads: list[str], pct: list[float], paper_pct: list[float], out_dir
             label.set_fontfamily(p.FONT_FAMILY)
         p._draw_app_x_tick_guides(ax, x_ticks)
 
-        legend = ax.legend(handles=p._ipc_legend_handles(SERIES), frameon=True, fancybox=False,
+        legend = ax.legend(handles=p._ipc_legend_handles(tuple(series)), frameon=True, fancybox=False,
                            loc="lower center", bbox_to_anchor=(0.5, 1.04), bbox_transform=ax.transAxes,
-                           fontsize=p.IPC_LEGEND_FONT, edgecolor="black", ncol=len(SERIES),
+                           fontsize=p.IPC_LEGEND_FONT, edgecolor="black", ncol=min(n, 2),
                            handlelength=0.95, handleheight=0.95, borderpad=0.55, columnspacing=1.0)
         legend.set_clip_on(False)
         legend.get_frame().set_linewidth(p.BAR_EDGE_WIDTH)
@@ -149,8 +155,20 @@ def main() -> None:
             w.writerow([app, HELIOS_PAPER_ORACLE_IPC[app][0], f"{HELIOS_PAPER_ORACLE_IPC[app][1]:.3f}",
                         f"{paper:.1f}", f"{ours:.2f}", "Singh et al. MICRO'22 Fig. 10, digitized"])
 
+    series, values = [IDEAL_FUSION], [pct]
+    stores_csv = args.results.parent / STORES_RESULTS / "summary.csv"
+    if stores_csv.exists():
+        with open(stores_csv) as f:
+            st = {r["app"]: (float(r["speedup"]) - 1.0) * 100.0 for r in csv.DictReader(f)}
+        if all(w in st for w in workloads):
+            series.append(IDEAL_FUSION_STORES)
+            values.append([st[w] for w in workloads])
+            print(f"Average speedup: ours + store fusion {sum(values[-1]) / len(workloads):+.2f}%")
+    series.append(PAPER_ORACLE)
+    values.append(paper_pct)
+
     plot_ipc.register_noto_serif()
-    plot(workloads, pct, paper_pct, args.results)
+    plot(workloads, series, values, args.results)
     print(f"Average speedup: ours {sum(pct) / len(pct):+.2f}%, Helios paper OracleFusion "
           f"{sum(paper_pct) / len(paper_pct):+.2f}% (same 9 apps)")
     print(f"Wrote {args.results}/speedup.{{png,pdf}}, speedup-labeled.{{png,pdf}}")
