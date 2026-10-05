@@ -20,7 +20,7 @@
 #   ./json/hpca2027-revision/helios_paper_ideal_fusion.sh --pass2     # pass 2 only (candidates must exist)
 #   ./json/hpca2027-revision/helios_paper_ideal_fusion.sh --register  # only register traces in workloads_db
 #   ./json/hpca2027-revision/helios_paper_ideal_fusion.sh --status
-#   ./json/hpca2027-revision/helios_paper_ideal_fusion.sh --package   # -> scarab/src/hpca2027-revision/helios-paper-config-ideal-fusion/<app>/
+#   ./json/hpca2027-revision/helios_paper_ideal_fusion.sh --package   # -> scarab/src/hpca2027-revision/helios-paper-config-ideal-fusion/<app>/ + speedup plot
 
 set -euo pipefail
 
@@ -95,6 +95,7 @@ main() {
     --package)
       python3 "${INFRA_DIR}/json/hpca2027-revision/package_helios_paper_ideal_fusion_results.py" \
         --pass1 "${PASS1_JSON}" --pass2 "${INFRA_DIR}/json/${PASS2}.json"
+      python3 "${INFRA_DIR}/json/hpca2027-revision/plot_helios_paper_ideal_fusion_speedup.py"
       ;;
     -h|--help)  sed -n '2,24p' "${SCRIPT}" ;;
     *)          echo "Unknown option: $1" >&2; exit 1 ;;
