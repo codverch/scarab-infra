@@ -1,0 +1,65 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "ld2-load-consumers",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/scarab/src",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab-ld2lc",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/ifuse",
+  "workload_db": "baseline.json",
+  "top_simpoint": false,
+  "_comment": "How many fused LOAD2 consumers are loads (pointer chase LOAD1 -> LOAD2 -> LOAD3)? I-Fuse vs 1-cycle-delayed I-Fuse, Golden Cove config, same params as backend-stalls.json.",
+  "simulations": [
+    {
+      "suite": "datacenter",
+      "subsuite": "datacenter",
+      "workload": [
+        "bfs",
+        "dfs",
+        "pagerank",
+        "corebench",
+        "appworld",
+        "terminal_bench",
+        "cachebench",
+        "clickhouse",
+        "duckdb",
+        "leveldb",
+        "memcached"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "llc-ifuse": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 9 --ifuse_fct_ways 4 --ifuse_ld2_wake_delay 0 --ifuse_apt_unique_ld2 1",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "llc-ifuse1c": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 9 --ifuse_fct_ways 4 --ifuse_ld2_wake_delay 1 --ifuse_apt_unique_ld2 1",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "llc-ifuse",
+    "configs": [],
+    "counters": [
+      "IPC",
+      "IFUSE_FUSED_LOADS",
+      "IFUSE_LOAD1_PREDICTIONS",
+      "IFUSE_CORRECT_PREDICTIONS",
+      "IFUSE_INCORRECT_PREDICTIONS"
+    ],
+    "average": false
+  }
+}
