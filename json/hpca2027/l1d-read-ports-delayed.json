@@ -1,0 +1,77 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "l1d-read-ports-delayed",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/scarab/src",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab-ld2lc",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/ifuse",
+  "workload_db": "baseline.json",
+  "top_simpoint": false,
+  "_comment": "No-fusion baseline and 1-cycle-delayed I-Fuse with 2 and 3 L1-D read ports per bank; otherwise PARAMS.golden_cove unchanged. Same I-Fuse knobs as ifuse-1-cycle-delayed-unique-apt.json. 20M warmup + 10M measured.",
+  "simulations": [
+    {
+      "suite": "datacenter",
+      "subsuite": "datacenter",
+      "workload": [
+        "bfs",
+        "dfs",
+        "pagerank",
+        "corebench",
+        "appworld",
+        "terminal_bench",
+        "cachebench",
+        "clickhouse",
+        "duckdb",
+        "leveldb",
+        "memcached"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "gc-baseline-2-l1d-read-ports": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/l1d-read-ports-delayed/scarab/bin --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 9 --ifuse_fct_ways 4 --ifuse_apt_unique_ld2 1 --ifuse_runtime_training_enabled 0 --ifuse_ld2_wake_delay 0 --dcache_read_ports 2",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "gc-ifuse1c-2-l1d-read-ports": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/l1d-read-ports-delayed/scarab/bin --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 9 --ifuse_fct_ways 4 --ifuse_apt_unique_ld2 1 --ifuse_runtime_training_enabled 1 --ifuse_ld2_wake_delay 1 --dcache_read_ports 2",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "gc-baseline-3-l1d-read-ports": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/l1d-read-ports-delayed/scarab/bin --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 9 --ifuse_fct_ways 4 --ifuse_apt_unique_ld2 1 --ifuse_runtime_training_enabled 0 --ifuse_ld2_wake_delay 0 --dcache_read_ports 3",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "gc-ifuse1c-3-l1d-read-ports": {
+      "params": "--icache_size 32768 --inst_limit 30000000 --full_warmup 20000000 --power_intf_on 1 --bindir {root_dir}/scarab_stage/l1d-read-ports-delayed/scarab/bin --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 9 --ifuse_fct_ways 4 --ifuse_apt_unique_ld2 1 --ifuse_runtime_training_enabled 1 --ifuse_ld2_wake_delay 1 --dcache_read_ports 3",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "gc-baseline-2-l1d-read-ports",
+    "configs": [],
+    "counters": [
+      "IPC",
+      "IFUSE_FUSED_LOADS",
+      "IFUSE_LOAD1_PREDICTIONS",
+      "IFUSE_CORRECT_PREDICTIONS",
+      "IFUSE_INCORRECT_PREDICTIONS"
+    ],
+    "average": false
+  }
+}
