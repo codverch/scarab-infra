@@ -1,0 +1,64 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "golden-cove-ideal-fusion-pass1",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/hpca2027-revision-runs",
+  "application_dir": "/dev/shm/baseline/ideal_fusion_candidates",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline",
+  "top_simpoint": false,
+  "_comment": "HPCA2027 revision: Ideal load fusion pass 1 (logs fusible pairs, no timing change) on PARAMS.golden_cove (same core as the datacenter runs: 1 L1D read port, 512-entry ROB, 6-wide) on SPEC CPU2017 speed int Helios fixed-region traces. Fusion window = 512 (default, matches datacenter ideal fusion). 20M warmup from instruction 1, then 100M measured (inst_limit 120M). Scarab branch hpca2027-revision-ideal-fusion. Launch with json/hpca2027-revision/golden_cove_ideal_fusion.sh.",
+  "simulations": [
+    {
+      "suite": "spec2017",
+      "subsuite": "speed_int_helios",
+      "workload": [
+        "deepsjeng_s",
+        "exchange2_s",
+        "gcc_s",
+        "gcc_s_2",
+        "gcc_s_3",
+        "leela_s",
+        "mcf_s",
+        "omnetpp_s",
+        "perlbench_s",
+        "perlbench_s_2",
+        "perlbench_s_3",
+        "xalancbmk_s",
+        "xz_s",
+        "xz_s_2"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "golden_cove_ideal_fusion_pass1": {
+      "params": "--inst_limit 120000000 --ideal_fusion_pass 1 --ideal_fusion_distance 512 --ideal_fusion_log /tmp_home/application/golden_cove/{workload}/{cluster_id}.csv.gz",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 512
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "golden_cove_ideal_fusion_pass1",
+    "configs": [
+      "golden_cove_ideal_fusion_pass1"
+    ],
+    "counters": [
+      "IPC",
+      "IDEAL_FUSION_FUSED_LOADS",
+      "IDEAL_FUSION_LOADS_PARTICIPATED"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 8192
+  }
+}
