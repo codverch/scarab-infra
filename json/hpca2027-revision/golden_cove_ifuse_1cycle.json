@@ -1,0 +1,65 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "golden-cove-ifuse-1cycle",
+  "workload_manager": "manual",
+  "root_dir": "/users/deepmish/hpca2027-revision-runs",
+  "application_dir": "/users/deepmish",
+  "scarab_path": "/users/deepmish/scarab",
+  "scarab_build": "opt",
+  "traces_dir": "/dev/shm/baseline",
+  "top_simpoint": false,
+  "_comment": "HPCA2027 revision: runtime I-Fuse with the 1-cycle LOAD2 wake delay on PARAMS.golden_cove (same core and I-Fuse settings as the datacenter ifuse-1-cycle-delayed runs: 1 L1D read port, 512-entry ROB, fusion distance 512, training threshold 100) on SPEC CPU2017 speed int Helios fixed-region traces. Instructions 1-120M with the first 20M as warmup, so stats cover 100M. ifuse_fct_hash_bits 16 keeps the ideal FCT from filling; apps that fit in 512 rows behave identically. Scarab branch hpca2027-revision-ifuse. Launch with ./sci --build-scarab and ./sci --sim hpca2027-revision/golden_cove_ifuse_1cycle.",
+  "simulations": [
+    {
+      "suite": "spec2017",
+      "subsuite": "speed_int_helios",
+      "workload": [
+        "deepsjeng_s",
+        "exchange2_s",
+        "gcc_s",
+        "gcc_s_2",
+        "gcc_s_3",
+        "leela_s",
+        "mcf_s",
+        "omnetpp_s",
+        "perlbench_s",
+        "perlbench_s_2",
+        "perlbench_s_3",
+        "xalancbmk_s",
+        "xz_s",
+        "xz_s_2"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 0
+    }
+  ],
+  "configurations": {
+    "golden_cove_ifuse_1cycle": {
+      "params": "--inst_limit 120000000 --full_warmup 20000000 --ifuse_fusion_distance 512 --ifuse_apt_match_policy 0 --ifuse_runtime_training_enabled 1 --ifuse_training_insert_threshold 100 --ifuse_fct_hash_bits 16",
+      "binary": "scarab_current",
+      "slurm_options": "",
+      "memory_overhead_mb": 512
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "golden_cove_ifuse_1cycle",
+    "configs": [
+      "golden_cove_ifuse_1cycle"
+    ],
+    "counters": [
+      "IPC",
+      "IFUSE_FUSED_LOADS",
+      "IFUSE_CORRECT_PREDICTIONS",
+      "IFUSE_INCORRECT_PREDICTIONS"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 8192
+  }
+}
