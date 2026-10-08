@@ -3001,27 +3001,27 @@
           {
             "cluster_id":149,
             "segment_id":0,
-            "weight":0.2
+            "weight":0.0116858
           },
           {
             "cluster_id":156,
             "segment_id":1,
-            "weight":0.2
+            "weight":0.128543
           },
           {
             "cluster_id":162,
             "segment_id":2,
-            "weight":0.2
+            "weight":0.175286
           },
           {
             "cluster_id":169,
             "segment_id":3,
-            "weight":0.2
+            "weight":0.152783
           },
           {
             "cluster_id":216,
             "segment_id":4,
-            "weight":0.2
+            "weight":0.531702
           }
         ]
       },
