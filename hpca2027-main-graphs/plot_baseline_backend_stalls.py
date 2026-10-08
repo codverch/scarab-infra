@@ -35,23 +35,23 @@ import plot_ipc  # noqa: E402
 from plot_ipc import AVERAGE_SEPARATOR_WIDTH, BAR_EDGE_WIDTH, register_noto_serif  # noqa: E402
 
 P = "TOPDOWN_BE_FULL_"
-# Colors of plot_backend_stall_resources.py (Helios, ColorBrewer Spectral).
+# Paper palette: deep teal, maroon, lime, and light gray, as in Figs. 4 and 6.
 RESOURCE = (
-    ("PRF", "#5E4FA1", P + "PRF_SLOTS"),
-    ("ROB", "#328795", P + "ROB_SLOTS"),
-    ("LQ", "#8EE08A", P + "LQ_SLOTS"),
-    ("SQ", "#E5F497", P + "SQ_SLOTS"),
+    ("PRF", "#0B6162", P + "PRF_SLOTS"),
+    ("ROB", "#A81E4C", P + "ROB_SLOTS"),
+    ("LQ", "#ACF771", P + "LQ_SLOTS"),
+    ("SQ", "#D9D9D9", P + "SQ_SLOTS"),
 )
 
 APP_STEP = 10.0
 BAR_WIDTH = 6.0
 AVERAGE_GAP = 4.0
-# Page size of hpca2027-characterization/backend-structure-stalls.pdf (1109 x 439 pt).
-FIGSIZE = (1108.6 / 72, 439.2 / 72)
+# Same width as hpca2027-characterization/backend-structure-stalls.pdf (1109 pt), shorter.
+FIGSIZE = (1108.6 / 72, 380.0 / 72)
 # Lines of the 72 x 22 in IPC-style figures, scaled to FIGSIZE.
 SCALE = FIGSIZE[0] / 72.0
 AXIS_FONT = 24
-LEGEND_FONT = 22
+LEGEND_FONT = 26
 XTICK_FONT = AXIS_FONT
 EDGE_WIDTH = BAR_EDGE_WIDTH * SCALE
 OUTPUT_STEM = "baseline-backend-stalls"
@@ -81,11 +81,11 @@ def plot(rows, output_dir: Path) -> None:
     ax.axvline(x=separator_x, color="black", linestyle="--",
                linewidth=3 * AVERAGE_SEPARATOR_WIDTH * SCALE, zorder=2)
     # Headroom for the legend, which sits inside the plot.
-    ax.set_ylim(0, 80)
+    ax.set_ylim(0, 90)
     ax.set_yticks(range(0, 81, 20))
     ax.set_ylabel("Backend stalls (%)", fontsize=AXIS_FONT)
     ax.tick_params(axis="y", labelsize=AXIS_FONT, colors="black",
-                   length=6 * SCALE, width=EDGE_WIDTH)
+                   direction="out", length=13, width=EDGE_WIDTH, pad=4)
     for spine in ax.spines.values():
         spine.set_color("black")
         spine.set_linewidth(EDGE_WIDTH)
@@ -93,7 +93,8 @@ def plot(rows, output_dir: Path) -> None:
     ax.set_xticks(x)
     ax.set_xticklabels([name for name, _ in rows], rotation=45, ha="right",
                        rotation_mode="anchor", color="black")
-    ax.tick_params(axis="x", labelsize=XTICK_FONT, length=0, pad=8 * SCALE)
+    ax.tick_params(axis="x", labelsize=XTICK_FONT, colors="black",
+                   direction="out", length=13, width=EDGE_WIDTH, pad=4)
     for tick in ax.get_xticklabels():
         if tick.get_text() == "Average":
             tick.set_weight("bold")
@@ -104,7 +105,7 @@ def plot(rows, output_dir: Path) -> None:
     legend = ax.legend(handles=handles, loc="upper left", ncol=len(handles),
                        fontsize=LEGEND_FONT, frameon=True, fancybox=False,
                        edgecolor="black", framealpha=1, handlelength=1.0,
-                       handleheight=1.0, columnspacing=1.6, borderaxespad=0.6)
+                       handleheight=1.0, columnspacing=0.9, handletextpad=0.5, borderaxespad=0.6)
     legend.get_frame().set_linewidth(EDGE_WIDTH)
 
     output_dir.mkdir(parents=True, exist_ok=True)

@@ -72,9 +72,14 @@ HELIOS_FUSED_COLOR = "#CF3054"
 #   Distance misprediction   = HEAD_EVICTED
 #   Short fusion window      = NEST_LIMIT
 #   Low prediction confidence = DEADLOCK + remaining structural rejects
-DISTANCE_MISPRED_COLOR = "#D5D5D4"  # light gray
-SHORT_WINDOW_COLOR = "#ACF771"  # lime, same as ldtwofill in the paper's TikZ figures
-LOW_CONF_COLOR = "#6E6E6E"  # dark gray
+# Not-covered buckets use the paper palette (teal, lime) and light gray.
+DISTANCE_MISPRED_COLOR = "#D9D9D9"  # light gray
+SHORT_WINDOW_COLOR = "#0B6162"  # deep teal, as LD1 and FCT in the paper
+LOW_CONF_COLOR = "#ACF771"  # lime, as LD2 and RLB in the paper
+SEGMENT_HATCH = {
+}
+HATCH_LINEWIDTH = 1.5
+HATCH_COLOR = "#A0A0A0"
 
 DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
 DEFAULT_OUTPUT_DIR = DEFAULT_RESULTS_ROOT / "helios-coverage-causes"
@@ -152,6 +157,7 @@ def _apply_plot_style() -> None:
             "xtick.labelsize": AXIS_FONT,
             "ytick.labelsize": AXIS_FONT,
             "legend.fontsize": LEGEND_FONT,
+            "hatch.linewidth": HATCH_LINEWIDTH,
         }
     )
 
@@ -432,6 +438,8 @@ def _legend_handles(active_segments: list[tuple[str, str]]) -> list:
         Patch(
             facecolor=color,
             edgecolor="black",
+            hatch=SEGMENT_HATCH.get(field),
+            hatchcolor=HATCH_COLOR,
             linewidth=BAR_EDGE_WIDTH,
             label=legend_label(field),
         )
@@ -495,6 +503,8 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
             BAR_WIDTH,
             bottom=bottoms,
             color=color,
+            hatch=SEGMENT_HATCH.get(field),
+            hatchcolor=HATCH_COLOR,
             edgecolor="black",
             linewidth=BAR_EDGE_WIDTH,
             label=legend_label(field),
