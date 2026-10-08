@@ -85,7 +85,7 @@ COMMITTED_STAT = HELIOS_FUSED_STAT
 IDEAL_FUSED_STAT = "IDEAL_FUSION_FUSED_LOADS_count"
 
 # Match current IPC main-graph canvas / stroke weight, with extra height.
-BAR_WIDTH = 4.5
+BAR_WIDTH = 6.0  # 60% of each slot
 APP_STEP = 10.0
 AVERAGE_GAP = 2.4
 FIGSIZE = (IPC_FIGSIZE[0], IPC_FIGSIZE[1] + 6.0)  # taller than IPC
@@ -94,7 +94,7 @@ AVERAGE_SEPARATOR_COLOR = "#2A2A2A"
 AVERAGE_SEPARATOR_WIDTH = 10.0
 AXIS_FONT = IPC_TICK_FONT
 AXIS_LABEL_FONT = IPC_AXIS_LABEL_FONT
-LEGEND_FONT = 90  # between axis ticks and previous oversized legend
+LEGEND_FONT = 105
 Y_LABEL_PAD = 28
 OUTPUT_DPI = 300
 Y_AXIS_LABEL = (
@@ -539,8 +539,10 @@ def plot_breakdown(results: list[WorkloadBreakdown], output_dir: Path) -> None:
     ax.set_ylim(0.0, 105.0)
     ax.yaxis.set_major_locator(mticker.MultipleLocator(20))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _p: f"{y:.0f}"))
-    ax.tick_params(axis="x", labelsize=AXIS_FONT, length=0, pad=14, colors="black")
-    ax.tick_params(axis="y", labelsize=AXIS_FONT, colors="black")
+    ax.tick_params(axis="x", labelsize=AXIS_FONT, colors="black",
+                   direction="out", length=60, width=BAR_EDGE_WIDTH * 0.7, pad=14)  # DBI-style tick dashes
+    ax.tick_params(axis="y", labelsize=AXIS_FONT, colors="black",
+                   direction="out", length=60, width=BAR_EDGE_WIDTH * 0.7, pad=12)  # DBI-style tick dashes
     for label in ax.get_yticklabels():
         label.set_fontsize(AXIS_FONT)
         label.set_fontfamily(FONT_FAMILY)
