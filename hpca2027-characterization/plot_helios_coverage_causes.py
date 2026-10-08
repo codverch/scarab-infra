@@ -73,7 +73,7 @@ HELIOS_FUSED_COLOR = "#CF3054"
 #   Short fusion window      = NEST_LIMIT
 #   Low prediction confidence = DEADLOCK + remaining structural rejects
 DISTANCE_MISPRED_COLOR = "#D5D5D4"  # light gray
-SHORT_WINDOW_COLOR = IFUSE_COLOR  # green (same as I-Fuse accent)
+SHORT_WINDOW_COLOR = "#ACF771"  # lime, same as ldtwofill in the paper's TikZ figures
 LOW_CONF_COLOR = "#6E6E6E"  # dark gray
 
 DEFAULT_RESULTS_ROOT = DEFAULT_SCARAB_ROOT / "src" / "hpca2027-characterization-results"
