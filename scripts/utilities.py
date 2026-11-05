@@ -74,7 +74,9 @@ USER_ENTRYPOINT = f"{INFRA_MOUNT_TARGET}/common/scripts/user_entrypoint.sh"
 
 
 def use_apptainer():
-    return not os.path.exists("/var/run/docker.sock") and shutil.which("apptainer") is not None
+    # A socket the user cannot open (e.g. not in the docker group) is as good as none.
+    docker_usable = os.access("/var/run/docker.sock", os.R_OK | os.W_OK)
+    return not docker_usable and shutil.which("apptainer") is not None
 
 
 def apptainer_exec_prefix(docker_prefix):
