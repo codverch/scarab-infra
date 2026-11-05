@@ -22,3 +22,13 @@ export COMPOSE_DOCKER_CLI_BUILD=1
 if [ -f "/usr/local/bin/workload_user_entrypoint.sh" ]; then
   source /usr/local/bin/workload_user_entrypoint.sh
 fi
+
+# Scarab's power model (--power_intf_on 1) shells out to McPAT and CACTI. They
+# must be built for this image's glibc, so they live under the mounted home at
+# $HOME/toolchain/bin; an explicit MCPAT_BIN/CACTI_BIN still wins.
+if [ -z "${MCPAT_BIN:-}" ] && [ -x "$HOME/toolchain/bin/mcpat" ]; then
+  export MCPAT_BIN="$HOME/toolchain/bin/mcpat"
+fi
+if [ -z "${CACTI_BIN:-}" ] && [ -x "$HOME/toolchain/bin/cacti" ]; then
+  export CACTI_BIN="$HOME/toolchain/bin/cacti"
+fi
