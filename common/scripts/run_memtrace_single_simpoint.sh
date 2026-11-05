@@ -69,7 +69,33 @@ else
 
   instLimit=$(( $roiEnd - $roiStart + 1 ))
 
-  if [ "$TRACE_TYPE" == "iterative_trace" ]; then
+  if [ "$TRACE_TYPE" == "explicit_roi" ]; then
+    # The window is not derived from segment arithmetic: <cluster_id>.roi beside
+    # the zip states it in the zip's own fetched-instruction ordinals (the ones
+    # DynamoRIO's skip_instructions and basic_counts use):
+    #   ROI_BEGIN=<1-based ordinal of the first warmup instruction>
+    #   WARMUP=<instructions of warmup>   MEASURE=<instructions measured>
+    # so every simpoint measures its own segment, whatever the zip layout.
+    ROIFILE=$trace_home/$WORKLOAD_HOME/traces/simp/$segID.roi
+    if [ ! -f "$ROIFILE" ]; then
+      echo "explicit_roi: missing $ROIFILE" > sim.log
+      exit 1
+    fi
+    ROI_BEGIN=$(sed -n 's/^ROI_BEGIN=//p' "$ROIFILE")
+    WARMUP=$(sed -n 's/^WARMUP=//p' "$ROIFILE")
+    MEASURE=$(sed -n 's/^MEASURE=//p' "$ROIFILE")
+    instLimit=$(( $WARMUP + $MEASURE ))
+    scarabCmd="$SCARABHOME/src/$SCARAB_BIN \
+    --frontend memtrace \
+    --cbp_trace_r0=$TRACEFILE \
+    --memtrace_roi_begin=$ROI_BEGIN \
+    --memtrace_roi_end=$(( $ROI_BEGIN + $instLimit - 1 )) \
+    --inst_limit=$instLimit \
+    --full_warmup=$WARMUP \
+    --use_fetched_count=1 \
+    $SCARABPARAMS \
+    &> sim.log"
+  elif [ "$TRACE_TYPE" == "iterative_trace" ]; then
     # with no warmup
     # simultion always simulate the whole trace file with no skip
 
