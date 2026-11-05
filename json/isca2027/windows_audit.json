@@ -1,0 +1,1065 @@
+{
+ "rule": {
+  "warmup": 20000000,
+  "measure": 10000000
+ },
+ "workloads": {
+  "appworld": {
+   "segment_size": 10000000,
+   "simpoints": [
+    {
+     "cluster_id": 0,
+     "segment_id": 5,
+     "weight": 0.100654,
+     "weight_raw": 0.100654,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/appworld/traces_simp/trace/5.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 60000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 50000000,
+     "offset_rule": "entry chunk.0005 is #5 of 6, chunk_instr_count 10000000",
+     "ROI_BEGIN": 30000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      50000000,
+      60000000
+     ],
+     "program_warmup": [
+      30000000,
+      50000000
+     ],
+     "chunk_check": "(n-1)*cic=50000000 < total=60000000 <= n*cic=60000000"
+    },
+    {
+     "cluster_id": 1,
+     "segment_id": 9,
+     "weight": 0.798692,
+     "weight_raw": 0.798692,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/appworld/traces_simp/trace/9.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 99350132,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 90000000,
+     "offset_rule": "entry chunk.0009 is #9 of 10, chunk_instr_count 10000000",
+     "ROI_BEGIN": 70000001,
+     "WARMUP": 20000000,
+     "MEASURE": 9350132,
+     "program_measured": [
+      90000000,
+      99350132
+     ],
+     "program_warmup": [
+      70000000,
+      90000000
+     ],
+     "chunk_check": "(n-1)*cic=90000000 < total=99350132 <= n*cic=100000000"
+    },
+    {
+     "cluster_id": 2,
+     "segment_id": 4,
+     "weight": 0.100654,
+     "weight_raw": 0.100654,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/appworld/traces_simp/trace/4.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 50000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 40000000,
+     "offset_rule": "entry chunk.0004 is #4 of 5, chunk_instr_count 10000000",
+     "ROI_BEGIN": 20000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      40000000,
+      50000000
+     ],
+     "program_warmup": [
+      20000000,
+      40000000
+     ],
+     "chunk_check": "(n-1)*cic=40000000 < total=50000000 <= n*cic=50000000"
+    }
+   ],
+   "notes": [
+    "warmup of segment 5 covers measured region of segment 4"
+   ]
+  },
+  "bfs": {
+   "segment_size": 30000000,
+   "simpoints": [
+    {
+     "cluster_id": 0,
+     "segment_id": 94,
+     "weight": 0.0288911913326426,
+     "weight_raw": 0.0288912,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/bfs/traces_simp/trace/94.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0093",
+      "chunk.0094"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0094 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      2820000000,
+      2830000000
+     ],
+     "program_warmup": [
+      2800000000,
+      2820000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    },
+    {
+     "cluster_id": 2,
+     "segment_id": 103,
+     "weight": 0.017698194690541593,
+     "weight_raw": 0.0176982,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/bfs/traces_simp/trace/103.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0102",
+      "chunk.0103"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0103 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      3090000000,
+      3100000000
+     ],
+     "program_warmup": [
+      3070000000,
+      3090000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    },
+    {
+     "cluster_id": 3,
+     "segment_id": 96,
+     "weight": 0.06741287977613607,
+     "weight_raw": 0.0674129,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/bfs/traces_simp/trace/96.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0095",
+      "chunk.0096"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0096 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      2880000000,
+      2890000000
+     ],
+     "program_warmup": [
+      2860000000,
+      2880000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    },
+    {
+     "cluster_id": 4,
+     "segment_id": 17,
+     "weight": 0.8859977342006797,
+     "weight_raw": 0.885998,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/bfs/traces_simp/trace/17.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0016",
+      "chunk.0017"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0017 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      510000000,
+      520000000
+     ],
+     "program_warmup": [
+      490000000,
+      510000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    }
+   ],
+   "notes": []
+  },
+  "cachebench": {
+   "segment_size": 10000000,
+   "simpoints": [
+    {
+     "cluster_id": 0,
+     "segment_id": 0,
+     "weight": 1.0,
+     "weight_raw": 1.0,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/cachebench/traces_simp/trace/0.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 100000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 20000000,
+     "offset_rule": "manifest warmup_instrs",
+     "ROI_BEGIN": 1,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      0,
+      10000000
+     ],
+     "program_warmup": [
+      -20000000,
+      0
+     ]
+    }
+   ],
+   "notes": []
+  },
+  "clickhouse": {
+   "segment_size": 10000000,
+   "simpoints": [
+    {
+     "cluster_id": 1,
+     "segment_id": 17,
+     "weight": 1.0,
+     "weight_raw": 1.0,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/clickhouse/traces_simp/trace/17.zip",
+     "zip_entries": [
+      "chunk.00000000",
+      "chunk.00000001",
+      "chunk.00000002",
+      "chunk.00000003",
+      "chunk.00000004",
+      "chunk.00000005",
+      "chunk.00000006"
+     ],
+     "chunk_instr_count": null,
+     "zip_total_instrs": null,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 10000000,
+     "offset_rule": "manifest trace_measurement_interval",
+     "ROI_BEGIN": 1,
+     "WARMUP": 10000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      170000000,
+      180000000
+     ],
+     "program_warmup": [
+      160000000,
+      170000000
+     ]
+    }
+   ],
+   "notes": []
+  },
+  "core_bench": {
+   "segment_size": 10000000,
+   "simpoints": [
+    {
+     "cluster_id": 0,
+     "segment_id": 4,
+     "weight": 0.1,
+     "weight_raw": 0.1,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/core_bench/traces_simp/trace/4.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 50000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 40000000,
+     "offset_rule": "entry chunk.0004 is #4 of 5, chunk_instr_count 10000000",
+     "ROI_BEGIN": 20000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      40000000,
+      50000000
+     ],
+     "program_warmup": [
+      20000000,
+      40000000
+     ],
+     "chunk_check": "(n-1)*cic=40000000 < total=50000000 <= n*cic=50000000"
+    },
+    {
+     "cluster_id": 1,
+     "segment_id": 9,
+     "weight": 0.6,
+     "weight_raw": 0.6,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/core_bench/traces_simp/trace/9.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 60000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 50000000,
+     "offset_rule": "entry chunk.0009 is #5 of 6, chunk_instr_count 10000000",
+     "ROI_BEGIN": 30000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      90000000,
+      100000000
+     ],
+     "program_warmup": [
+      70000000,
+      90000000
+     ],
+     "chunk_check": "(n-1)*cic=50000000 < total=60000000 <= n*cic=60000000"
+    },
+    {
+     "cluster_id": 2,
+     "segment_id": 8,
+     "weight": 0.3,
+     "weight_raw": 0.3,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/core_bench/traces_simp/trace/8.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 60000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 50000000,
+     "offset_rule": "entry chunk.0008 is #5 of 6, chunk_instr_count 10000000",
+     "ROI_BEGIN": 30000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      80000000,
+      90000000
+     ],
+     "program_warmup": [
+      60000000,
+      80000000
+     ],
+     "chunk_check": "(n-1)*cic=50000000 < total=60000000 <= n*cic=60000000"
+    }
+   ],
+   "notes": [
+    "warmup of segment 9 covers measured region of segment 8"
+   ]
+  },
+  "dfs": {
+   "segment_size": 30000000,
+   "simpoints": [
+    {
+     "cluster_id": 0,
+     "segment_id": 8,
+     "weight": 0.5294118941176211,
+     "weight_raw": 0.529412,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/dfs/traces_simp/trace/8.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0007",
+      "chunk.0008"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0008 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      240000000,
+      250000000
+     ],
+     "program_warmup": [
+      220000000,
+      240000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    },
+    {
+     "cluster_id": 1,
+     "segment_id": 28,
+     "weight": 0.3725489254902149,
+     "weight_raw": 0.372549,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/dfs/traces_simp/trace/28.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0027",
+      "chunk.0028"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0028 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      840000000,
+      850000000
+     ],
+     "program_warmup": [
+      820000000,
+      840000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    },
+    {
+     "cluster_id": 2,
+     "segment_id": 96,
+     "weight": 0.06862738627452274,
+     "weight_raw": 0.0686274,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/dfs/traces_simp/trace/96.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0095",
+      "chunk.0096"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0096 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      2880000000,
+      2890000000
+     ],
+     "program_warmup": [
+      2860000000,
+      2880000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    },
+    {
+     "cluster_id": 4,
+     "segment_id": 94,
+     "weight": 0.029411794117641173,
+     "weight_raw": 0.0294118,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/dfs/traces_simp/trace/94.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0093",
+      "chunk.0094"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0094 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      2820000000,
+      2830000000
+     ],
+     "program_warmup": [
+      2800000000,
+      2820000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    }
+   ],
+   "notes": []
+  },
+  "duckdb": {
+   "segment_size": 10000000,
+   "simpoints": [
+    {
+     "cluster_id": 1,
+     "segment_id": 5,
+     "weight": 0.2999997999627931,
+     "weight_raw": 0.299944,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/duckdb/traces_simp/trace/5.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 60000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 50000000,
+     "offset_rule": "entry chunk.0005 is #5 of 6, chunk_instr_count 10000000",
+     "ROI_BEGIN": 30000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      50000000,
+      60000000
+     ],
+     "program_warmup": [
+      30000000,
+      50000000
+     ],
+     "chunk_check": "(n-1)*cic=50000000 < total=60000000 <= n*cic=60000000"
+    },
+    {
+     "cluster_id": 2,
+     "segment_id": 6,
+     "weight": 0.700000200037207,
+     "weight_raw": 0.69987,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/duckdb/traces_simp/trace/6.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 70000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0006 is #6 of 7, chunk_instr_count 10000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      60000000,
+      70000000
+     ],
+     "program_warmup": [
+      40000000,
+      60000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=70000000 <= n*cic=70000000"
+    }
+   ],
+   "notes": [
+    "warmup of segment 6 covers measured region of segment 5"
+   ]
+  },
+  "leveldb": {
+   "segment_size": 10000000,
+   "simpoints": [
+    {
+     "cluster_id": 1,
+     "segment_id": 9,
+     "weight": 0.39999999999999997,
+     "weight_raw": 0.39996,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/leveldb/traces_simp/trace/9.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 100000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 90000000,
+     "offset_rule": "entry chunk.0009 is #9 of 10, chunk_instr_count 10000000",
+     "ROI_BEGIN": 70000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      90000000,
+      100000000
+     ],
+     "program_warmup": [
+      70000000,
+      90000000
+     ],
+     "chunk_check": "(n-1)*cic=90000000 < total=100000000 <= n*cic=100000000"
+    },
+    {
+     "cluster_id": 2,
+     "segment_id": 5,
+     "weight": 0.6,
+     "weight_raw": 0.59994,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/leveldb/traces_simp/trace/5.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 60000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 50000000,
+     "offset_rule": "entry chunk.0005 is #5 of 6, chunk_instr_count 10000000",
+     "ROI_BEGIN": 30000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      50000000,
+      60000000
+     ],
+     "program_warmup": [
+      30000000,
+      50000000
+     ],
+     "chunk_check": "(n-1)*cic=50000000 < total=60000000 <= n*cic=60000000"
+    }
+   ],
+   "notes": []
+  },
+  "memcached": {
+   "segment_size": 100000000,
+   "simpoints": [
+    {
+     "cluster_id": 0,
+     "segment_id": 216,
+     "weight": 0.5317021063404214,
+     "weight_raw": 0.531702,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/memcached/traces_simp/trace/216.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004"
+     ],
+     "chunk_instr_count": 25000000,
+     "zip_total_instrs": 111776436,
+     "segment_size": 100000000,
+     "segment_offset_in_zip": 25000000,
+     "offset_rule": "manifest warmup_instrs",
+     "ROI_BEGIN": 5000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      21600000000,
+      21610000000
+     ],
+     "program_warmup": [
+      21580000000,
+      21600000000
+     ]
+    },
+    {
+     "cluster_id": 1,
+     "segment_id": 149,
+     "weight": 0.011685802337160468,
+     "weight_raw": 0.0116858,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/memcached/traces_simp/trace/149.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004"
+     ],
+     "chunk_instr_count": 25000000,
+     "zip_total_instrs": 114326791,
+     "segment_size": 100000000,
+     "segment_offset_in_zip": 25000000,
+     "offset_rule": "manifest warmup_instrs",
+     "ROI_BEGIN": 5000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      14900000000,
+      14910000000
+     ],
+     "program_warmup": [
+      14880000000,
+      14900000000
+     ]
+    },
+    {
+     "cluster_id": 2,
+     "segment_id": 162,
+     "weight": 0.17528603505720702,
+     "weight_raw": 0.175286,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/memcached/traces_simp/trace/162.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004"
+     ],
+     "chunk_instr_count": 25000000,
+     "zip_total_instrs": 116254688,
+     "segment_size": 100000000,
+     "segment_offset_in_zip": 25000000,
+     "offset_rule": "manifest warmup_instrs",
+     "ROI_BEGIN": 5000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      16200000000,
+      16210000000
+     ],
+     "program_warmup": [
+      16180000000,
+      16200000000
+     ]
+    },
+    {
+     "cluster_id": 3,
+     "segment_id": 156,
+     "weight": 0.12854302570860515,
+     "weight_raw": 0.128543,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/memcached/traces_simp/trace/156.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004"
+     ],
+     "chunk_instr_count": 25000000,
+     "zip_total_instrs": 114317279,
+     "segment_size": 100000000,
+     "segment_offset_in_zip": 25000000,
+     "offset_rule": "manifest warmup_instrs",
+     "ROI_BEGIN": 5000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      15600000000,
+      15610000000
+     ],
+     "program_warmup": [
+      15580000000,
+      15600000000
+     ]
+    },
+    {
+     "cluster_id": 4,
+     "segment_id": 169,
+     "weight": 0.15278303055660614,
+     "weight_raw": 0.152783,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/memcached/traces_simp/trace/169.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004"
+     ],
+     "chunk_instr_count": 25000000,
+     "zip_total_instrs": 105821510,
+     "segment_size": 100000000,
+     "segment_offset_in_zip": 25000000,
+     "offset_rule": "manifest warmup_instrs",
+     "ROI_BEGIN": 5000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      16900000000,
+      16910000000
+     ],
+     "program_warmup": [
+      16880000000,
+      16900000000
+     ]
+    }
+   ],
+   "notes": []
+  },
+  "pagerank": {
+   "segment_size": 30000000,
+   "simpoints": [
+    {
+     "cluster_id": 0,
+     "segment_id": 97,
+     "weight": 0.018119507247802903,
+     "weight_raw": 0.0181195,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/pagerank/traces_simp/trace/97.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0096",
+      "chunk.0097"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0097 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      2910000000,
+      2920000000
+     ],
+     "program_warmup": [
+      2890000000,
+      2910000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    },
+    {
+     "cluster_id": 1,
+     "segment_id": 94,
+     "weight": 0.036239014495605806,
+     "weight_raw": 0.036239,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/pagerank/traces_simp/trace/94.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0093",
+      "chunk.0094"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0094 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      2820000000,
+      2830000000
+     ],
+     "program_warmup": [
+      2800000000,
+      2820000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    },
+    {
+     "cluster_id": 2,
+     "segment_id": 91,
+     "weight": 0.8425563370225349,
+     "weight_raw": 0.842556,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/pagerank/traces_simp/trace/91.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0090",
+      "chunk.0091"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0091 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      2730000000,
+      2740000000
+     ],
+     "program_warmup": [
+      2710000000,
+      2730000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    },
+    {
+     "cluster_id": 3,
+     "segment_id": 107,
+     "weight": 0.03966691586676635,
+     "weight_raw": 0.0396669,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/pagerank/traces_simp/trace/107.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0106",
+      "chunk.0107"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0107 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      3210000000,
+      3220000000
+     ],
+     "program_warmup": [
+      3190000000,
+      3210000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    },
+    {
+     "cluster_id": 4,
+     "segment_id": 99,
+     "weight": 0.06341822536729015,
+     "weight_raw": 0.0634182,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/pagerank/traces_simp/trace/99.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0098",
+      "chunk.0099"
+     ],
+     "chunk_instr_count": 30000000,
+     "zip_total_instrs": 90000000,
+     "segment_size": 30000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "entry chunk.0099 is #2 of 3, chunk_instr_count 30000000",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      2970000000,
+      2980000000
+     ],
+     "program_warmup": [
+      2950000000,
+      2970000000
+     ],
+     "chunk_check": "(n-1)*cic=60000000 < total=90000000 <= n*cic=90000000"
+    }
+   ],
+   "notes": []
+  },
+  "terminal_bench": {
+   "segment_size": 10000000,
+   "simpoints": [
+    {
+     "cluster_id": 0,
+     "segment_id": 12,
+     "weight": 0.411628,
+     "weight_raw": 0.411628,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/terminal_bench/traces_simp/trace/12.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0008",
+      "chunk.0009",
+      "chunk.0010",
+      "chunk.0011",
+      "chunk.0012"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 60000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 50000000,
+     "offset_rule": "entry chunk.0012 is #5 of 6, chunk_instr_count 10000000",
+     "ROI_BEGIN": 30000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      120000000,
+      130000000
+     ],
+     "program_warmup": [
+      100000000,
+      120000000
+     ],
+     "chunk_check": "(n-1)*cic=50000000 < total=60000000 <= n*cic=60000000"
+    },
+    {
+     "cluster_id": 1,
+     "segment_id": 5,
+     "weight": 0.588372,
+     "weight_raw": 0.588372,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/terminal_bench/traces_simp/trace/5.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 60000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 50000000,
+     "offset_rule": "entry chunk.0005 is #5 of 6, chunk_instr_count 10000000",
+     "ROI_BEGIN": 30000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      50000000,
+      60000000
+     ],
+     "program_warmup": [
+      30000000,
+      50000000
+     ],
+     "chunk_check": "(n-1)*cic=50000000 < total=60000000 <= n*cic=60000000"
+    }
+   ],
+   "notes": []
+  }
+ }
+}
