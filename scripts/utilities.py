@@ -1068,7 +1068,7 @@ def _build_missing_scarab_version(
                 pin_cache_name = _cache_bin_name(f"pin_exec_{bin_name}", build_mode)
                 pin_dest = Path(infra_dir) / "scarab_builds" / pin_cache_name
                 shutil.copy2(built_pin_exec, pin_dest)
-            info(f"Cached new pin_exec binary at {pin_dest}", dbg_lvl)
+                info(f"Cached new pin_exec binary at {pin_dest}", dbg_lvl)
     except subprocess.CalledProcessError as exc:
         err(
             f"Failed to checkout {target_hash} in scarab repository: {exc.stderr or exc.stdout or exc}",

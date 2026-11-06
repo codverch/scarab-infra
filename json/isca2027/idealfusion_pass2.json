@@ -1,0 +1,57 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "isca2027-idealfusion",
+  "workload_manager": "manual",
+  "root_dir": "/hot/deepanjm/isca2027",
+  "application_dir": "/hot/deepanjm/isca2027/applications",
+  "scarab_path": "/hot/deepanjm/isca2027/scarab-idealfusion",
+  "scarab_build": "opt",
+  "traces_dir": "/hot/deepanjm/isca2027/traces",
+  "top_simpoint": false,
+  "_comment": "Ideal fusion (oracle, two passes) ported onto baseline Scarab 89b5145; tree codverch/ifuse branch ideal-fusion-on-baseline. Pass 1 finds pairs without fusing (must reproduce isca2027-baseline); pass 2 reads each SimPoint's pass-1 log from the ideal_pass1 directory and fuses. Run pass 1 to completion first.",
+  "simulations": [
+    {
+      "suite": "isca2027",
+      "subsuite": "datacenter",
+      "workload": [
+        "appworld",
+        "bfs",
+        "cachebench",
+        "clickhouse",
+        "core_bench",
+        "dfs",
+        "duckdb",
+        "leveldb",
+        "memcached",
+        "pagerank",
+        "terminal_bench"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "ideal_pass2": {
+      "params": "--icache_size 32768 --power_intf_on 1 --bindir /home/deepanjm/scarab-idealfusion/bin --ideal_fusion_pass 2 --ideal_fusion_log_sibling_config ideal_pass1",
+      "binary": "scarab_240d66c_0.opt",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "ideal_pass2",
+    "configs": [],
+    "counters": [
+      "IPC"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 4096
+  }
+}

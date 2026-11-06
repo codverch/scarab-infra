@@ -1,0 +1,57 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "isca2027-rfp",
+  "workload_manager": "manual",
+  "root_dir": "/hot/deepanjm/isca2027",
+  "application_dir": "/hot/deepanjm/isca2027/applications",
+  "scarab_path": "/hot/deepanjm/isca2027/scarab-rfp",
+  "scarab_build": "opt",
+  "traces_dir": "/hot/deepanjm/isca2027/traces",
+  "top_simpoint": false,
+  "_comment": "Register file prefetching (RFP, ISCA'22 as in the I-Fuse evaluation) ported onto baseline Scarab 89b5145; tree codverch/ifuse branch rfp-on-baseline. --rfp_on 0 must reproduce isca2027-baseline. Windows as baseline.json.",
+  "simulations": [
+    {
+      "suite": "isca2027",
+      "subsuite": "datacenter",
+      "workload": [
+        "appworld",
+        "bfs",
+        "cachebench",
+        "clickhouse",
+        "core_bench",
+        "dfs",
+        "duckdb",
+        "leveldb",
+        "memcached",
+        "pagerank",
+        "terminal_bench"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "rfp": {
+      "params": "--icache_size 32768 --power_intf_on 1 --bindir /home/deepanjm/scarab-rfp/bin",
+      "binary": "scarab_6592d84_0.opt",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "rfp",
+    "configs": [],
+    "counters": [
+      "IPC"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 4096
+  }
+}

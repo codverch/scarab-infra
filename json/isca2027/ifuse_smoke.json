@@ -1,0 +1,55 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "isca2027-ifuse-smoke",
+  "workload_manager": "manual",
+  "root_dir": "/hot/deepanjm/isca2027",
+  "application_dir": "/hot/deepanjm/isca2027/applications",
+  "scarab_path": "/hot/deepanjm/isca2027/scarab-ifuse",
+  "scarab_build": "opt",
+  "traces_dir": "/hot/deepanjm/isca2027/traces",
+  "top_simpoint": false,
+  "_comment": "I-Fuse (1-cycle-delayed, bank model on) ported onto the baseline Scarab 89b5145; tree codverch/ifuse branch i-fuse-on-baseline. nofuse = same binary with --ifuse_runtime_training_enabled 0 and must reproduce isca2027-baseline cycle-for-cycle. Windows as in baseline.json (explicit_roi, 20M warmup + 10M measured).",
+  "simulations": [
+    {
+      "suite": "isca2027",
+      "subsuite": "datacenter",
+      "workload": [
+        "appworld"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "nofuse": {
+      "params": "--icache_size 32768 --power_intf_on 1 --bindir /home/deepanjm/scarab-ifuse/bin --ifuse_runtime_training_enabled 0",
+      "binary": "scarab_8c37ec8_0.opt",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "ifuse": {
+      "params": "--icache_size 32768 --power_intf_on 1 --bindir /home/deepanjm/scarab-ifuse/bin",
+      "binary": "scarab_8c37ec8_0.opt",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "nofuse",
+    "configs": [
+      "ifuse"
+    ],
+    "counters": [
+      "IPC"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 4096
+  }
+}
