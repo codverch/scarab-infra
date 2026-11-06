@@ -238,9 +238,9 @@
    "simpoints": [
     {
      "cluster_id": 0,
-     "segment_id": 0,
-     "weight": 1.0,
-     "weight_raw": 1.0,
+     "segment_id": 2,
+     "weight": 0.2,
+     "weight_raw": 0.2,
      "zip": "/hot/deepanjm/hpca2027-final-traces/cachebench/traces_simp/trace/0.zip",
      "zip_entries": [
       "chunk.0000",
@@ -258,55 +258,423 @@
      "zip_total_instrs": 100000000,
      "segment_size": 10000000,
      "segment_offset_in_zip": 20000000,
-     "offset_rule": "manifest warmup_instrs",
+     "offset_rule": "contiguous trace from instruction 0 (released 100M steady-state trace; SimPoint -maxK 5 picks k=1 and -k 5 fills only 2 clusters on segments 2..9, so 5 evenly spaced segments, equal weight (systematic sampling))",
      "ROI_BEGIN": 1,
      "WARMUP": 20000000,
      "MEASURE": 10000000,
      "program_measured": [
-      0,
-      10000000
+      20000000,
+      30000000
      ],
      "program_warmup": [
-      -20000000,
-      0
+      0,
+      20000000
+     ]
+    },
+    {
+     "cluster_id": 1,
+     "segment_id": 4,
+     "weight": 0.2,
+     "weight_raw": 0.2,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/cachebench/traces_simp/trace/0.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 100000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 40000000,
+     "offset_rule": "contiguous trace from instruction 0 (released 100M steady-state trace; SimPoint -maxK 5 picks k=1 and -k 5 fills only 2 clusters on segments 2..9, so 5 evenly spaced segments, equal weight (systematic sampling))",
+     "ROI_BEGIN": 20000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      40000000,
+      50000000
+     ],
+     "program_warmup": [
+      20000000,
+      40000000
+     ]
+    },
+    {
+     "cluster_id": 2,
+     "segment_id": 6,
+     "weight": 0.2,
+     "weight_raw": 0.2,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/cachebench/traces_simp/trace/0.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 100000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 60000000,
+     "offset_rule": "contiguous trace from instruction 0 (released 100M steady-state trace; SimPoint -maxK 5 picks k=1 and -k 5 fills only 2 clusters on segments 2..9, so 5 evenly spaced segments, equal weight (systematic sampling))",
+     "ROI_BEGIN": 40000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      60000000,
+      70000000
+     ],
+     "program_warmup": [
+      40000000,
+      60000000
+     ]
+    },
+    {
+     "cluster_id": 3,
+     "segment_id": 7,
+     "weight": 0.2,
+     "weight_raw": 0.2,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/cachebench/traces_simp/trace/0.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 100000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 70000000,
+     "offset_rule": "contiguous trace from instruction 0 (released 100M steady-state trace; SimPoint -maxK 5 picks k=1 and -k 5 fills only 2 clusters on segments 2..9, so 5 evenly spaced segments, equal weight (systematic sampling))",
+     "ROI_BEGIN": 50000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      70000000,
+      80000000
+     ],
+     "program_warmup": [
+      50000000,
+      70000000
+     ]
+    },
+    {
+     "cluster_id": 4,
+     "segment_id": 9,
+     "weight": 0.2,
+     "weight_raw": 0.2,
+     "zip": "/hot/deepanjm/hpca2027-final-traces/cachebench/traces_simp/trace/0.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 100000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 90000000,
+     "offset_rule": "contiguous trace from instruction 0 (released 100M steady-state trace; SimPoint -maxK 5 picks k=1 and -k 5 fills only 2 clusters on segments 2..9, so 5 evenly spaced segments, equal weight (systematic sampling))",
+     "ROI_BEGIN": 70000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      90000000,
+      100000000
+     ],
+     "program_warmup": [
+      70000000,
+      90000000
      ]
     }
    ],
-   "notes": []
+   "notes": [
+    "warmup of segment 4 covers measured region of segment 2",
+    "warmup of segment 6 covers measured region of segment 4",
+    "warmup of segment 7 covers measured region of segment 6",
+    "warmup of segment 9 covers measured region of segment 7"
+   ]
   },
   "clickhouse": {
    "segment_size": 10000000,
    "simpoints": [
     {
-     "cluster_id": 1,
-     "segment_id": 17,
-     "weight": 1.0,
-     "weight_raw": 1.0,
-     "zip": "/hot/deepanjm/hpca2027-final-traces/clickhouse/traces_simp/trace/17.zip",
+     "cluster_id": 0,
+     "segment_id": 2,
+     "weight": 0.2,
+     "weight_raw": 0.2,
+     "zip": "/hot/deepanjm/isca2027/recluster/clickhouse/clickhouse_worker_260M.zip",
      "zip_entries": [
-      "chunk.00000000",
-      "chunk.00000001",
-      "chunk.00000002",
-      "chunk.00000003",
-      "chunk.00000004",
-      "chunk.00000005",
-      "chunk.00000006"
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009",
+      "chunk.0010",
+      "chunk.0011",
+      "chunk.0012",
+      "chunk.0013",
+      "chunk.0014",
+      "chunk.0015",
+      "chunk.0016",
+      "chunk.0017",
+      "chunk.0018",
+      "chunk.0019",
+      "chunk.0020",
+      "chunk.0021",
+      "chunk.0022",
+      "chunk.0023",
+      "chunk.0024",
+      "chunk.0025"
      ],
-     "chunk_instr_count": null,
-     "zip_total_instrs": null,
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 260000000,
      "segment_size": 10000000,
-     "segment_offset_in_zip": 10000000,
-     "offset_rule": "manifest trace_measurement_interval",
+     "segment_offset_in_zip": 20000000,
+     "offset_rule": "contiguous trace from instruction 0 (ClickHouse worker thread (exact released binary 85d4aaae..., manifest query) re-traced, first 26 chunks = 260M, ARCH_REGDEPS; SimPoint -k 5 on segments 2..25 fills only 3 clusters (one phase), so 5 evenly spaced segments, equal weight (systematic sampling))",
      "ROI_BEGIN": 1,
-     "WARMUP": 10000000,
+     "WARMUP": 20000000,
      "MEASURE": 10000000,
      "program_measured": [
-      170000000,
-      180000000
+      20000000,
+      30000000
      ],
      "program_warmup": [
-      160000000,
-      170000000
+      0,
+      20000000
+     ]
+    },
+    {
+     "cluster_id": 1,
+     "segment_id": 8,
+     "weight": 0.2,
+     "weight_raw": 0.2,
+     "zip": "/hot/deepanjm/isca2027/recluster/clickhouse/clickhouse_worker_260M.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009",
+      "chunk.0010",
+      "chunk.0011",
+      "chunk.0012",
+      "chunk.0013",
+      "chunk.0014",
+      "chunk.0015",
+      "chunk.0016",
+      "chunk.0017",
+      "chunk.0018",
+      "chunk.0019",
+      "chunk.0020",
+      "chunk.0021",
+      "chunk.0022",
+      "chunk.0023",
+      "chunk.0024",
+      "chunk.0025"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 260000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 80000000,
+     "offset_rule": "contiguous trace from instruction 0 (ClickHouse worker thread (exact released binary 85d4aaae..., manifest query) re-traced, first 26 chunks = 260M, ARCH_REGDEPS; SimPoint -k 5 on segments 2..25 fills only 3 clusters (one phase), so 5 evenly spaced segments, equal weight (systematic sampling))",
+     "ROI_BEGIN": 60000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      80000000,
+      90000000
+     ],
+     "program_warmup": [
+      60000000,
+      80000000
+     ]
+    },
+    {
+     "cluster_id": 2,
+     "segment_id": 14,
+     "weight": 0.2,
+     "weight_raw": 0.2,
+     "zip": "/hot/deepanjm/isca2027/recluster/clickhouse/clickhouse_worker_260M.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009",
+      "chunk.0010",
+      "chunk.0011",
+      "chunk.0012",
+      "chunk.0013",
+      "chunk.0014",
+      "chunk.0015",
+      "chunk.0016",
+      "chunk.0017",
+      "chunk.0018",
+      "chunk.0019",
+      "chunk.0020",
+      "chunk.0021",
+      "chunk.0022",
+      "chunk.0023",
+      "chunk.0024",
+      "chunk.0025"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 260000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 140000000,
+     "offset_rule": "contiguous trace from instruction 0 (ClickHouse worker thread (exact released binary 85d4aaae..., manifest query) re-traced, first 26 chunks = 260M, ARCH_REGDEPS; SimPoint -k 5 on segments 2..25 fills only 3 clusters (one phase), so 5 evenly spaced segments, equal weight (systematic sampling))",
+     "ROI_BEGIN": 120000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      140000000,
+      150000000
+     ],
+     "program_warmup": [
+      120000000,
+      140000000
+     ]
+    },
+    {
+     "cluster_id": 3,
+     "segment_id": 19,
+     "weight": 0.2,
+     "weight_raw": 0.2,
+     "zip": "/hot/deepanjm/isca2027/recluster/clickhouse/clickhouse_worker_260M.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009",
+      "chunk.0010",
+      "chunk.0011",
+      "chunk.0012",
+      "chunk.0013",
+      "chunk.0014",
+      "chunk.0015",
+      "chunk.0016",
+      "chunk.0017",
+      "chunk.0018",
+      "chunk.0019",
+      "chunk.0020",
+      "chunk.0021",
+      "chunk.0022",
+      "chunk.0023",
+      "chunk.0024",
+      "chunk.0025"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 260000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 190000000,
+     "offset_rule": "contiguous trace from instruction 0 (ClickHouse worker thread (exact released binary 85d4aaae..., manifest query) re-traced, first 26 chunks = 260M, ARCH_REGDEPS; SimPoint -k 5 on segments 2..25 fills only 3 clusters (one phase), so 5 evenly spaced segments, equal weight (systematic sampling))",
+     "ROI_BEGIN": 170000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      190000000,
+      200000000
+     ],
+     "program_warmup": [
+      170000000,
+      190000000
+     ]
+    },
+    {
+     "cluster_id": 4,
+     "segment_id": 25,
+     "weight": 0.2,
+     "weight_raw": 0.2,
+     "zip": "/hot/deepanjm/isca2027/recluster/clickhouse/clickhouse_worker_260M.zip",
+     "zip_entries": [
+      "chunk.0000",
+      "chunk.0001",
+      "chunk.0002",
+      "chunk.0003",
+      "chunk.0004",
+      "chunk.0005",
+      "chunk.0006",
+      "chunk.0007",
+      "chunk.0008",
+      "chunk.0009",
+      "chunk.0010",
+      "chunk.0011",
+      "chunk.0012",
+      "chunk.0013",
+      "chunk.0014",
+      "chunk.0015",
+      "chunk.0016",
+      "chunk.0017",
+      "chunk.0018",
+      "chunk.0019",
+      "chunk.0020",
+      "chunk.0021",
+      "chunk.0022",
+      "chunk.0023",
+      "chunk.0024",
+      "chunk.0025"
+     ],
+     "chunk_instr_count": 10000000,
+     "zip_total_instrs": 260000000,
+     "segment_size": 10000000,
+     "segment_offset_in_zip": 250000000,
+     "offset_rule": "contiguous trace from instruction 0 (ClickHouse worker thread (exact released binary 85d4aaae..., manifest query) re-traced, first 26 chunks = 260M, ARCH_REGDEPS; SimPoint -k 5 on segments 2..25 fills only 3 clusters (one phase), so 5 evenly spaced segments, equal weight (systematic sampling))",
+     "ROI_BEGIN": 230000001,
+     "WARMUP": 20000000,
+     "MEASURE": 10000000,
+     "program_measured": [
+      250000000,
+      260000000
+     ],
+     "program_warmup": [
+      230000000,
+      250000000
      ]
     }
    ],
@@ -690,7 +1058,7 @@
     {
      "cluster_id": 0,
      "segment_id": 216,
-     "weight": 0.5317021063404214,
+     "weight": 0.5317021063404213,
      "weight_raw": 0.531702,
      "zip": "/hot/deepanjm/hpca2027-final-traces/memcached/traces_simp/trace/216.zip",
      "zip_entries": [
@@ -720,7 +1088,7 @@
     {
      "cluster_id": 1,
      "segment_id": 149,
-     "weight": 0.011685802337160468,
+     "weight": 0.011685802337160467,
      "weight_raw": 0.0116858,
      "zip": "/hot/deepanjm/hpca2027-final-traces/memcached/traces_simp/trace/149.zip",
      "zip_entries": [
@@ -780,7 +1148,7 @@
     {
      "cluster_id": 3,
      "segment_id": 156,
-     "weight": 0.12854302570860515,
+     "weight": 0.12854302570860512,
      "weight_raw": 0.128543,
      "zip": "/hot/deepanjm/hpca2027-final-traces/memcached/traces_simp/trace/156.zip",
      "zip_entries": [
@@ -810,7 +1178,7 @@
     {
      "cluster_id": 4,
      "segment_id": 169,
-     "weight": 0.15278303055660614,
+     "weight": 0.1527830305566061,
      "weight_raw": 0.152783,
      "zip": "/hot/deepanjm/hpca2027-final-traces/memcached/traces_simp/trace/169.zip",
      "zip_entries": [
@@ -846,7 +1214,7 @@
     {
      "cluster_id": 0,
      "segment_id": 97,
-     "weight": 0.018119507247802903,
+     "weight": 0.0181195072478029,
      "weight_raw": 0.0181195,
      "zip": "/hot/deepanjm/hpca2027-final-traces/pagerank/traces_simp/trace/97.zip",
      "zip_entries": [
@@ -875,7 +1243,7 @@
     {
      "cluster_id": 1,
      "segment_id": 94,
-     "weight": 0.036239014495605806,
+     "weight": 0.0362390144956058,
      "weight_raw": 0.036239,
      "zip": "/hot/deepanjm/hpca2027-final-traces/pagerank/traces_simp/trace/94.zip",
      "zip_entries": [
@@ -904,7 +1272,7 @@
     {
      "cluster_id": 2,
      "segment_id": 91,
-     "weight": 0.8425563370225349,
+     "weight": 0.8425563370225347,
      "weight_raw": 0.842556,
      "zip": "/hot/deepanjm/hpca2027-final-traces/pagerank/traces_simp/trace/91.zip",
      "zip_entries": [
@@ -933,7 +1301,7 @@
     {
      "cluster_id": 3,
      "segment_id": 107,
-     "weight": 0.03966691586676635,
+     "weight": 0.03966691586676634,
      "weight_raw": 0.0396669,
      "zip": "/hot/deepanjm/hpca2027-final-traces/pagerank/traces_simp/trace/107.zip",
      "zip_entries": [
@@ -962,7 +1330,7 @@
     {
      "cluster_id": 4,
      "segment_id": 99,
-     "weight": 0.06341822536729015,
+     "weight": 0.06341822536729014,
      "weight_raw": 0.0634182,
      "zip": "/hot/deepanjm/hpca2027-final-traces/pagerank/traces_simp/trace/99.zip",
      "zip_entries": [

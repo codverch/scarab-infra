@@ -155,6 +155,39 @@ def plan_workload(app_dir, launcher, warmup, measure, facts_cache):
     return seg_size, plans
 
 
+def plan_from_override(path, warmup, measure):
+    """Simpoints chosen outside the release (re-clustering), on one contiguous trace.
+
+    JSON: {"zip": ..., "segment_size": ..., "total": <basic_counts fetched total>,
+           "chunk_instr_count": ..., "selection": "<how chosen>",
+           "simpoints": [{"cluster_id", "segment_id", "weight"}, ...]}
+    The zip starts at instruction 0 of the traced thread, so segment s starts at
+    s * segment_size and everything before it is contiguous warmup.
+    """
+    o = json.loads(Path(path).read_text())
+    seg_size, total = int(o["segment_size"]), int(o["total"])
+    wsum = sum(float(s["weight"]) for s in o["simpoints"])
+    names = zipfile.ZipFile(o["zip"]).namelist()
+    plans = []
+    for s in o["simpoints"]:
+        seg = int(s["segment_id"])
+        seg_off = seg * seg_size
+        w = min(warmup, seg_off)
+        m = min(measure, total - seg_off)
+        plans.append({
+            "cluster_id": int(s["cluster_id"]), "segment_id": seg,
+            "weight": float(s["weight"]) / wsum, "weight_raw": float(s["weight"]),
+            "zip": o["zip"], "zip_entries": names,
+            "chunk_instr_count": o.get("chunk_instr_count"), "zip_total_instrs": total,
+            "segment_size": seg_size, "segment_offset_in_zip": seg_off,
+            "offset_rule": f"contiguous trace from instruction 0 ({o['selection']})",
+            "ROI_BEGIN": seg_off - w + 1, "WARMUP": w, "MEASURE": m,
+            "program_measured": [seg_off, seg_off + m],
+            "program_warmup": [seg_off - w, seg_off],
+        })
+    return seg_size, plans
+
+
 def check_distinct(plans):
     """Measured windows must be pairwise disjoint; report warmup overlaps too."""
     notes = []
@@ -182,14 +215,20 @@ def main():
     ap.add_argument("--db", type=Path, default=Path(__file__).resolve().parents[1] / "workloads" / "workloads_db.json")
     ap.add_argument("--audit", required=True, type=Path)
     ap.add_argument("--facts-cache", type=Path)
+    ap.add_argument("--override", nargs="*", default=[], metavar="WORKLOAD=JSON",
+                    help="use re-clustered simpoints (see plan_from_override) for WORKLOAD")
     args = ap.parse_args()
+    overrides = dict(o.split("=", 1) for o in args.override)
 
     facts = json.loads(args.facts_cache.read_text()) if args.facts_cache and args.facts_cache.exists() else {}
     db = json.loads(args.db.read_text())
     audit = {"rule": {"warmup": args.warmup, "measure": args.measure}, "workloads": {}}
     for wl in args.workloads:
-        seg_size, plans = plan_workload(args.release_dir / wl, args.dr_launcher,
-                                        args.warmup, args.measure, facts)
+        if wl in overrides:
+            seg_size, plans = plan_from_override(overrides[wl], args.warmup, args.measure)
+        else:
+            seg_size, plans = plan_workload(args.release_dir / wl, args.dr_launcher,
+                                            args.warmup, args.measure, facts)
         if args.facts_cache:
             args.facts_cache.write_text(json.dumps(facts, indent=1))
         notes = check_distinct(plans)
@@ -207,6 +246,8 @@ def main():
                 assert p["ROI_BEGIN"] - 1 + p["WARMUP"] + p["MEASURE"] <= tot, (wl, p["segment_id"])
         out = args.traces_dir / SUITE / SUBSUITE / wl / "traces" / "simp"
         out.mkdir(parents=True, exist_ok=True)
+        for stale in list(out.glob("*.zip")) + list(out.glob("*.roi")):
+            stale.unlink()          # a re-registration must not leave old clusters behind
         for p in plans:
             dst = out / f"{p['cluster_id']}.zip"
             if dst.exists():

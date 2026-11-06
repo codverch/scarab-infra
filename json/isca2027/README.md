@@ -11,8 +11,8 @@
 | Traces | HF `deepanjalimishra99/hpca2027-final-traces` (8 apps) + `hpca2027-ifuse` (cachebench, clickhouse, memcached) |
 
 Applications: appworld, bfs, cachebench, clickhouse, core_bench, dfs, duckdb,
-leveldb, memcached, pagerank, terminal_bench (32 simpoints, the `lpt0.99` sets,
-weights renormalized to 1).
+leveldb, memcached, pagerank, terminal_bench (40 simpoints; the `lpt0.99` sets,
+weights renormalized to 1, except cachebench and clickhouse below).
 
 ## Simulation windows
 
@@ -40,11 +40,26 @@ Exceptions, all recorded in `windows_audit.json`:
 | Workload | Simpoint | Window | Why |
 |----------|----------|--------|-----|
 | appworld | segment 9 | 20M warmup + 9.35M measured | the program ends 9.35M into segment 9 |
-| clickhouse | segment 17 | 10M warmup + 10M measured | the release holds only 10M before the selected interval (`trace_warmup_interval [0,10M]`) |
 
 Warmup that covers another simpoint's measured segment (standard SimPoint
 practice; stats are reset after warmup): appworld 5 over 4, core_bench 9 over 8,
 duckdb 6 over 5.
+
+## cachebench and clickhouse: 5 simpoints each
+
+The releases hold one simpoint each. `scripts/trace_bbv.py` builds 10M-segment
+BBVs from the trace itself; SimPoint 3.2 with k=5 fills only 2 (cachebench) and
+3 (clickhouse) clusters, i.e. each is a single phase. So both use 5 evenly
+spaced segments at weight 0.2 (systematic sampling), same 20M+10M windows:
+
+- cachebench: segments 2, 4, 6, 7, 9 of the released trace.
+- clickhouse: re-traced (pod, AVX2) from the released binary and query; the
+  worker thread's first 260M instructions (of 7.44B), converted to ARCH_REGDEPS;
+  segments 2, 8, 14, 19, 25.
+
+Selections: `json/isca2027/recluster/*.json`, applied with
+`register_isca2027_traces.py --override WORKLOAD=JSON`; descriptor
+`baseline_recluster.json`.
 
 Known trace property: Scarab's memtrace reader replaces about 0.6% of instructions with a
 jump where the trace has a PC gap ("Patching gap in trace"). It affects
@@ -67,4 +82,4 @@ python3 scripts/register_isca2027_traces.py \
 json/isca2027/progress.sh          # battery per simpoint
 ```
 
-Results: `results/isca2027/baseline/`.
+Results: `codverch/ifuse` branch `baseline`, folder `baseline/isca2027/`.

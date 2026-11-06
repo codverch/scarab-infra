@@ -1,0 +1,34 @@
+{
+ "zip": "/hot/deepanjm/hpca2027-final-traces/cachebench/traces_simp/trace/0.zip",
+ "segment_size": 10000000,
+ "total": 100000000,
+ "chunk_instr_count": 10000000,
+ "selection": "released 100M steady-state trace; SimPoint -maxK 5 picks k=1 and -k 5 fills only 2 clusters on segments 2..9, so 5 evenly spaced segments, equal weight (systematic sampling)",
+ "simpoints": [
+  {
+   "cluster_id": 0,
+   "segment_id": 2,
+   "weight": 0.2
+  },
+  {
+   "cluster_id": 1,
+   "segment_id": 4,
+   "weight": 0.2
+  },
+  {
+   "cluster_id": 2,
+   "segment_id": 6,
+   "weight": 0.2
+  },
+  {
+   "cluster_id": 3,
+   "segment_id": 7,
+   "weight": 0.2
+  },
+  {
+   "cluster_id": 4,
+   "segment_id": 9,
+   "weight": 0.2
+  }
+ ]
+}
