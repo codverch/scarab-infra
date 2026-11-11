@@ -1,0 +1,77 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "isca2027-rfp-ifuse",
+  "_comment": "I-Fuse + RFP: RFP prefetches only loads that I-Fuse does not classify as LD1/LD2 (--rfp_skip_ifuse_pairs 1, default), at the lowest L1-D priority. Scarab codverch/ifuse branch isca2027-rfp-ifuse @ f013b38 (merge of isca2027-ifuse e64f41b and isca2027-rfp 1aaf11b). RFP parameters match recipe-rfp.json; I-Fuse parameters match recipe-ifuse.json. 'off' must reproduce isca2027-baseline.",
+  "workload_manager": "manual",
+  "root_dir": "/hot/deepanjm/isca2027",
+  "application_dir": "/hot/deepanjm/isca2027/applications",
+  "scarab_path": "/hot/deepanjm/isca2027/scarab-rfp-ifuse",
+  "scarab_build": "opt",
+  "traces_dir": "/hot/deepanjm/isca2027/traces",
+  "top_simpoint": false,
+  "simulations": [
+    {
+      "suite": "isca2027",
+      "subsuite": "datacenter",
+      "workload": [
+        "appworld",
+        "bfs",
+        "cachebench",
+        "clickhouse",
+        "core_bench",
+        "dfs",
+        "duckdb",
+        "leveldb",
+        "memcached",
+        "pagerank",
+        "terminal_bench"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "off": {
+      "params": "--icache_size 32768 --power_intf_on 1 --bindir /home/deepanjm/scarab-rfp-ifuse/bin --ifuse_runtime_training_enabled 0 --rfp_on 0",
+      "binary": "scarab_f013b38_0.opt",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "ifuse_only": {
+      "params": "--icache_size 32768 --power_intf_on 1 --bindir /home/deepanjm/scarab-rfp-ifuse/bin --rfp_on 0",
+      "binary": "scarab_f013b38_0.opt",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "rfp_only": {
+      "params": "--icache_size 32768 --power_intf_on 1 --bindir /home/deepanjm/scarab-rfp-ifuse/bin --ifuse_runtime_training_enabled 0 --rfp_on 1 --rfp_pt_num_sets 128 --rfp_pt_num_ways 8 --rfp_pat_on 0 --rfp_stride_bits 8 --rfp_prob_shift 4 --rfp_conf_max 1 --rfp_one_per_cycle 0 --rfp_l1_miss_to_l2 1 --rfp_md_on 1 --rfp_mispred_penalty 3 --rfp_wait_src_store 1 --rfp_pc_set_shift 2 --rfp_pc_hash 2 --rfp_tmp_slots 1 --rfp_train_l1_pref 0 --rfp_miss_trains_pref 1 --rfp_conf_reset_at_dispatch 0",
+      "binary": "scarab_f013b38_0.opt",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    },
+    "rfp_ifuse": {
+      "params": "--icache_size 32768 --power_intf_on 1 --bindir /home/deepanjm/scarab-rfp-ifuse/bin --rfp_on 1 --rfp_pt_num_sets 128 --rfp_pt_num_ways 8 --rfp_pat_on 0 --rfp_stride_bits 8 --rfp_prob_shift 4 --rfp_conf_max 1 --rfp_one_per_cycle 0 --rfp_l1_miss_to_l2 1 --rfp_md_on 1 --rfp_mispred_penalty 3 --rfp_wait_src_store 1 --rfp_pc_set_shift 2 --rfp_pc_hash 2 --rfp_tmp_slots 1 --rfp_train_l1_pref 0 --rfp_miss_trains_pref 1 --rfp_conf_reset_at_dispatch 0",
+      "binary": "scarab_f013b38_0.opt",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "off",
+    "configs": [
+      "rfp_ifuse"
+    ],
+    "counters": [
+      "IPC"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 4096
+  }
+}

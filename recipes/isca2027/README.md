@@ -9,6 +9,7 @@ result was validated.
 | [`baseline/`](baseline/) | `isca2027-baseline` | `89b5145` | `scarab_89b5145_0.opt` | `isca2027-baseline` |
 | [`rfp/`](rfp/) | `isca2027-rfp` | `1aaf11b` | `scarab_1aaf11b_0.opt` | `isca2027-rfp-final` |
 | [`ifuse/`](ifuse/) | `isca2027-ifuse` | `e64f41b` | `scarab_e64f41b_0.opt` | `isca2027-ifuse` |
+| [`rfp-ifuse/`](rfp-ifuse/) | `isca2027-rfp-ifuse` | `f013b38` | `scarab_f013b38_0.opt` | `isca2027-rfp-ifuse` |
 
 ## Shared setup
 
