@@ -1,0 +1,57 @@
+{
+  "descriptor_type": "simulation",
+  "architecture": "golden_cove",
+  "experiment": "isca2027-rfp-final",
+  "_comment": "Register File Prefetching (Shukla et al., ISCA 2022), final paper-faithful model. Scarab codverch/ifuse branch isca2027-rfp @ 1aaf11b. See recipes/isca2027/rfp/README.md.",
+  "workload_manager": "manual",
+  "root_dir": "/hot/deepanjm/isca2027",
+  "application_dir": "/hot/deepanjm/isca2027/applications",
+  "scarab_path": "/hot/deepanjm/isca2027/scarab-rfp",
+  "scarab_build": "opt",
+  "traces_dir": "/hot/deepanjm/isca2027/traces",
+  "top_simpoint": false,
+  "simulations": [
+    {
+      "suite": "isca2027",
+      "subsuite": "datacenter",
+      "workload": [
+        "appworld",
+        "bfs",
+        "cachebench",
+        "clickhouse",
+        "core_bench",
+        "dfs",
+        "leveldb",
+        "memcached",
+        "pagerank",
+        "terminal_bench",
+        "duckdb"
+      ],
+      "cluster_id": null,
+      "simulation_type": "memtrace",
+      "warmup": 20000000
+    }
+  ],
+  "configurations": {
+    "rfp": {
+      "params": "--icache_size 32768 --power_intf_on 1 --rfp_on 1 --rfp_pt_num_sets 128 --rfp_pt_num_ways 8 --rfp_pat_on 0 --rfp_stride_bits 8 --rfp_prob_shift 4 --rfp_conf_max 1 --rfp_one_per_cycle 0 --rfp_l1_miss_to_l2 1 --rfp_md_on 1 --rfp_mispred_penalty 3 --rfp_wait_src_store 1 --rfp_pc_set_shift 2 --rfp_pc_hash 2 --rfp_tmp_slots 1 --rfp_train_l1_pref 0 --rfp_miss_trains_pref 1 --rfp_conf_reset_at_dispatch 0 --bindir /home/deepanjm/scarab-rfp/bin",
+      "binary": "scarab_1aaf11b_0.opt",
+      "slurm_options": "",
+      "memory_overhead_mb": 0
+    }
+  },
+  "collect_stats": {
+    "configs": null
+  },
+  "visualize": {
+    "baseline": "rfp",
+    "configs": [],
+    "counters": [
+      "IPC"
+    ]
+  },
+  "mem": {
+    "collection_baseline": null,
+    "fallback_mb": 4096
+  }
+}
